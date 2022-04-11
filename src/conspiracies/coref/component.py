@@ -53,6 +53,8 @@ class CoreferenceComponent(TrainablePipe):
         self.model = CoreferenceModel(model_path=model_path, device=device)
 
         # Register custom extension on the Doc and Span
+        if not Doc.has_extension("resolved_coref"):
+            Doc.set_extension("resolved_coref", default=None)
         if not Doc.has_extension("coref_clusters"):
             Doc.set_extension("coref_clusters", default=[])
         if not Span.has_extension("coref_cluster"):
@@ -85,7 +87,17 @@ class CoreferenceComponent(TrainablePipe):
                         if sent == coref.sent:
                             sent._.coref_cluster.append((cluster, coref))
                             sent._.antecedent = coref_clusters_lookup_dict[cluster][0]
-
+                            
+            # Add the resolved coreference doc
+            resolved = list(tok.text_with_ws for tok in doc)
+            for i, cluster in doc._.coref_clusters:
+                for coref in cluster:
+                    if coref != coref._.antecedent:
+                        resolved[coref.start] = coref._.antecedent.text + doc[coref.end-1].whitespace_
+                        for i in range(coref.start+1, coref.end):
+                            resolved[i] = ""
+            doc._.resolved_coref = ''.join(resolved)
+    
     def __call__(self, doc: Doc) -> Doc:
         """
         Apply the pipe to one document. The document is modified in place,
