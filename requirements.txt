@@ -6,9 +6,9 @@ allennlp_models>=2.9.0,<2.10.0
 transformers>=4.11.3,<4.19.0
 
 # tests
-https://huggingface.co/spacy/da_core_news_sm/resolve/main/da_core_news_sm-any-py3-none-any.whl
+https://github.com/explosion/spacy-models/releases/download/da_core_news_sm-3.2.0/da_core_news_sm-3.2.0.tar.gz
 da-core-news-sm==3.2.0
-https://huggingface.co/spacy/en_core_web_sm/resolve/main/en_core_web_sm-any-py3-none-any.whl
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.2.0/en_core_web_sm-3.2.0.tar.gz
 en-core-web-sm==3.2.0
 
 # pipeline
