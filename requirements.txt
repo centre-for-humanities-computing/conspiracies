@@ -16,7 +16,7 @@ en-core-web-sm==3.2.0
 # git+https://github.com/KennethEnevoldsen/Multi2OIE@patch-1
 
 # style
-black==22.3.0
+black==22.6.0
 
 # testing
 pytest>=6.2.5
