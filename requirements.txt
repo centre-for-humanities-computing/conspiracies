@@ -1,5 +1,5 @@
 # package
-spacy>=3.1.0,<3.4.0
+spacy>=3.1.0,<3.5.0
 spacy-transformers>=1.1.2,<1.2.0
 allennlp>=2.9.2,<2.10.0
 allennlp_models>=2.9.0,<2.10.0
