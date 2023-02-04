@@ -27,7 +27,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
       # Checkout action is required for token to persist
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE }}
@@ -35,6 +35,7 @@ jobs:
       - name: Python Semantic Release
         uses: relekang/python-semantic-release@v7.32.2
         with:
+          directory: .
           github_token: ${{ secrets.RELEASE }}
           # Remember to copy the [semantic_release] section from pyproject.toml
           # as well
