@@ -109,7 +109,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
     "light_logo": "icon.png",
-    "dark_logo": "icon_dark.png",
+    "dark_logo": "icon.png",
     "light_css_variables": {
         "color-brand-primary": "#ff5454",
         "color-brand-content": "#ff7575",
