@@ -29,10 +29,10 @@ the [documentation](https://centre-for-humanities-computing.github.io/conspiraci
 | 👩‍💻 **[Tutorials]**     | Tutorials for using this package                 |
 | 📚 **[FAQ]**           | Frequently asked questions                       |
 
-[Documentation]: https://kennethenevoldsen.github.io/conspiracies/index.html
-[Installation]: https://kennethenevoldsen.github.io/conspiracies/installation.html
-[Tutorials]: https://kennethenevoldsen.github.io/conspiracies/tutorials.html
-[FAQ]: https://kennethenevoldsen.github.io/conspiracies/faq.html
+[Documentation]: https://centre-for-humanities-computing.github.io/conspiracies/index.html
+[Installation]: https://centre-for-humanities-computing.github.io/conspiracies/installation.html
+[Tutorials]: https://centre-for-humanities-computing.github.io/conspiracies/tutorials.html
+[FAQ]: https://centre-for-humanities-computing.github.io/conspiracies/faq.html
 
 # 💬 Where to ask questions
 
@@ -44,7 +44,7 @@ the [documentation](https://centre-for-humanities-computing.github.io/conspiraci
 | 👩‍💻 **Usage Questions**          | [GitHub Discussions]   |
 | 🗯 **General Discussion**       | [GitHub Discussions]   |
 
-[FAQ]: https://kennethenevoldsen.github.io/conspiracies/faq.html
-[github issue tracker]: https://github.com/kennethenevoldsen/conspiracies/issues
-[github discussions]: https://github.com/kennethenevoldsen/conspiracies/discussions
+[FAQ]: https://centre-for-humanities-computing.github.io/conspiracies/faq.html
+[github issue tracker]: https://github.com/centre-for-humanities-computing/conspiracies/issues
+[github discussions]: https://github.com/centre-for-humanities-computing/conspiracies/discussions
 
