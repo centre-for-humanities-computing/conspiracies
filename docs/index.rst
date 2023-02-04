@@ -35,7 +35,13 @@ please use the discussion Forums.
    installation
    tutorials/overview
    faq
+
+
+.. toctree::
+   :hidden:
    
+   Changelog <https://github.com/centre-for-humanities-computing/conspiracies/blob/main/CHANGELOG.md>
+
 
 .. toctree::
    :hidden:
