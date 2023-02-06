@@ -1,5 +1,7 @@
 
-# 👁‍🗨 Conspiracies
+<a href="https://github.com/Aarhus-Psychiatry-Research/timeseriesflattener"><img src="https://github.com/centre-for-humanities-computing/conspiracies/blob/main/docs/_static/icon.png?raw=true" width="100" align="right"/></a>
+
+# Conspiracies
 [![python versions](https://img.shields.io/badge/Python-%3E=3.8-blue)](https://github.com/centre-for-humanities-computing/conspiracies)
 [![Code style: black](https://img.shields.io/badge/Code%20Style-Black-black)](https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html)
 [![github actions pytest](https://github.com/centre-for-humanities-computing/conspiracies/actions/workflows/tests.yml/badge.svg)](https://github.com/centre-for-humanities-computing/conspiracies/actions)
