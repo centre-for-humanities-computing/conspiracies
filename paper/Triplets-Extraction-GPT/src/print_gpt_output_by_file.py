@@ -2,7 +2,11 @@ import json
 import os
 
 root_path = os.path.join(
-    "/work", "conspiracies", "data", "triplet-extraction-gpt", "predictions"
+    "/work",
+    "conspiracies",
+    "data",
+    "triplet-extraction-gpt",
+    "predictions",
 )
 
 
