@@ -1,17 +1,14 @@
-'''
-extract examples of tweets and triplets
-examples are on ucloud in data/triplet-extraction-gpt/tagged/
-'''
+"""extract examples of tweets and triplets examples are on ucloud in
+data/triplet-extraction-gpt/tagged/"""
 
 from copy import deepcopy, copy
 import random
 from typing import List, Tuple
 
 
-
 def extract_examples(examples: List[dict], n: int) -> Tuple[List[Tuple], List[str]]:
-    """
-    Extract n examples which fulfill the criteria:
+    """Extract n examples which fulfill the criteria:
+
         - An example with multiple triplets
         - An example w. no triplets
         - One mention
@@ -20,7 +17,7 @@ def extract_examples(examples: List[dict], n: int) -> Tuple[List[Tuple], List[st
         - A multi-word subj2
         - A mulit-word subj1
 
-    Extract by randomly sampling a criteria and the randomly sampling an example from 
+    Extract by randomly sampling a criteria and the randomly sampling an example from
     the examples which fulfill the criteria.
 
     Args:
@@ -35,7 +32,7 @@ def extract_examples(examples: List[dict], n: int) -> Tuple[List[Tuple], List[st
         ...     {"tweet": "tweet1", "triplets": [["subj1", "verb", "subj2"]], ...},
         ...     {"tweet": "tweet2", "triplets": [], ...}
         ...     ...
-        ... ] 
+        ... ]
         >>> extract_examples(examples, 9)
     """
     # create deep copy of examples
@@ -56,10 +53,10 @@ def extract_examples(examples: List[dict], n: int) -> Tuple[List[Tuple], List[st
         if criteria_keys:
             criteria_key = random.choice(criteria_keys)
             criteria_keys.remove(criteria_key)
-        
+
             # examples which fulfill the criteria
             examples_fulfilling_criteria = list(
-                filter(lambda x: x[criteria_key], examples_)
+                filter(lambda x: x[criteria_key], examples_),
             )
             example = random.choice(examples_fulfilling_criteria)
 
@@ -70,8 +67,7 @@ def extract_examples(examples: List[dict], n: int) -> Tuple[List[Tuple], List[st
                     criteria_keys.remove(criteria_key)
         else:
             example = random.choice(examples_)
-        
-        
+
         # remove example from examples_
         examples_.remove(example)
         result.append((example["tweet"], example["triplets"]))

@@ -1,12 +1,13 @@
-'''
-functions for creating prompt templates
-'''
+"""Functions for creating prompt templates."""
 
 from typing import Tuple, List
 
-def prompt_template_1(examples: List[Tuple], target_tweet: str, introduction: str) -> str:
+
+def prompt_template_1(
+    examples: List[Tuple], target_tweet: str, introduction: str
+) -> str:
     """Create a prompt template on the form
-    
+
     '''
     {Introduction}
     Tweet: {tweet1}
@@ -18,11 +19,11 @@ def prompt_template_1(examples: List[Tuple], target_tweet: str, introduction: st
     Tweet: {target_tweet}
     '''
     """
-    
+
     examples_str = "---\n\n"
     for tweet, triplets in examples:
         examples_str += f"Tweet: {tweet}\n\n"
-        
+
         if len(triplets) == 0:
             examples_str += f"Triplet: Null \n"
         else:
@@ -33,15 +34,17 @@ def prompt_template_1(examples: List[Tuple], target_tweet: str, introduction: st
                     examples_str += f"Triplet: {triplet_str}\n"
                 else:
                     examples_str += f"\t{triplet_str}\n"
-        
+
         examples_str += "\n---\n\n"
-            
+
     return f"{introduction}\n\n{examples_str}\nTweet: {target_tweet}\n\nTriplets:"
 
 
-def prompt_template_2(examples: List[Tuple], target_tweet: str, introduction: str) -> str:
+def prompt_template_2(
+    examples: List[Tuple], target_tweet: str, introduction: str
+) -> str:
     """Create a prompt template on the form
-    
+
     '''
     {Introduction}
     Tweet: {tweet1}
@@ -57,7 +60,7 @@ def prompt_template_2(examples: List[Tuple], target_tweet: str, introduction: st
     Tweet: {target_tweet}
     '''
     """
-    
+
     tweets_block = "---\n\n"
     tweets, tweet_triplets = zip(*examples)
 
@@ -73,13 +76,14 @@ def prompt_template_2(examples: List[Tuple], target_tweet: str, introduction: st
                 tweet_triplet_str += f"Triplet: {triplet_str}\n"
             else:
                 tweet_triplet_str += f"\t{triplet_str}\n"
-    tweet_triplet_str  += "\n---\n\n"
-        
-            
+    tweet_triplet_str += "\n---\n\n"
+
     return f"{introduction}\n\n{tweets_block}\n{tweet_triplet_str}\nTweet: {target_tweet}\n\nTriplets:"
 
 
-def prompt_template_3(examples: List[Tuple], target_tweet: str, introduction: str) -> str:
+def prompt_template_3(
+    examples: List[Tuple], target_tweet: str, introduction: str
+) -> str:
     """Create a prompt template on the form
 
     '''
@@ -101,19 +105,23 @@ def prompt_template_3(examples: List[Tuple], target_tweet: str, introduction: st
         for i, triplet in enumerate(triplets):
             assert len(triplet) == 3, "len of triplets should be 3"
             if i == 0:
-                tweet_string += f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
+                tweet_string += (
+                    f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
+                )
             else:
                 tweet_string += f"\n| | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
     tweet_string += f"\n| {target_tweet} |"
     return tweet_string
 
 
-def prompt_template_4(examples: List[Tuple], target_tweet: str, introduction: str) -> str:
+def prompt_template_4(
+    examples: List[Tuple], target_tweet: str, introduction: str
+) -> str:
     """Create a prompt template on the form
 
     '''
     {Task description}
- 
+
     {tweet 1}
 
     | Subject | Predicate | Object |
@@ -137,7 +145,7 @@ def prompt_template_4(examples: List[Tuple], target_tweet: str, introduction: st
 
     """
     header = "| Subject | Predicate | Object |\n| --- | --- | --- |"
-    tweet_string = f'{introduction}\n\n'
+    tweet_string = f"{introduction}\n\n"
     for example, triplets in examples:
         tweet_string += example + "\n\n" + header
         for triplet in triplets:
