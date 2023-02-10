@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          pytest --cov=augmenty --cov-report term-missing | tee pytest-coverage.txt
+          pytest --cov=. --cov-report term-missing | tee pytest-coverage.txt
 
       - name: Install dependencies for notebooks
         shell: bash
