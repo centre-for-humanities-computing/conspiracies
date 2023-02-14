@@ -8,7 +8,9 @@ from utils import find_tweet_in_list_of_dicts
 
 
 def extract_examples(
-    examples: List[dict], n: int, prev_target_tweets: Optional[List[str]] = None
+    examples: List[dict],
+    n: int,
+    prev_target_tweets: Optional[List[str]] = None,
 ) -> Tuple[List[Tuple], List[str]]:
     """Extract n examples which fulfill the criteria:
 

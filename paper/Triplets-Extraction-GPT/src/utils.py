@@ -3,7 +3,9 @@ from typing import List
 
 
 def find_tweet_in_list_of_dicts(
-    tweet: str, dict_list: List[dict], key: str = "tweet"
+    tweet: str,
+    dict_list: List[dict],
+    key: str = "tweet",
 ) -> dict:
     """Finds the dict in a list of dict that contains the tweet in question.
 
@@ -45,7 +47,10 @@ def get_paths(machine: str, get_openai_key: bool = False):
 
     elif machine == "ucloud":
         root_path = os.path.join(
-            "/work", "conspiracies", "data", "triplet-extraction-gpt"
+            "/work",
+            "conspiracies",
+            "data",
+            "triplet-extraction-gpt",
         )
         prediction_path = os.path.join(root_path, "predictions")
         with open(os.path.join("/work", "conspiracies", "openai_API_key.txt")) as f:
@@ -56,7 +61,7 @@ def get_paths(machine: str, get_openai_key: bool = False):
         openai_key = "key"
         prediction_path = root_path
         print(
-            f'Invalid machine, using current path ({root_path}) and the openai key "{openai_key}"'
+            f'Invalid machine, using current path ({root_path}) and the openai key "{openai_key}"',
         )
 
     if get_openai_key:
