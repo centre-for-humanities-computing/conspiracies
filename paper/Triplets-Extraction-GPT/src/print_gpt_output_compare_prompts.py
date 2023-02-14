@@ -29,9 +29,12 @@ def main(machine: str,
             f.write(f"\n### Examples set {i}\n")
         first = templates[0]
         first_file = os.path.join(
-            prediction_path, f"template{first}_gpt_outputs_{i}.json"
+            prediction_path,
+            f"template{first}_gpt_outputs_{i}.json",
         )
-        gold_file = os.path.join(root_path, "tagged", "tagged_tweets_with_features.json")
+        gold_file = os.path.join(
+            root_path, "tagged", "tagged_tweets_with_features.json"
+        )
 
         with open(first_file, "r") as f:
             first_data = json.load(f)
@@ -72,7 +75,8 @@ def main(machine: str,
                 write_triplets(triplets, out_file)
 
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m',
                         '--machine', 

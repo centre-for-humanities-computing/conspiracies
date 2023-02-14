@@ -53,6 +53,7 @@ def get_prompt_functions(templates:Optional[List[int]]=None):
         return {f'template{i}':template_dicts[f'template{i}'] for i in templates}
 
 
+
 def run_triplet_extraction(
         data:List[dict], 
         machine:str,
@@ -88,8 +89,13 @@ def run_triplet_extraction(
 
     examples_json = json.dumps(examples_set, ensure_ascii=False, indent=2)
 
-    with open(os.path.join(prediction_path, 
-                           f"examples_set_{iteration}.json"), "w") as outfile:
+    with open(
+        os.path.join(
+            prediction_path,
+            f"examples_set_{iteration}.json",
+        ),
+        "w",
+    ) as outfile:
         outfile.write(examples_json)
 
     for key, value in dict_functions.items():
@@ -100,8 +106,7 @@ def run_triplet_extraction(
             template = value(
                 examples=examples,
                 target_tweet=tweet,
-                introduction=
-                """Extract semantic triplets from the following tweet. 
+                introduction="""Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
 There should always be exactly three phrases extracted, no more no less. 
 They should be put in a markdown table as shown below:""",
@@ -119,8 +124,13 @@ They should be put in a markdown table as shown below:""",
             gpt_outputs.append(result)
         outputs_json = json.dumps(gpt_outputs, ensure_ascii=False, indent=2)
 
-        with open(os.path.join(prediction_path, 
-                               f"{key}_gpt_outputs_{iteration}.json"), "w") as outfile:
+        with open(
+            os.path.join(
+                prediction_path,
+                f"{key}_gpt_outputs_{iteration}.json",
+            ),
+            "w",
+        ) as outfile:
             outfile.write(outputs_json)
     return target_tweets
 
@@ -174,29 +184,37 @@ def main(machine:str,
                 n_tweets -= 1
                 continue
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m',
-                        '--machine', 
-                        type=str,
-                        help='Which machine are you working on? Takes values "grundtvig" or "ucloud')
-    parser.add_argument('-n',
-                        '--n_tweets', 
-                        default=20,
-                        type=int,
-                        help='Number of example tweets to use if possible')
-    parser.add_argument('-t',
-                        '--templates',
-                        nargs='+',
-                        type=int,
-                        help='Integers indicating templates to use')
-    parser.add_argument('-i',
-                        '--iterations',
-                        default=2,
-                        type=int,
-                        help='Number of iterations of sampling and prompting')
+    parser.add_argument(
+        "-m",
+        "--machine",
+        type=str,
+        help='Which machine are you working on? Takes values "grundtvig" or "ucloud',
+    )
+    parser.add_argument(
+        "-n",
+        "--n_tweets",
+        default=20,
+        type=int,
+        help="Number of example tweets to use if possible",
+    )
+    parser.add_argument(
+        "-t",
+        "--templates",
+        nargs="+",
+        type=int,
+        help="Integers indicating templates to use",
+    )
+    parser.add_argument(
+        "-i",
+        "--iterations",
+        default=2,
+        type=int,
+        help="Number of iterations of sampling and prompting",
+    )
 
     args = parser.parse_args()
-    
+
     main(args.machine, args.n_tweets, args.templates, args.iterations)
-    

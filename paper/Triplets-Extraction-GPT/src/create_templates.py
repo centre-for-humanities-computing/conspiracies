@@ -4,7 +4,9 @@ from typing import Tuple, List
 
 
 def prompt_template_1(
-    examples: List[Tuple], target_tweet: str, introduction: str
+    examples: List[Tuple],
+    target_tweet: str,
+    introduction: str,
 ) -> str:
     """Create a prompt template on the form
 
@@ -41,7 +43,9 @@ def prompt_template_1(
 
 
 def prompt_template_2(
-    examples: List[Tuple], target_tweet: str, introduction: str
+    examples: List[Tuple],
+    target_tweet: str,
+    introduction: str,
 ) -> str:
     """Create a prompt template on the form
 
@@ -82,7 +86,9 @@ def prompt_template_2(
 
 
 def prompt_template_3(
-    examples: List[Tuple], target_tweet: str, introduction: str
+    examples: List[Tuple],
+    target_tweet: str,
+    introduction: str,
 ) -> str:
     """Create a prompt template on the form
 
@@ -115,7 +121,9 @@ def prompt_template_3(
 
 
 def prompt_template_4(
-    examples: List[Tuple], target_tweet: str, introduction: str
+    examples: List[Tuple],
+    target_tweet: str,
+    introduction: str,
 ) -> str:
     """Create a prompt template on the form
 
