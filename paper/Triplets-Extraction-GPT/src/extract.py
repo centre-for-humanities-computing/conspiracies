@@ -6,7 +6,10 @@ import random
 from typing import List, Tuple, Optional
 from utils import find_tweet_in_list_of_dicts
 
-def extract_examples(examples: List[dict], n: int, prev_target_tweets:Optional[List[str]]=None) -> Tuple[List[Tuple], List[str]]:
+
+def extract_examples(
+    examples: List[dict], n: int, prev_target_tweets: Optional[List[str]] = None
+) -> Tuple[List[Tuple], List[str]]:
     """Extract n examples which fulfill the criteria:
 
         - An example with multiple triplets
@@ -51,16 +54,16 @@ def extract_examples(examples: List[dict], n: int, prev_target_tweets:Optional[L
     result = []
     if prev_target_tweets:
         for tweet in prev_target_tweets:
-            tweet_dict = find_tweet_in_list_of_dicts(tweet, examples_, 'resolved')
+            tweet_dict = find_tweet_in_list_of_dicts(tweet, examples_, "resolved")
 
             # Remove criteria keys that in the previous target tweets which are now forced example tweets
             for criteria_key in copy(criteria_keys):
                 if tweet_dict[criteria_key]:
                     criteria_keys.remove(criteria_key)
-            
+
             examples_.remove(tweet_dict)
             result.append((tweet_dict["resolved"], tweet_dict["triplets"]))
-            
+
     while len(result) < n:
         if criteria_keys:
             criteria_key = random.choice(criteria_keys)
@@ -85,6 +88,6 @@ def extract_examples(examples: List[dict], n: int, prev_target_tweets:Optional[L
         result.append((example["resolved"], example["triplets"]))
 
     assert len(criteria_keys) == 0, "Not all criteria were fulfilled"
-    
+
     target_tweets = [item["resolved"] for item in examples_]
     return result, target_tweets
