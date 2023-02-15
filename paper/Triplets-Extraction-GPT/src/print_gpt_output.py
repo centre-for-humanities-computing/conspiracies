@@ -10,6 +10,7 @@ from utils import (
     write_triplets,
 )
 
+
 def main(
     machine: str,
     templates: List[int],
@@ -17,7 +18,7 @@ def main(
 ):
     root_path, prediction_path = get_paths(machine)
     out_file = os.path.join(prediction_path, "prompt_outputs_compare_templates.md")
-    counters = {f"Template {t}":Counter({f'extraction_errors':0}) for t in templates}
+    counters = {f"Template {t}": Counter({f"extraction_errors": 0}) for t in templates}
 
     with open(out_file, "w") as f:
         f.write("Comparing templates:\n")
@@ -49,14 +50,18 @@ def main(
 
             gold_dict = find_tweet_in_list_of_dicts(tweet, input_data, "resolved")
             input_text = f"\n\n#### Target tweet:\n{tweet}\n\n"
-            header =  "| Type | Subject | Predicate | Object |\n| --- | --- | --- | --- |\n"
+            header = (
+                "| Type | Subject | Predicate | Object |\n| --- | --- | --- | --- |\n"
+            )
 
             with open(out_file, "a") as f:
                 f.write(input_text)
                 f.write(header)
 
             write_triplets(gold_dict["triplets"], out_file, "Gold")
-            write_triplets(triplets, out_file, f'Template {first}', counters[f'Template {first}'])
+            write_triplets(
+                triplets, out_file, f"Template {first}", counters[f"Template {first}"]
+            )
 
             for n in templates[1:]:
                 new_file = os.path.join(
@@ -68,11 +73,15 @@ def main(
                     data = json.load(f)
                 new_dict = find_tweet_in_list_of_dicts(tweet, data)
                 triplets = get_triplet_from_string(new_dict["triplets"])
-                write_triplets(triplets, out_file, f'Template {n}', counters[f'Template {n}'])
+                write_triplets(
+                    triplets, out_file, f"Template {n}", counters[f"Template {n}"]
+                )
 
     for template, counter in counters.items():
         with open(out_file, "a") as f:
-            f.write(f'\n\n #### {template} had {counter["extraction_errors"]} extraction errors')
+            f.write(
+                f'\n\n #### {template} had {counter["extraction_errors"]} extraction errors'
+            )
 
 
 if __name__ == "__main__":

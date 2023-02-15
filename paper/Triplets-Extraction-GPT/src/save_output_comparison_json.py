@@ -7,14 +7,15 @@ from utils import (
     get_paths,
     get_triplet_from_string,
     write_triplets,
-    sanity_check_triplets
+    sanity_check_triplets,
 )
+
 
 def main(
     machine: str,
     templates: List[int],
     iterations: int,
-    sanity_check:bool=True
+    sanity_check: bool = True,
 ):
     root_path, prediction_path = get_paths(machine)
     out_file = os.path.join(prediction_path, "gpt_predictions_compare.json")
@@ -36,7 +37,7 @@ def main(
             first_data = json.load(f)
         with open(gold_file, "r") as f:
             input_data = json.load(f)
-        
+
         for d in first_data:
             tweet_dict = {}
             tweet = d["tweet"]
@@ -47,7 +48,7 @@ def main(
             tweet_dict["gold_tagging"] = gold_dict["triplets"]
             if sanity_check:
                 tweet_dict[f"template_{first}"] = sanity_check_triplets(triplets)
-            else: 
+            else:
                 tweet_dict[f"template_{first}"] = triplets
 
             for n in templates[1:]:
@@ -97,7 +98,7 @@ if __name__ == "__main__":
         "--sanity_check",
         default=True,
         type=bool,
-        help="Whether or not to sanity check the tweets before saving. Defaults to true"
+        help="Whether or not to sanity check the tweets before saving. Defaults to true",
     )
     args = parser.parse_args()
 
