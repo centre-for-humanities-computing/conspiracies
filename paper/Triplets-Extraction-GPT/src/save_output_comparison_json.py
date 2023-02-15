@@ -1,32 +1,26 @@
 import json
 import os
 from typing import List
-from collections import Counter
 import argparse
 from utils import (
     find_tweet_in_list_of_dicts,
     get_paths,
     get_triplet_from_string,
     write_triplets,
+    sanity_check_triplets
 )
 
 def main(
     machine: str,
     templates: List[int],
     iterations: int,
+    sanity_check:bool=True
 ):
     root_path, prediction_path = get_paths(machine)
-    out_file = os.path.join(prediction_path, "prompt_outputs_compare_templates.md")
-    counters = {f"Template {t}":Counter({f'extraction_errors':0}) for t in templates}
+    out_file = os.path.join(prediction_path, "gpt_predictions_compare.json")
 
-    with open(out_file, "w") as f:
-        f.write("Comparing templates:\n")
-        for n in templates:
-            f.write(f"\t{n}\n")
-
+    list_of_tweet_dicts = []
     for i in range(iterations):
-        with open(out_file, "a") as f:
-            f.write(f"\n### Examples set {i}\n")
         first = templates[0]
         first_file = os.path.join(
             prediction_path,
@@ -42,21 +36,19 @@ def main(
             first_data = json.load(f)
         with open(gold_file, "r") as f:
             input_data = json.load(f)
-
+        
         for d in first_data:
+            tweet_dict = {}
             tweet = d["tweet"]
             triplets = get_triplet_from_string(d["triplets"])
-
             gold_dict = find_tweet_in_list_of_dicts(tweet, input_data, "resolved")
-            input_text = f"\n\n#### Target tweet:\n{tweet}\n\n"
-            header =  "| Type | Subject | Predicate | Object |\n| --- | --- | --- | --- |\n"
 
-            with open(out_file, "a") as f:
-                f.write(input_text)
-                f.write(header)
-
-            write_triplets(gold_dict["triplets"], out_file, "Gold")
-            write_triplets(triplets, out_file, f'Template {first}', counters[f'Template {first}'])
+            tweet_dict["tweet"] = tweet
+            tweet_dict["gold_tagging"] = gold_dict["triplets"]
+            if sanity_check:
+                tweet_dict[f"template_{first}"] = sanity_check_triplets(triplets)
+            else: 
+                tweet_dict[f"template_{first}"] = triplets
 
             for n in templates[1:]:
                 new_file = os.path.join(
@@ -67,12 +59,15 @@ def main(
                 with open(new_file, "r") as f:
                     data = json.load(f)
                 new_dict = find_tweet_in_list_of_dicts(tweet, data)
-                triplets = get_triplet_from_string(new_dict["triplets"])
-                write_triplets(triplets, out_file, f'Template {n}', counters[f'Template {n}'])
+                new_triplets = get_triplet_from_string(new_dict["triplets"])
+                if sanity_check:
+                    tweet_dict[f"template_{n}"] = sanity_check_triplets(new_triplets)
+                else:
+                    tweet_dict[f"template_{n}"] = new_triplets
+            list_of_tweet_dicts.append(tweet_dict)
 
-    for template, counter in counters.items():
-        with open(out_file, "a") as f:
-            f.write(f'\n\n #### {template} had {counter["extraction_errors"]} extraction errors')
+    with open(out_file, "w") as f:
+        json.dump(list_of_tweet_dicts, f, indent=2)
 
 
 if __name__ == "__main__":
@@ -97,6 +92,13 @@ if __name__ == "__main__":
         type=int,
         help="Number of iterations of sampling and prompting",
     )
+    parser.add_argument(
+        "-s",
+        "--sanity_check",
+        default=True,
+        type=bool,
+        help="Whether or not to sanity check the tweets before saving. Defaults to true"
+    )
     args = parser.parse_args()
 
-    main(args.machine, args.templates, args.iterations)
+    main(args.machine, args.templates, args.iterations, args.sanity_check)

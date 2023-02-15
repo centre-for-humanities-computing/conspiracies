@@ -6,13 +6,14 @@ For extraction of relational triplets using OpenAI's GPT.
 ```
 ├── README.md      
 ├── src
-│   ├── create_templates.py  <- prompt templates
-│   ├── extract.py           <- extracting examples
-│   ├── extract_triplets.py  <- extracting triplets using prompts
-│   ├── print_gpt_output.py  <- print output from one or several prompts in MD format
-│   └── utils.py             <- helper functions for the other scripts
+│   ├── create_templates.py            <- prompt templates
+│   ├── extract.py                     <- extracting examples
+│   ├── extract_triplets.py            <- extracting triplets using prompts
+│   ├── print_gpt_output.py            <- print output from one or several prompts in MD format
+│   ├── save_output_comparison_json.py <- saves target tweet and extracted triplets as lists to a json file
+│   └── utils.py                       <- helper functions for the other scripts
 ├── requirements.txt
-└── validation_metrics.md    <- notes on the metrics for comparing prompt performance
+└── validation_metrics.md              <- notes on the metrics for comparing prompt performance
 ```
 
 ### Data
@@ -144,3 +145,14 @@ python src/print_gpt_output.py -m ucloud/grundtvig -t 3 4
 ```
 The flag ```-m``` tells which machine you are working on, takes values ``ucloud`` or ``grundtvig``.
 The flag ``-t`` indicates templates to use. Several templates can be entered if separated by a space. Additionally, fhe flag ``-i`` can be used to indicate number of iterations of example extraction and prompting (defaults to 2). To print output from all gpt predictions, set ``-i`` equal to the ``-i`` used when extracting the triplets.
+
+
+## Save extracted triplets as lists
+The triplets extracted by GPT can be saved to a json file. The file will contain a list of dicts with the target tweet, the gold tagged triplets and the triplets extracted by GPT. 
+To generate the file with the triplets as lists, run
+```
+python src/save_output_comparison_json.py -m ucloud/grundtvig -t 3 4
+```
+The flag ```-m``` tells which machine you are working on, takes values ``ucloud`` or ``grundtvig``.
+The flag ``-t`` indicates templates to use. Several templates can be entered if separated by a space. Additionally, fhe flag ``-i`` can be used to indicate number of iterations of example extraction and prompting (defaults to 2). To print output from all gpt predictions, set ``-i`` equal to the ``-i`` used when extracting the triplets.
+The flag ``-s`` indicated whether or not to run a sanity check on triplets before saving (e.g. removing triplets with not exactly three elements). Default to True
