@@ -60,7 +60,10 @@ def main(
 
             write_triplets(gold_dict["triplets"], out_file, "Gold")
             write_triplets(
-                triplets, out_file, f"Template {first}", counters[f"Template {first}"]
+                triplets,
+                out_file,
+                f"Template {first}",
+                counters[f"Template {first}"],
             )
 
             for n in templates[1:]:
@@ -74,13 +77,16 @@ def main(
                 new_dict = find_tweet_in_list_of_dicts(tweet, data)
                 triplets = get_triplet_from_string(new_dict["triplets"])
                 write_triplets(
-                    triplets, out_file, f"Template {n}", counters[f"Template {n}"]
+                    triplets,
+                    out_file,
+                    f"Template {n}",
+                    counters[f"Template {n}"],
                 )
 
     for template, counter in counters.items():
         with open(out_file, "a") as f:
             f.write(
-                f'\n\n #### {template} had {counter["extraction_errors"]} extraction errors'
+                f'\n\n #### {template} had {counter["extraction_errors"]} extraction errors',
             )
 
 

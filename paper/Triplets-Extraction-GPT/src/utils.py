@@ -82,7 +82,8 @@ def get_triplet_from_string(triplet_string: str) -> List[List[str]]:
 
 
 def sanity_check_triplets(
-    triplets: List[List[str]], counter: Optional[Counter] = None
+    triplets: List[List[str]],
+    counter: Optional[Counter] = None,
 ) -> List[List[str]]:
     """Sanity check for a given set of triplets. Checks if triplets indicate
     template is trying to start new table, if triplet start with a new tweet
