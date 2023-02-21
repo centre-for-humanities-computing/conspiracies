@@ -3,9 +3,11 @@ from typing import List, Tuple, Optional
 
 
 class Template:
-    def __init__(self,
-    examples: List[Tuple],
-    task_description: str):
+    def __init__(
+        self,
+        examples: List[Tuple],
+        task_description: str,
+    ):
         self.examples = examples
         self.task_description = task_description
         self.generate_prompt(generate_string=True)
@@ -13,28 +15,27 @@ class Template:
     def set_examples(self, examples: List[Tuple]):
         self.examples = examples
         self.generate_prompt(generate_string=True)
-    
+
     def set_task_description(self, task_description: str):
         self.task_description = task_description
         self.generate_prompt(generate_string=True)
 
-    def __str__(self):
-        return self.__name__
-    
     @abstractmethod
     def generate_prompt(self):
         pass
 
+    def __str__(self):
+        return self.__name__
+
 
 class PromptTemplate1(Template):
-
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {task_description}
         Tweet: {tweet1}
         Triplet: {triplets1}
@@ -64,19 +65,19 @@ class PromptTemplate1(Template):
             examples_str += "---\n"
             tweet_string = f"{self.task_description}\n\n{examples_str}\nTweet:"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + f"{target_tweet}\nTriplets:"
 
-class PromptTemplate2(Template):
 
+class PromptTemplate2(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {task_description}
         Tweet: {tweet1}
         Tweet: {tweet2}
@@ -108,21 +109,23 @@ class PromptTemplate2(Template):
                     else:
                         tweet_triplet_str += f"\t{triplet_str}\n"
             tweet_triplet_str += "\n---\n\n"
-            tweet_string = f"{self.task_description}\n\n{tweets_block}\n{tweet_triplet_str}"
+            tweet_string = (
+                f"{self.task_description}\n\n{tweets_block}\n{tweet_triplet_str}"
+            )
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + f"Tweet: {target_tweet}\n\nTriplets:"
 
-class PromptTemplate3(Template):
 
+class PromptTemplate3(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
         """Create a prompt template on the form
-        
+
         '''
         {task_description}
 
@@ -143,25 +146,25 @@ class PromptTemplate3(Template):
                 for i, triplet in enumerate(triplets):
                     assert len(triplet) == 3, "len of triplets should be 3"
                     if i == 0:
-                        tweet_string += (
-                            f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
-                        )
+                        tweet_string += f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
                     else:
-                        tweet_string += f"\n| | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
-            self.prompt = tweet_string 
-        
+                        tweet_string += (
+                            f"\n| | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
+                        )
+            self.prompt = tweet_string
+
         if target_tweet:
             return self.prompt + f"\n| {target_tweet} |"
 
-class PromptTemplate4(Template):
 
+class PromptTemplate4(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {Task description}
 
         {tweet 1}
@@ -194,18 +197,18 @@ class PromptTemplate4(Template):
                     tweet_string += f"\n| {triplet[0]} | {triplet[1]} | {triplet[2]} |"
                 tweet_string += "\n\n"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + target_tweet + "\n\n" + header + "\n"
 
-class PromptTemplate5(Template):
 
+class PromptTemplate5(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
+        """Create a prompt template on the form.
 
         {task_description}
 
@@ -225,20 +228,31 @@ class PromptTemplate5(Template):
                 assert html is not None, "Example does not seem to contain html-tagging"
                 tweet_string += example + "\n" + html + "\n\n"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + target_tweet + "\n"
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     # Example of how to use the templates
     examples = [
         ("This is a tweet", [("this", "is", "a tweet")]),
         ("This is another tweet", [("this", "is", "another tweet")]),
-        ("This is a third tweet, one that is long and has several triplets", [("this", "is", "a third tweet"), ("one", "is", "long"), ("one", "has", "several triplets")] )
+        (
+            "This is a third tweet, one that is long and has several triplets",
+            [
+                ("this", "is", "a third tweet"),
+                ("one", "is", "long"),
+                ("one", "has", "several triplets"),
+            ],
+        ),
     ]
     new_examples = [
         ("This is a new example tweet", [("this", "is", "a new example tweet")]),
-        ("I see you now provide a new example", [("I", "see", "you now"), ("you", "provide", "a new example")])
+        (
+            "I see you now provide a new example",
+            [("I", "see", "you now"), ("you", "provide", "a new example")],
+        ),
     ]
     target_tweets = ["Target tweet 1", "Target tweet 2"]
     template = PromptTemplate5(examples, "This is a task description")
