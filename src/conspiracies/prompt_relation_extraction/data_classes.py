@@ -126,6 +126,9 @@ class SpanTriplet(BaseModel):
 
     def __visualize_no_overlap(self):
         """Visualizes the triplet using displacy."""
+        self.subject.label_ = "SUBJECT"
+        self.predicate.label_ = "PREDICATE"
+        self.object.label_ = "OBJECT"
         colors = {
             "SUBJECT": "#7aecec",
             "PREDICATE": "#ff9561",
@@ -170,7 +173,9 @@ class SpanTriplet(BaseModel):
 
     @staticmethod
     def span_from_json(json: dict, doc: Doc) -> Span:
-        return doc[json["start"] : json["end"]]
+        span = doc[json["start"] : json["end"]]
+        return span
+
 
     def to_json(self, include_doc=True) -> Dict[str, Any]:
         if include_doc:
@@ -201,6 +206,9 @@ class SpanTriplet(BaseModel):
             doc,
         )
         object = SpanTriplet.span_from_json(json["semantic_triplets"]["object"], doc)
+        subject.label_ = "SUBJECT"
+        predicate.label_ = "PREDICATE"
+        object.label_ = "OBJECT"
 
         return SpanTriplet(
             span=span,
