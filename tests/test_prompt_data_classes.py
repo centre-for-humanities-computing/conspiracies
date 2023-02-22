@@ -1,5 +1,9 @@
-import pytest
-from conspiracies.prompt_relation_extraction import PromptOutput, SpanTriplet
+import pytest  # noqa F401
+
+from conspiracies.prompt_relation_extraction import (  # noqa F401
+    PromptOutput,
+    SpanTriplet,
+)
 
 
 def test_prompt_output():
