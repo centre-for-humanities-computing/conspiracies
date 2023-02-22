@@ -1,4 +1,3 @@
-from .coref import CoreferenceComponent, create_coref_component  # noqa F401
 from .HeadWordExtractionComponent import HeadwordsExtractionComponent  # noqa F401
 from .HeadWordExtractionComponent import create_headwords_component  # noqa F401
 from .prompt_relation_extraction import PromptOutput, SpanTriplet  # noqa F401
