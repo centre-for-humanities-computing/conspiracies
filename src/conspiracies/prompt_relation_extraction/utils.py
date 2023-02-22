@@ -1,72 +1,11 @@
-from functools import partial
-from typing import Iterable, List, Union, Tuple
-
-from spacy.tokens import Doc, Span, Token
-import jsonlines
 from pathlib import Path
-from conspiracies import SpanTriplet
+from typing import List, Tuple, Union
+
+import jsonlines
 from spacy.language import Language
+from spacy.tokens import Doc
 
-
-def get_text(span: Iterable[Token], ignore_spaces: bool, lowercase: bool) -> str:
-    """Gets the text of a span or doc.
-
-    Args:
-        span (Union[Span, Doc]): a spacy span or doc.
-
-    Returns:
-        str: the text of the span or doc.
-    """
-    if ignore_spaces:
-        span_str = " ".join([t.text.strip() for t in span])
-    else:
-        span_str = "".join([t.text_with_ws for t in span])
-    if lowercase:
-        span_str = span_str.lower()
-    return span_str
-
-
-def subspan_of_span(
-    subspan: Union[Span, Doc],
-    span: Union[Span, Doc],
-    lowercase: bool = False,
-    ignore_spaces: bool = False,
-) -> List[Span]:
-    """Checks if a token is contained in a span. This function assumes that the token
-    is not from the span and therefore
-
-    Args:
-        subspan (Union[Span, Doc]): a spacy span or doc to check if it is contained
-            wihtin span.
-        span (Union[Span, Doc]): a spacy span (or Doc) to check if the subspan is
-            contained within.
-
-    Returns:
-        List[Span]: a list of spans from span that are (string-)equal to the subspan.
-    """
-    if not span:
-        return []
-
-    _get_text = partial(get_text, ignore_spaces=ignore_spaces, lowercase=lowercase)
-    if ignore_spaces:
-        subspan = [t for t in subspan if t.text.strip() != ""]  # type: ignore
-        span = [t for t in span if t.text.strip() != ""]  # type: ignore
-    span_len = len(subspan)
-    _spans = [span[i : i + span_len] for i in range(len(span) - span_len + 1)]
-
-    subspan_text = _get_text(subspan)
-
-    potential_spans = []
-    for _span in _spans:
-        _span_text = _get_text(_span)
-        if subspan_text == _span_text:
-            potential_spans.append(_span)
-
-    if ignore_spaces:  # reconstruct to spans instead of list[token]
-        doc = span[0].doc
-        potential_spans = [doc[span[0].i : span[-1].i + 1] for span in potential_spans]
-
-    return potential_spans
+from .data_classes import SpanTriplet
 
 
 def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
@@ -87,10 +26,11 @@ def _doc_from_json(json: dict, nlp: Language) -> Tuple[Doc, List[SpanTriplet]]:
 
 
 def docs_to_jsonl(
-    docs: List[Doc], triplets: List[List[SpanTriplet]], path: Union[Path, str]
+    docs: List[Doc],
+    triplets: List[List[SpanTriplet]],
+    path: Union[Path, str],
 ) -> None:
-    """
-    Write docs and triplets to a jsonl file.
+    """Write docs and triplets to a jsonl file.
 
     Args:
         docs (List[Doc]): a list of docs.
@@ -103,10 +43,10 @@ def docs_to_jsonl(
 
 
 def docs_from_jsonl(
-    path: Union[Path, str], nlp: Language
+    path: Union[Path, str],
+    nlp: Language,
 ) -> Tuple[List[Doc], List[List[SpanTriplet]]]:
-    """
-    Read docs and triplets from a jsonl file.
+    """Read docs and triplets from a jsonl file.
 
     Args:
         path (Union[Path, str]): path to the jsonl file.
