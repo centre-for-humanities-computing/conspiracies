@@ -1,8 +1,22 @@
 from abc import abstractmethod
-from typing import List, Tuple, Optional
-
+from typing import List, Tuple, Optional, Dict
+import os
+import json
 
 class Template:
+    """Abstract class for template classes. The class is used to create a
+    template for the triplet extraction task. The template is used to create
+    a prompt for the GPT-3 model.
+
+    Methods:
+        generate_prompt(target_tweet, generate_string):  
+            creates a prompt for the GPT-3 model with the given target tweet. boolean option to generate the string over
+        set_examples(examples): 
+            sets the examples to be used in the prompt
+        set_task_description(task_description): 
+            sets the task description to be used in the prompt
+    """
+    
     def __init__(self,
     examples: List[Tuple],
     task_description: str):
@@ -229,21 +243,89 @@ class PromptTemplate5(Template):
         if target_tweet:
             return self.prompt + target_tweet + "\n"
 
-if __name__=="__main__":
-    # Example of how to use the templates
-    examples = [
-        ("This is a tweet", [("this", "is", "a tweet")]),
-        ("This is another tweet", [("this", "is", "another tweet")]),
-        ("This is a third tweet, one that is long and has several triplets", [("this", "is", "a third tweet"), ("one", "is", "long"), ("one", "has", "several triplets")] )
-    ]
-    new_examples = [
-        ("This is a new example tweet", [("this", "is", "a new example tweet")]),
-        ("I see you now provide a new example", [("I", "see", "you now"), ("you", "provide", "a new example")])
-    ]
-    target_tweets = ["Target tweet 1", "Target tweet 2"]
-    template = PromptTemplate5(examples, "This is a task description")
-    template.set_examples(new_examples)
 
-    for target in target_tweets:
-        prompt = template.generate_prompt(target)
-        print(prompt + "\n\n")
+def load_jsonl(input_path) -> list:
+    """
+    Read list of objects from a JSON lines file.
+    """
+    data = []
+    with open(input_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            data.append(json.loads(line.rstrip('\n|\r')))
+    return data
+
+
+def create_html_example(text: str, semantic_triplets: List[Dict[str, dict]]):
+    text_list = text.split()
+    triplets = [{key: value for key, value in triplet.items() if key != "span"} for triplet in semantic_triplets]
+    print(triplets)
+    sorted_triplets = [dict(sorted(t.items(), key=lambda x: (x[1]["start"], x[1]["end"]))) for t in triplets]
+    
+    
+    
+    print(sorted_triplets)
+
+    # print(sorted_triplets)
+    # triplets.sort(key=lambda x: (x["subject"]["end"], x["subject"]["start"]))
+    # print(triplets)
+    # spans = [{"type": key,
+    #           "start": value["start"],
+    #           "end": value["end"]} for triplet in semantic_triplets for key, value in triplet.items() if key != "span"]
+    # # print(spans)
+    # spans.sort(key=lambda x: (x["start"], x["end"]))
+    # # print(spans)
+    # result_list = []
+    # for index, word in enumerate(text_list):
+    #     for triplet in triplets:
+    #         for n, tag in enumerate(triplet):
+    #             if triplet[tag]["start"] == index:
+    #                 result_list.append(f'<{tag}-{n+1}>')
+    #             elif triplet[tag]["end"] == index:
+    #                 result_list.append(f'</{tag}- {n+1}>')
+    #     result_list.append(word)
+    # print(result_list)
+    #         if triplet["subject"]["start"] == index:
+    #             result_list.append(f'<subject>{word}</span>')
+    # for t in semantic_triplets:
+    #     print(type(t))
+    # for tag, triplet in semantic_triplets.items():
+    #     print(tag, triplet)
+
+
+
+if __name__=="__main__":
+    # # Example of how to use the templates
+    # examples = [
+    #     ("This is a tweet", [("this", "is", "a tweet")]),
+    #     ("This is another tweet", [("this", "is", "another tweet")]),
+    #     ("This is a third tweet, one that is long and has several triplets", [("this", "is", "a third tweet"), ("one", "is", "long"), ("one", "has", "several triplets")] )
+    # ]
+    # new_examples = [
+    #     ("This is a new example tweet", [("this", "is", "a new example tweet")]),
+    #     ("I see you now provide a new example", [("I", "see", "you now"), ("you", "provide", "a new example")])
+    # ]
+    # target_tweets = ["Target tweet 1", "Target tweet 2"]
+    # template = PromptTemplate5(examples, "This is a task description")
+    # template.set_examples(new_examples)
+
+    # for target in target_tweets:
+    #     prompt = template.generate_prompt(target)
+    #     print(prompt + "\n\n")
+
+    
+    # with open(
+    #     os.path.join("/home", os.getlogin(), "data", "tagged", "gold_triplets.jsonl"),
+    #     "r",
+    #     # encoding="utf8",
+    # ) as f:
+    #     data = list(f)
+    data = load_jsonl("/home/au617333/data/tagged/gold_triplets.jsonl")
+
+    for x in data:
+        create_html_example(x["text"], x["semantic_triplets"])
+        # print(x["text"], x["semantic_triplets"])
+        break
+        # print(x)
+        # print(x["semantic_triplets"])
+        # print(x["text"])
+        # print("\n")

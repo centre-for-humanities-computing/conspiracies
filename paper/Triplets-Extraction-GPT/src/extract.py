@@ -11,6 +11,7 @@ def extract_examples(
     examples: List[dict],
     n: int,
     prev_target_tweets: Optional[List[str]] = None,
+    html_tagged: Optional[bool]=False,
 ) -> Tuple[List[Tuple], List[str]]:
     """Extract n examples which fulfill the criteria:
 
@@ -43,6 +44,8 @@ def extract_examples(
     # create deep copy of examples
     examples_ = deepcopy(examples)
 
+    target_key = "html_example" if html_tagged else "triplets"
+
     criteria_keys = [
         "has_multiple_triplets",
         "has_no_triplets",
@@ -52,6 +55,9 @@ def extract_examples(
         "has_multi_word_subj1",
         "has_multi_word_subj2",
     ]
+    if html_tagged:
+        examples_ = [d for d in examples_ if "html_example" in d.keys()]
+        criteria_keys = []
 
     result = []
     if prev_target_tweets:
@@ -64,7 +70,7 @@ def extract_examples(
                     criteria_keys.remove(criteria_key)
 
             examples_.remove(tweet_dict)
-            result.append((tweet_dict["resolved"], tweet_dict["triplets"]))
+            result.append((tweet_dict["resolved"], tweet_dict[target_key]))
 
     while len(result) < n:
         if criteria_keys:
@@ -87,7 +93,7 @@ def extract_examples(
 
         # remove example from examples_
         examples_.remove(example)
-        result.append((example["resolved"], example["triplets"]))
+        result.append((example["resolved"], example[target_key]))
 
     assert len(criteria_keys) == 0, "Not all criteria were fulfilled"
 

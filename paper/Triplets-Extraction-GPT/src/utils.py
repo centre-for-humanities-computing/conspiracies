@@ -25,7 +25,7 @@ def find_tweet_in_list_of_dicts(
             return d
 
 
-def get_paths(machine: str, get_openai_key: bool = False):
+def get_paths(machine: str, get_openai_key: Optional[bool] = False):
     """Returns appropriate path depending on machine.
 
     Args:
@@ -154,3 +154,18 @@ def write_triplets(
                 triplet_string = f"||{triplet[0]}|{triplet[1]}|{triplet[2]}|\n"
             with open(file, "a") as f:
                 f.write(triplet_string)
+
+def get_introduction_text(html_tagged: Optional[bool] = False) -> str:
+    if html_tagged:
+        text = """Tag the following tweet with triplets using HTML tags.
+Semantic triplets consists of the elements subject, verb phrase and object. The verb phrase includes all particles and modifyers.
+There should always be exactly three elements in a triplet, no more no less.
+The subject is enclosed between <subject-n> and </subject-n>, the verb phrase between <predicate-n> and </predicate-n> and the object between <object-n> and </object-n>.
+n is the number of the triplet, starting at 1. Elements of one triplet can be contained within elements of another triplet.
+The triplets should be tagged in the tweet as shown below:"""
+    else:
+        text = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be put in a markdown table as shown below:"""
+    return text

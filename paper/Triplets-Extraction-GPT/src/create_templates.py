@@ -161,3 +161,30 @@ def prompt_template_4(
         tweet_string += "\n\n"
     tweet_string += target_tweet + "\n\n" + header + "\n"
     return tweet_string
+
+def prompt_template_5(
+    examples: List[Tuple],
+    target_tweet: str,
+    introduction: str,
+) -> str:
+    """Create a prompt template on the form
+
+    {introduction}
+
+    {tweet 1}
+    {html_tagged tweet 1}
+
+    ...
+
+    {tweet n}
+    {html_tagged tweet n}
+
+    {target tweet}
+    """
+
+    tweet_string = f"{introduction}\n\n"
+    for example, html in examples:
+        tweet_string += example + "\n" + html + "\n\n"
+    
+    tweet_string += target_tweet + "\n"
+    return tweet_string
