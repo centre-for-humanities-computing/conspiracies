@@ -1,17 +1,75 @@
-"""
-Pydantic data classes for the relation extraction using prompt-based models.
-"""
+"""Pydantic data classes for the relation extraction using prompt-based
+models."""
 
 from copy import copy
 from functools import partial
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import spacy
 from pydantic import BaseModel
 from spacy import displacy
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc, Span, Token
 
-from .utils import subspan_of_span
+
+def get_text(span: Iterable[Token], ignore_spaces: bool, lowercase: bool) -> str:
+    """Gets the text of a span or doc.
+
+    Args:
+        span (Union[Span, Doc]): a spacy span or doc.
+
+    Returns:
+        str: the text of the span or doc.
+    """
+    if ignore_spaces:
+        span_str = " ".join([t.text.strip() for t in span])
+    else:
+        span_str = "".join([t.text_with_ws for t in span])
+    if lowercase:
+        span_str = span_str.lower()
+    return span_str
+
+
+def subspan_of_span(
+    subspan: Union[Span, Doc],
+    span: Union[Span, Doc],
+    lowercase: bool = False,
+    ignore_spaces: bool = False,
+) -> List[Span]:
+    """Checks if a token is contained in a span. This function assumes that the
+    token is not from the span and therefore.
+
+    Args:
+        subspan (Union[Span, Doc]): a spacy span or doc to check if it is contained
+            wihtin span.
+        span (Union[Span, Doc]): a spacy span (or Doc) to check if the subspan is
+            contained within.
+
+    Returns:
+        List[Span]: a list of spans from span that are (string-)equal to the subspan.
+    """
+    if not span:
+        return []
+
+    _get_text = partial(get_text, ignore_spaces=ignore_spaces, lowercase=lowercase)
+    if ignore_spaces:
+        subspan = [t for t in subspan if t.text.strip() != ""]  # type: ignore
+        span = [t for t in span if t.text.strip() != ""]  # type: ignore
+    span_len = len(subspan)
+    _spans = [span[i : i + span_len] for i in range(len(span) - span_len + 1)]
+
+    subspan_text = _get_text(subspan)
+
+    potential_spans = []
+    for _span in _spans:
+        _span_text = _get_text(_span)
+        if subspan_text == _span_text:
+            potential_spans.append(_span)
+
+    if ignore_spaces:  # reconstruct to spans instead of list[token]
+        doc = span[0].doc
+        potential_spans = [doc[span[0].i : span[-1].i + 1] for span in potential_spans]
+
+    return potential_spans
 
 
 class SpanTriplet(BaseModel):
@@ -23,30 +81,18 @@ class SpanTriplet(BaseModel):
         object (Span): Object of the triplet.
     """
 
+    class Config:
+        arbitrary_types_allowed = True
+
     subject: Span
     predicate: Span
     object: Span
     span: Union[Span, Doc]
 
-    class Config:
-        arbitrary_types_allowed = True
-
     @property
     def triplet(self) -> Tuple[Span, Span, Span]:
         """Returns the triplet as a tuple."""
         return self.subject, self.predicate, self.object
-
-    def visualize(self, overlap: Optional[bool] = None):
-        """Visualizes the triplet using displacy."""
-        if overlap is None:
-            try:
-                return self.__visualize_no_overlap()
-            except ValueError:
-                return self.__visualize_w_overlap()
-        if overlap:
-            return self.__visualize_w_overlap()
-        else:
-            return self.__visualize_no_overlap()
 
     def __visualize_w_overlap(self):
         """Visualizes the triplet using displacy."""
@@ -71,13 +117,15 @@ class SpanTriplet(BaseModel):
             },
         ]
         html = displacy.render(
-            ex, style="span", manual=True, options={"colors": colors}
+            ex,
+            style="span",
+            manual=True,
+            options={"colors": colors},
         )
         return html
 
     def __visualize_no_overlap(self):
         """Visualizes the triplet using displacy."""
-
         colors = {
             "SUBJECT": "#7aecec",
             "PREDICATE": "#ff9561",
@@ -98,6 +146,18 @@ class SpanTriplet(BaseModel):
         html = displacy.render(viz_doc, style="ent", options=options)
         return html
 
+    def visualize(self, overlap: Optional[bool] = None):
+        """Visualizes the triplet using displacy."""
+        if overlap is None:
+            try:
+                return self.__visualize_no_overlap()
+            except ValueError:
+                return self.__visualize_w_overlap()
+        if overlap:
+            return self.__visualize_w_overlap()
+        else:
+            return self.__visualize_no_overlap()
+
     @staticmethod
     def span_to_json(span: Union[Span, Doc]) -> Dict[str, Any]:
         if isinstance(span, Doc):
@@ -113,7 +173,6 @@ class SpanTriplet(BaseModel):
         return doc[json["start"] : json["end"]]
 
     def to_json(self, include_doc=True) -> Dict[str, Any]:
-
         if include_doc:
             json = self.span.doc.to_json()
         else:
@@ -138,12 +197,16 @@ class SpanTriplet(BaseModel):
         span = SpanTriplet.span_from_json(json["semantic_triplets"]["span"], doc)
         subject = SpanTriplet.span_from_json(json["semantic_triplets"]["subject"], doc)
         predicate = SpanTriplet.span_from_json(
-            json["semantic_triplets"]["predicate"], doc
+            json["semantic_triplets"]["predicate"],
+            doc,
         )
         object = SpanTriplet.span_from_json(json["semantic_triplets"]["object"], doc)
 
         return SpanTriplet(
-            span=span, subject=subject, predicate=predicate, object=object
+            span=span,
+            subject=subject,
+            predicate=predicate,
+            object=object,
         )
 
     @staticmethod
@@ -152,7 +215,8 @@ class SpanTriplet(BaseModel):
         span: Union[Span, Doc],
         lowercase: Optional[bool] = None,
     ) -> Optional["SpanTriplet"]:
-        """Checks if the triplet contained within the doc based on text overlap.
+        """Checks if the triplet contained within the doc based on text
+        overlap.
 
         Args:
             triplet (Tuple[str, str, str]): A semantic triplet to check if contained
@@ -172,12 +236,16 @@ class SpanTriplet(BaseModel):
 
         if lowercase is None:
             spantriplet = SpanTriplet.span_triplet_from_text_triplet(
-                triplet, span, lowercase=False
+                triplet,
+                span,
+                lowercase=False,
             )
             if spantriplet is not None:
                 return spantriplet
             return SpanTriplet.span_triplet_from_text_triplet(
-                triplet, span, lowercase=True
+                triplet,
+                span,
+                lowercase=True,
             )
 
         if lowercase:
@@ -209,17 +277,24 @@ class SpanTriplet(BaseModel):
 
         # create spans from ranges
         subj_span = span.char_span(
-            subj_start, subj_end, label="SUBJECT"
+            subj_start,
+            subj_end,
+            label="SUBJECT",
         )  # type: ignore
         pred_span = span.char_span(
-            start_pred, end_pred, label="PREDICATE"
+            start_pred,
+            end_pred,
+            label="PREDICATE",
         )  # type: ignore
         obj_span = span.char_span(obj_start, obj_end, label="OBJECT")  # type: ignore
 
         if subj_span is None or pred_span is None or obj_span is None:
             return None
         return SpanTriplet(
-            subject=subj_span, predicate=pred_span, object=obj_span, span=span
+            subject=subj_span,
+            predicate=pred_span,
+            object=obj_span,
+            span=span,
         )
 
     @staticmethod
@@ -229,8 +304,8 @@ class SpanTriplet(BaseModel):
         lowercase: Optional[bool] = None,
         ignore_spaces: Optional[bool] = True,
     ) -> Optional["SpanTriplet"]:
-        """Checks if the triplet contained within the doc based on overlap of span
-        tokens.
+        """Checks if the triplet contained within the doc based on overlap of
+        span tokens.
 
         Args:
             triplet (Tuple[Span, Span, Span]): A semantic triplet to check if contained
@@ -253,25 +328,37 @@ class SpanTriplet(BaseModel):
             span = span[:]
         if ignore_spaces is None:
             spantriplet = SpanTriplet.span_triplet_from_span_triplet(
-                triplet, span, lowercase=lowercase, ignore_spaces=False
+                triplet,
+                span,
+                lowercase=lowercase,
+                ignore_spaces=False,
             )
             if spantriplet is not None:
                 return spantriplet
             return SpanTriplet.span_triplet_from_span_triplet(
-                triplet, span, lowercase=lowercase, ignore_spaces=True
+                triplet,
+                span,
+                lowercase=lowercase,
+                ignore_spaces=True,
             )
         if lowercase is None:
             spantriplet = SpanTriplet.span_triplet_from_span_triplet(
-                triplet, span, lowercase=False
+                triplet,
+                span,
+                lowercase=False,
             )
             if spantriplet is not None:
                 return spantriplet
             return SpanTriplet.span_triplet_from_span_triplet(
-                triplet, span, lowercase=True
+                triplet,
+                span,
+                lowercase=True,
             )
 
         _subspan_of_span = partial(
-            subspan_of_span, lowercase=lowercase, ignore_spaces=ignore_spaces
+            subspan_of_span,
+            lowercase=lowercase,
+            ignore_spaces=ignore_spaces,
         )
 
         subj, pred, obj = triplet
@@ -309,7 +396,8 @@ class SpanTriplet(BaseModel):
         else:
             # assume the one closest to the object
             pred_span = sorted(
-                cand_pred_span, key=lambda x: abs(x.start - obj_span.start)
+                cand_pred_span,
+                key=lambda x: abs(x.start - obj_span.start),
             )[0]
 
         # update the subject span to be the closest to the predicate/obj
@@ -324,7 +412,10 @@ class SpanTriplet(BaseModel):
         obj_span.label_ = "OBJECT"
 
         return SpanTriplet(
-            subject=subj_span, predicate=pred_span, object=obj_span, span=span
+            subject=subj_span,
+            predicate=pred_span,
+            object=obj_span,
+            span=span,
         )
 
     @staticmethod
@@ -336,9 +427,9 @@ class SpanTriplet(BaseModel):
         lowercase: Optional[bool] = None,
         ignore_spaces: Optional[bool] = True,
     ) -> Optional["SpanTriplet"]:
-        """Converts the StringTriplet to a SpanTriplet.
-        First checks if the span is contained within a singular sentence, then it checks
-        if the span is contained within the entire document.
+        """Converts the StringTriplet to a SpanTriplet. First checks if the
+        span is contained within a singular sentence, then it checks if the
+        span is contained within the entire document.
 
         Args:
             doc (Doc): Document of the text.
@@ -391,7 +482,8 @@ class SpanTriplet(BaseModel):
 
         span_triplet_from_mapping = {
             "span": partial(
-                SpanTriplet.span_triplet_from_span_triplet, ignore_spaces=ignore_spaces
+                SpanTriplet.span_triplet_from_span_triplet,
+                ignore_spaces=ignore_spaces,
             ),
             "text": SpanTriplet.span_triplet_from_text_triplet,
         }
@@ -400,7 +492,9 @@ class SpanTriplet(BaseModel):
 
         for sent in doc.sents:
             span_triplet = span_triplet_from(
-                triplet, sent, lowercase=lowercase  # type: ignore
+                triplet,
+                sent,
+                lowercase=lowercase,  # type: ignore
             )
             if span_triplet is not None:
                 return span_triplet
@@ -408,8 +502,7 @@ class SpanTriplet(BaseModel):
 
 
 class PromptOutput(BaseModel):
-    """
-    A prompt output.
+    """A prompt output.
 
     Args:
         input_text (str): The target of the prompt.
