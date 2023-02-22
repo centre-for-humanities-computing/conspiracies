@@ -132,3 +132,7 @@ dmypy.json
 .vscode/*
 # MacOS
 .DS_Store
+
+# data 
+data/gpt_predictions_compare.json
+data/prompt_output_compare_templates.md
