@@ -5,13 +5,13 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from .data_classes import SpanTriplet
+from .prompt_relation_extraction.data_classes import SpanTriplet
 
 
 def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
     json = doc.to_json()
     json["semantic_triplets"] = [
-        triplet.to_json(include_doc=False) for triplet in triplets
+        triplet.to_dict(include_doc=False) for triplet in triplets
     ]
     return json
 
@@ -19,7 +19,7 @@ def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
 def _doc_from_json(json: dict, nlp: Language) -> Tuple[Doc, List[SpanTriplet]]:
     doc = Doc(nlp.vocab).from_json(json)
     triplets = [
-        SpanTriplet.from_json(triplet_json, nlp=nlp, doc=doc)
+        SpanTriplet.from_dict(triplet_json, nlp=nlp, doc=doc)
         for triplet_json in json["semantic_triplets"]
     ]
     return doc, triplets
