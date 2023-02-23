@@ -149,13 +149,6 @@ class SpanTriplet(BaseModel):
         html = displacy.render(viz_doc, style="ent", options=options)
         return html
 
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, SpanTriplet):
-            return False
-
-        triplet_is_equal = all(s1 == s2 for s1, s2 in zip(self.triplet, other.triplet))
-        return triplet_is_equal
-
     def is_string_match(self, other) -> bool:
         if not isinstance(other, SpanTriplet):
             return False
@@ -211,7 +204,7 @@ class SpanTriplet(BaseModel):
         nlp: spacy.Language,
         doc: Optional[Doc] = None,
     ):
-        
+
         if doc is None:
             doc = Doc(nlp.vocab).from_json(data)  # type: ignore
         span = SpanTriplet.span_from_json(data["semantic_triplets"]["span"], doc)
@@ -524,6 +517,13 @@ class SpanTriplet(BaseModel):
             if span_triplet is not None:
                 return span_triplet
         return span_triplet_from(triplet, doc, lowercase=lowercase)  # type: ignore
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, SpanTriplet):
+            return False
+
+        triplet_is_equal = all(s1 == s2 for s1, s2 in zip(self.triplet, other.triplet))
+        return triplet_is_equal
 
 
 class PromptOutput(BaseModel):
