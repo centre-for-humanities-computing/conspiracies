@@ -11,6 +11,7 @@ or on Ucloud in the project `pandemic-info-resp` within the folder:
 ```
 /conspiracies/data
 ```
+Information on retrivial and location of tweets can be found in ``paper/docs/data-documentation.md``.
 
 # API Keys
 API keys are stored on Ucloud in the project `pandemic-info-resp` within the folder:
