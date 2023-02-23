@@ -15,7 +15,9 @@ def get_text(span: Iterable[Token], ignore_spaces: bool, lowercase: bool) -> str
     """Gets the text of a span or doc.
 
     Args:
-        span (Union[Span, Doc]): a spacy span or doc.
+        span (Iterable[Token]): a spacy span or doc.
+        ignore_spaces (bool): whether to ignore spaces.
+        lowercase (bool): whether to lowercase the text.
 
     Returns:
         str: the text of the span or doc.
