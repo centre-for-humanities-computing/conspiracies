@@ -19,15 +19,20 @@ class TestSpanTriplet:
 
     @pytest.fixture(scope="class")
     def span_triplets(self, nlp):
-
         doc = nlp("I am happy today")
 
         triplet = SpanTriplet(
-            subject=doc[0:1], predicate=doc[1:2], object=doc[2:3], span=doc[:]
+            subject=doc[0:1],
+            predicate=doc[1:2],
+            object=doc[2:3],
+            span=doc[:],
         )
 
         triplet_w_overlap = SpanTriplet(
-            subject=doc[0:2], predicate=doc[1:2], object=doc[2:3], span=doc[:]
+            subject=doc[0:2],
+            predicate=doc[1:2],
+            object=doc[2:3],
+            span=doc[:],
         )
 
         return [triplet, triplet_w_overlap]
