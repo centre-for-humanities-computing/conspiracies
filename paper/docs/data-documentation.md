@@ -18,11 +18,13 @@ stopwords taken from: https://github.com/apache/lucene-solr/blob/master/lucene/a
 
 using the following query (twitters requires that you use a search phrase together with lang:da):
 
+```
 ############## QUERY ######################## 
 
 lang:da (og OR i OR jeg OR det OR at OR en OR den OR til OR er OR som OR på OR de OR med OR han OR af OR for OR ikke OR der OR var OR mig OR sig OR men OR et OR har OR om OR vi OR min OR havde OR ham OR hun OR nu OR over OR da OR fra OR du OR ud OR sin OR dem OR os OR op OR man OR hans OR hvor OR eller OR hvad OR skal OR selv OR her OR alle OR vil OR blev OR kunne OR ind OR når OR være OR dog OR noget OR ville OR jo OR deres OR efter OR ned OR skulle OR denne OR end OR dette OR mit OR også OR under OR have OR dig OR anden OR hende OR mine OR alt OR meget OR sit OR sine OR vor OR mod OR disse OR hvis OR din OR nogle OR hos OR blive OR mange OR ad OR bliver OR hendes OR været OR thi OR jer)
 
 ############## QUERY END ####################
+```
 
 **nordic-tweets**
 
