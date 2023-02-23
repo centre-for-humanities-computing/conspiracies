@@ -1,5 +1,7 @@
 # Conspiracies data documentation
 
+*NB: Paths refer to locations on Grundtvig*
+
 ## 001_twitter_hope
 The folder ``/data/001_twitter_hope/`` on Grundtvig contains nordic tweets continously collected.
 
