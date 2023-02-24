@@ -62,7 +62,7 @@ class Template:
         self.examples = examples
         self.spacy_examples_to_list()
         self.generate_prompt(generate_string=True)
-    
+
     def set_task_description(self, task_description: str):
         self.task_description = task_description
         self.spacy_examples_to_list()
@@ -78,16 +78,18 @@ class Template:
     def generate_prompt(self):
         pass
 
+    def __str__(self):
+        return self.__name__
+
 
 class PromptTemplate1(Template):
-
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {task_description}
         Tweet: {tweet1}
         Triplet: {triplets1}
@@ -117,19 +119,19 @@ class PromptTemplate1(Template):
             examples_str += "---\n"
             tweet_string = f"{self.task_description}\n\n{examples_str}\nTweet:"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + f"{target_tweet}\nTriplets:"
 
-class PromptTemplate2(Template):
 
+class PromptTemplate2(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {task_description}
         Tweet: {tweet1}
         Tweet: {tweet2}
@@ -161,21 +163,23 @@ class PromptTemplate2(Template):
                     else:
                         tweet_triplet_str += f"\t{triplet_str}\n"
             tweet_triplet_str += "\n---\n\n"
-            tweet_string = f"{self.task_description}\n\n{tweets_block}\n{tweet_triplet_str}"
+            tweet_string = (
+                f"{self.task_description}\n\n{tweets_block}\n{tweet_triplet_str}"
+            )
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + f"Tweet: {target_tweet}\n\nTriplets:"
 
-class PromptTemplate3(Template):
 
+class PromptTemplate3(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
         """Create a prompt template on the form
-        
+
         '''
         {task_description}
 
@@ -196,25 +200,25 @@ class PromptTemplate3(Template):
                 for i, triplet in enumerate(triplets):
                     assert len(triplet) == 3, "len of triplets should be 3"
                     if i == 0:
-                        tweet_string += (
-                            f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
-                        )
+                        tweet_string += f"\n| {example} | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
                     else:
-                        tweet_string += f"\n| | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
-            self.prompt = tweet_string 
-        
+                        tweet_string += (
+                            f"\n| | {triplet[0]} | {triplet[1]} | {triplet[2]} |"
+                        )
+            self.prompt = tweet_string
+
         if target_tweet:
             return self.prompt + f"\n| {target_tweet} |"
 
-class PromptTemplate4(Template):
 
+class PromptTemplate4(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
-        '''
+        """Create a prompt template on the form '''.
+
         {Task description}
 
         {tweet 1}
@@ -247,18 +251,18 @@ class PromptTemplate4(Template):
                     tweet_string += f"\n| {triplet[0]} | {triplet[1]} | {triplet[2]} |"
                 tweet_string += "\n\n"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + target_tweet + "\n\n" + header + "\n"
 
-class PromptTemplate5(Template):
 
+class PromptTemplate5(Template):
     def generate_prompt(
         self,
         target_tweet: Optional[str] = None,
         generate_string: bool = False,
     ) -> str:
-        """Create a prompt template on the form
+        """Create a prompt template on the form.
 
         {task_description}
 
@@ -277,9 +281,8 @@ class PromptTemplate5(Template):
             for example in self.examples:
                 tweet_string += example["doc"].text + "\n" + create_html_example(example["doc"], example["triplets"]) + "\n\n"
             self.prompt = tweet_string
-        
+
         if target_tweet:
             return self.prompt + target_tweet + "\n"
-
 
 
