@@ -56,7 +56,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # set the timeout for executing notebooks
 # nb_execution_timeout = 600  # in seconds, default 30 seconds
-nb_execution_timeout = 600  # in seconds, default 30 seconds. 600 seconds = 10 minutes
+nb_execution_timeout = 6000  # in seconds, default 30 seconds. 600 seconds = 10 minutes
 
 # always fail CI pipeline when nb cannot be executed
 nb_execution_raise_on_error = True

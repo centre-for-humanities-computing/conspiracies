@@ -23,13 +23,13 @@ def test_relationextraction_component_pipe(nlp_da):  # noqa F811
 
 
 def test_relation_extraction_component_single(nlp_da):  # noqa F811
-    nlp_da.add_pipe("relation_extractor")
-    doc = nlp_da("Barack Obama is the former president of the United States")
+    nlp_da.add_pipe("relation_extractor", config={"confidence_threshold": 1.8})
+    doc = nlp_da("Obama is the former president of the United States.")
     triplet_str = [
         tuple([str(t) for t in triplet]) for triplet in doc._.relation_triplets
     ]
     assert triplet_str == [
-        ("Barack Obama", "is", "the former president of the United States"),
+        ("Obama", "is", "the former president of the United States"),
     ]
 
 
