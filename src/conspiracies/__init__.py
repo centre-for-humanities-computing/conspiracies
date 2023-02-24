@@ -6,5 +6,6 @@ from .prompt_relation_extraction import (  # noqa F401
     SpanTriplet,
     docs_from_jsonl,
     docs_to_jsonl,
+    parse,
 )
 from .wordpiece_length_normalization import wordpiece_length_normalization  # noqa F401

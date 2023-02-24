@@ -3,17 +3,26 @@
 import os
 import openai
 import json
-from extract import extract_examples
+import spacy
+import random
+from extract import extract_examples, extract_spacy_examples
 from create_templates import (
     prompt_template_1,
     prompt_template_2,
     prompt_template_3,
     prompt_template_4,
 )
-from template_class import PromptTemplate1, PromptTemplate2, PromptTemplate3, PromptTemplate4, PromptTemplate5
+from template_class import (
+    PromptTemplate1, 
+    PromptTemplate2, 
+    PromptTemplate3, 
+    PromptTemplate4, 
+    PromptTemplate5
+)
 from typing import List, Optional, Union
 import argparse
 from utils import get_introduction_text, get_paths
+from conspiracies import docs_from_jsonl, docs_to_jsonl, parse
 
 
 def create_list_dics(tweet: str, triplets: Optional[List[list]]) -> dict:
@@ -56,6 +65,79 @@ def get_prompt_functions(templates: Optional[List[int]] = None):
         return template_dicts
     else:
         return {f"template{i}": template_dicts[f"template{i}"] for i in templates}
+
+
+def run_triplet_extraction2(
+    data: List[dict],
+    machine: str,
+    dict_functions: dict,
+    openai_key: str,
+    iteration: int
+) -> List[str]:
+    
+    root_path, prediction_path = get_paths(machine)
+    targets, examples = data
+
+    docs_to_jsonl(
+        [tweet["doc"] for tweet in examples], 
+        [tweet["triplets"] for tweet in examples], 
+        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"))
+
+    for key, value in dict_functions.items():
+        print(f"Prompting using {key}\n")
+        gpt_outputs = []
+        template = value(examples=examples, task_description=get_introduction_text())
+
+        print(template.generate_prompt(targets[0]["doc"].text))
+        # while True:
+        #     try:
+        #         for tweet in targets:
+        #             openai.api_key = openai_key
+        #             response = openai.Completion.create(
+        #                 model="text-davinci-002",
+        #                 prompt=template.generate_prompt(tweet["doc"].text),
+        #                 temperature=0.7,
+        #                 max_tokens=500,
+        #             )
+        #             ### How to parse the output back to spacy?? ask kenneth
+        #             # print(parse(response["choices"][0]["text"]))
+        #             # print(parse(response["choices"][0]["text"])["triplets"])
+        #             # print(type(parse(response["choices"][0]["text"])["triplets"]["1"]["subject"]))
+
+        #             gpt_outputs.append(response["choices"][0]["text"])
+        #         break
+        #     except openai.error.InvalidRequestError:
+        #         examples.pop(random.randrange(len(examples)))
+        #         print(f"Too many examples, trying {len(examples)} examples")
+        #         template.set_examples(examples)
+        #         continue
+
+        docs_to_jsonl(
+            [target["doc"] for target in targets], 
+            [parse(pred) for pred in gpt_outputs], 
+            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"))
+
+def main2(
+    machine: str,
+    n_target: int,
+    templates: List[int],
+    iterations: int,
+) -> None:
+
+    root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
+    nlp = spacy.blank("da")
+    path_to_data = os.path.join("/home", os.getlogin(), "conspiracies", "data", "gold_triplets.jsonl")
+    docs, triplets = docs_from_jsonl(path_to_data, nlp)
+    data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
+
+    assert len(data)/n_target >= iterations, f"Cannot extract {n_target} tweets per iteration with {iterations} iterations"
+
+    print(f'Running {iterations} iterations with {n_target} tweets per iteration')
+    targets, examples = extract_spacy_examples(data, n_target, iterations)
+
+    for i in range(iterations):
+        print(f'Iteration {i}')
+        run_triplet_extraction2((targets[i], examples[i]), machine, get_prompt_functions(templates), openai_key, i)
 
 
 def run_triplet_extraction(
@@ -112,14 +194,6 @@ def run_triplet_extraction(
         template = value(examples=examples, task_description=get_introduction_text())
 
         for tweet in target_tweets:
-#             template = value(
-#                 examples=examples,
-#                 target_tweet=tweet,
-#                 introduction="""Extract semantic triplets from the following tweet. 
-# The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
-# There should always be exactly three phrases extracted, no more no less. 
-# They should be put in a markdown table as shown below:""",
-#             )
 
             openai.api_key = openai_key
             response = openai.Completion.create(
@@ -221,10 +295,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-n",
-        "--n_tweets",
-        default=20,
+        "--n_target_tweets",
+        default=10,
         type=int,
-        help="Number of example tweets to use if possible",
+        help="Number of target tweets to use if possible",
     )
     parser.add_argument(
         "-t",
@@ -243,4 +317,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.machine, args.n_tweets, args.templates, args.iterations)
+    main2(args.machine, args.n_target_tweets, args.templates, args.iterations)

@@ -1,7 +1,40 @@
 from abc import abstractmethod
 from typing import List, Tuple, Optional, Dict
-import os
-import json
+from spacy.tokens import Doc 
+from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
+
+def create_html_example(doc: Doc, triplets: List[SpanTriplet]) -> str:
+    """This function creates an html example from a spacy doc and a list of triplets.
+    It inserts html tags around the subject, predicate and object of each triplet based on the start and end index of the span.
+
+    Args:
+        doc (Doc): The spacy doc to insert the html tags into.
+        triplets (SpanTriplet): The triplets specifying the subjects, predicates and objects.
+
+    Returns:
+        str: The doc with html tags around the subjects, predicates and objects of each triplet
+    """    
+    result_string = ""
+    for i, d in enumerate(doc):
+        for n, triplet in enumerate(triplets, 1):
+            if triplet.subject.end == i:
+                result_string += f'</subject-{n}>'
+            if triplet.object.end == i:
+                result_string += f'</object-{n}>'
+            if triplet.predicate.end == i:
+                result_string += f'</predicate-{n}>'
+            
+            if triplet.subject.start == i:
+                result_string += f'<subject-{n}>'
+            if triplet.object.start == i:
+                result_string += f'<object-{n}>'
+            if triplet.predicate.start == i:
+                result_string += f'<predicate-{n}>'
+        result_string += d.text_with_ws
+    return result_string
+
+def get_list_triplets(triplets: List[SpanTriplet]):
+    return [[triplet.subject.text, triplet.predicate.text, triplet.object.text] for triplet in triplets]
 
 class Template:
     """Abstract class for template classes. The class is used to create a
@@ -18,23 +51,29 @@ class Template:
     """
     
     def __init__(self,
-    examples: List[Tuple],
+    examples: List[Dict[str, str]],
     task_description: str):
         self.examples = examples
         self.task_description = task_description
+        self.spacy_examples_to_list()
         self.generate_prompt(generate_string=True)
 
-    def set_examples(self, examples: List[Tuple]):
+    def set_examples(self, examples: List[Tuple[Doc, List[SpanTriplet]]]):
         self.examples = examples
+        self.spacy_examples_to_list()
         self.generate_prompt(generate_string=True)
     
     def set_task_description(self, task_description: str):
         self.task_description = task_description
+        self.spacy_examples_to_list()
         self.generate_prompt(generate_string=True)
 
     def __str__(self):
         return self.__name__
     
+    def spacy_examples_to_list(self):
+        self.non_spacy = [(example['doc'].text, get_list_triplets(example['triplets'])) for example in self.examples]
+
     @abstractmethod
     def generate_prompt(self):
         pass
@@ -61,7 +100,7 @@ class PromptTemplate1(Template):
         """
         if generate_string:
             examples_str = "---\n\n"
-            for tweet, triplets in self.examples:
+            for tweet, triplets in self.non_spacy:
                 examples_str += f"Tweet: {tweet}\n"
 
                 if len(triplets) == 0:
@@ -107,7 +146,7 @@ class PromptTemplate2(Template):
         """
         if generate_string:
             tweets_block = "---\n\n"
-            tweets, tweet_triplets = zip(*self.examples)
+            tweets, tweet_triplets = zip(*self.non_spacy)
 
             for tweet in tweets:
                 tweets_block += f"Tweet: {tweet}\n\n"
@@ -153,7 +192,7 @@ class PromptTemplate3(Template):
         """
         if generate_string:
             tweet_string = f"{self.task_description}\n| Tweet | Subject | Predicate | Object |\n| --- | --- | --- | --- |"
-            for example, triplets in self.examples:
+            for example, triplets in self.non_spacy:
                 for i, triplet in enumerate(triplets):
                     assert len(triplet) == 3, "len of triplets should be 3"
                     if i == 0:
@@ -202,7 +241,7 @@ class PromptTemplate4(Template):
         header = "| Subject | Predicate | Object |\n| --- | --- | --- |"
         if generate_string:
             tweet_string = f"{self.task_description}\n\n"
-            for example, triplets in self.examples:
+            for example, triplets in self.non_spacy:
                 tweet_string += example + "\n\n" + header
                 for triplet in triplets:
                     tweet_string += f"\n| {triplet[0]} | {triplet[1]} | {triplet[2]} |"
@@ -235,97 +274,12 @@ class PromptTemplate5(Template):
         """
         if generate_string:
             tweet_string = f"{self.task_description}\n\n"
-            for example, html in self.examples:
-                assert html is not None, "Example does not seem to contain html-tagging"
-                tweet_string += example + "\n" + html + "\n\n"
+            for example in self.examples:
+                tweet_string += example["doc"].text + "\n" + create_html_example(example["doc"], example["triplets"]) + "\n\n"
             self.prompt = tweet_string
         
         if target_tweet:
             return self.prompt + target_tweet + "\n"
 
 
-def load_jsonl(input_path) -> list:
-    """
-    Read list of objects from a JSON lines file.
-    """
-    data = []
-    with open(input_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            data.append(json.loads(line.rstrip('\n|\r')))
-    return data
 
-
-def create_html_example(text: str, semantic_triplets: List[Dict[str, dict]]):
-    text_list = text.split()
-    triplets = [{key: value for key, value in triplet.items() if key != "span"} for triplet in semantic_triplets]
-    print(triplets)
-    sorted_triplets = [dict(sorted(t.items(), key=lambda x: (x[1]["start"], x[1]["end"]))) for t in triplets]
-    
-    
-    
-    print(sorted_triplets)
-
-    # print(sorted_triplets)
-    # triplets.sort(key=lambda x: (x["subject"]["end"], x["subject"]["start"]))
-    # print(triplets)
-    # spans = [{"type": key,
-    #           "start": value["start"],
-    #           "end": value["end"]} for triplet in semantic_triplets for key, value in triplet.items() if key != "span"]
-    # # print(spans)
-    # spans.sort(key=lambda x: (x["start"], x["end"]))
-    # # print(spans)
-    # result_list = []
-    # for index, word in enumerate(text_list):
-    #     for triplet in triplets:
-    #         for n, tag in enumerate(triplet):
-    #             if triplet[tag]["start"] == index:
-    #                 result_list.append(f'<{tag}-{n+1}>')
-    #             elif triplet[tag]["end"] == index:
-    #                 result_list.append(f'</{tag}- {n+1}>')
-    #     result_list.append(word)
-    # print(result_list)
-    #         if triplet["subject"]["start"] == index:
-    #             result_list.append(f'<subject>{word}</span>')
-    # for t in semantic_triplets:
-    #     print(type(t))
-    # for tag, triplet in semantic_triplets.items():
-    #     print(tag, triplet)
-
-
-
-if __name__=="__main__":
-    # # Example of how to use the templates
-    # examples = [
-    #     ("This is a tweet", [("this", "is", "a tweet")]),
-    #     ("This is another tweet", [("this", "is", "another tweet")]),
-    #     ("This is a third tweet, one that is long and has several triplets", [("this", "is", "a third tweet"), ("one", "is", "long"), ("one", "has", "several triplets")] )
-    # ]
-    # new_examples = [
-    #     ("This is a new example tweet", [("this", "is", "a new example tweet")]),
-    #     ("I see you now provide a new example", [("I", "see", "you now"), ("you", "provide", "a new example")])
-    # ]
-    # target_tweets = ["Target tweet 1", "Target tweet 2"]
-    # template = PromptTemplate5(examples, "This is a task description")
-    # template.set_examples(new_examples)
-
-    # for target in target_tweets:
-    #     prompt = template.generate_prompt(target)
-    #     print(prompt + "\n\n")
-
-    
-    # with open(
-    #     os.path.join("/home", os.getlogin(), "data", "tagged", "gold_triplets.jsonl"),
-    #     "r",
-    #     # encoding="utf8",
-    # ) as f:
-    #     data = list(f)
-    data = load_jsonl("/home/au617333/data/tagged/gold_triplets.jsonl")
-
-    for x in data:
-        create_html_example(x["text"], x["semantic_triplets"])
-        # print(x["text"], x["semantic_triplets"])
-        break
-        # print(x)
-        # print(x["semantic_triplets"])
-        # print(x["text"])
-        # print("\n")
