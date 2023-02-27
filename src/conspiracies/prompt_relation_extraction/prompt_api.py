@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from catalogue import registry
 
+import random
 
 @registry.prompt_apis.register("conspiracies/openai_api")
 def create_openai_prompt_api(
@@ -16,12 +17,21 @@ def create_openai_prompt_api(
 
         openai.api_key = api_key
 
-        # TODO: Add auto dropping of example tweets if prompt is too long.
-        response = openai.Completion.create(
-            model=model_name,
-            prompt=prompt_template.generate_prompt(target),
-            **api_kwargs,
-        )
-        return response
+        # Run loop until reaching return and response is returned
+        while True:
+            try:
+                response = openai.Completion.create(
+                    model=model_name,
+                    prompt=prompt_template.generate_prompt(target),
+                    **api_kwargs,
+                )
+                return response
+            
+            except openai.error.InvalidRequestError:
+                # Randomly select an example to drop
+                current_examples = prompt_template.examples
+                current_examples.pop(random.randrange(len(current_examples)))
+                prompt_template.set_examples(current_examples)
+                continue
 
     return openai_prompt
