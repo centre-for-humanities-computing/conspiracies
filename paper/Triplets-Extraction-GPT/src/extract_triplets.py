@@ -13,11 +13,11 @@ from create_templates import (
     prompt_template_4,
 )
 from conspiracies.prompt_relation_extraction.template_class import (
-    PromptTemplate1, 
-    PromptTemplate2, 
-    PromptTemplate3, 
-    PromptTemplate4, 
-    PromptTemplate5
+    PromptTemplate1,
+    PromptTemplate2,
+    PromptTemplate3,
+    PromptTemplate4,
+    PromptTemplate5,
 )
 from typing import List, Optional, Tuple
 import argparse
@@ -72,23 +72,27 @@ def run_triplet_extraction2(
     machine: str,
     templates: List[int],
     openai_key: str,
-    iteration: int
+    iteration: int,
 ) -> List[str]:
-    
+
     root_path, prediction_path = get_paths(machine)
     targets, examples = data
 
     docs_to_jsonl(
-        [tweet["doc"] for tweet in examples], 
-        [tweet["triplets"] for tweet in examples], 
-        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"))
+        [tweet["doc"] for tweet in examples],
+        [tweet["triplets"] for tweet in examples],
+        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"),
+    )
 
     dict_functions = get_prompt_functions(templates)
     for key, value in dict_functions.items():
         print(f"Prompting using {key}\n")
         gpt_outputs = []
         html_tagged = True if key == "template5" else False
-        template = value(examples=examples, task_description=get_introduction_text(html_tagged=html_tagged))
+        template = value(
+            examples=examples,
+            task_description=get_introduction_text(html_tagged=html_tagged),
+        )
 
         print(template.generate_prompt(targets[0]["doc"].text))
         while True:
@@ -112,9 +116,11 @@ def run_triplet_extraction2(
                 continue
 
         docs_to_jsonl(
-            [target["doc"] for target in targets], 
-            [parse(pred) for pred in gpt_outputs], 
-            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"))
+            [target["doc"] for target in targets],
+            [parse(pred) for pred in gpt_outputs],
+            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"),
+        )
+
 
 def main2(
     machine: str,
@@ -125,20 +131,26 @@ def main2(
 
     root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
     nlp = spacy.blank("da")
-    path_to_data = os.path.join("/home", os.getlogin(), "conspiracies", "data", "gold_triplets.jsonl")
+    path_to_data = os.path.join(
+        "/home", os.getlogin(), "conspiracies", "data", "gold_triplets.jsonl"
+    )
     docs, triplets = docs_from_jsonl(path_to_data, nlp)
     data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
 
-    assert len(data)/n_target >= iterations, f"Cannot extract {n_target} target tweets per iteration with {iterations} iterations and {len(data)} tweets"
+    assert (
+        len(data) / n_target >= iterations
+    ), f"Cannot extract {n_target} target tweets per iteration with {iterations} iterations and {len(data)} tweets"
 
-    print(f'Running {iterations} iterations with {n_target} tweets per iteration')
-    
+    print(f"Running {iterations} iterations with {n_target} tweets per iteration")
+
     # targets and examples will contain cross-validated extracted examples
     targets, examples = extract_spacy_examples(data, n_target, iterations)
 
     for i in range(iterations):
-        print(f'Iteration {i}')
-        run_triplet_extraction2((targets[i], examples[i]), machine, templates, openai_key, i)
+        print(f"Iteration {i}")
+        run_triplet_extraction2(
+            (targets[i], examples[i]), machine, templates, openai_key, i
+        )
 
 
 def run_triplet_extraction(

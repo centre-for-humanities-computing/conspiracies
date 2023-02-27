@@ -155,6 +155,7 @@ def write_triplets(
             with open(file, "a") as f:
                 f.write(triplet_string)
 
+
 def get_introduction_text(html_tagged: Optional[bool] = False) -> str:
     if html_tagged:
         text = """Tag the following tweet with triplets using HTML tags.
