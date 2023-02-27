@@ -66,10 +66,22 @@ docs = [
 tutorials = [
     "jupyter>=1.0.0,<1.1.0"
 ]
+openai = [
+    "openai>=0.26.5,<0.27.0"
+]
 
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
+
+[project.entry-points.conspiracies.prompt_apis]
+"conspiracies/openai_api" = "conspiracies:prompt_relation_extraction.prompt_apis"
+
+[project.entry-points.conspiracies.split_functions]
+"conspiracies/split_thread_to_tweets" = "conspiracies:prompt_relation_extraction.utils"
+
+[project.entry-points.conspiracies.prompt_templates]
+# "conspiracies/templateX" = "conspiracies:prompt_relation_extraction.prompt_templates"
 
 
 [build-system]
