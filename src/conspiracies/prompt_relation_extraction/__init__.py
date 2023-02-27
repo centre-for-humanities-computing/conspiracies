@@ -1,1 +1,1 @@
-from .data_classes import PromptOutput, SpanTriplet  # noqa F401
+from .data_classes import SpanTriplet  # noqa F401
