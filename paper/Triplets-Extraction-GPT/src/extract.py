@@ -4,7 +4,7 @@ data/triplet-extraction-gpt/tagged/"""
 import random
 import re
 from typing import List
-from spacy.tokens import Doc 
+from spacy.tokens import Doc
 from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
 
 
@@ -80,7 +80,7 @@ def extract_spacy_examples(
     examples: List[dict],
     n_target,
     cv=1,
-    ):
+):
     # Manually create copy since spacy spans cannot be deepcopied
     example_dicts = [{"doc": d["doc"], "triplets": d["triplets"]} for d in examples]
 
@@ -96,8 +96,13 @@ def extract_spacy_examples(
             "has_multi_word_subj1": has_multi_word_subj,
             "has_multi_word_obj": has_multi_word_obj,
         }
-        extracted_targets, extracted_examples = criteria_sampling(criteria_keys, n_target, example_dicts)
-        example_list.append([ex for prev_target in target_list for ex in prev_target] + extracted_examples)
+        extracted_targets, extracted_examples = criteria_sampling(
+            criteria_keys, n_target, example_dicts
+        )
+        example_list.append(
+            [ex for prev_target in target_list for ex in prev_target]
+            + extracted_examples
+        )
         target_list.append(extracted_targets)
-            
+
     return target_list, example_list

@@ -131,7 +131,6 @@ def main2(
         len(data) / n_target >= iterations
     ), f"Cannot extract {n_target} target tweets per iteration with {iterations} iterations and {len(data)} tweets"
 
-
     print(f"Running {iterations} iterations with {n_target} tweets per iteration")
 
     # targets and examples will contain cross-validated extracted examples
