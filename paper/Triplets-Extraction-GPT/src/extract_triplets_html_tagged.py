@@ -3,26 +3,17 @@
 import os
 import openai
 import json
-import spacy
-import random
-from extract import extract_examples, extract_spacy_examples
+from extract import extract_examples
 from create_templates import (
     prompt_template_1,
     prompt_template_2,
     prompt_template_3,
     prompt_template_4,
-)
-from conspiracies.template_class import (
-    PromptTemplate1, 
-    PromptTemplate2, 
-    PromptTemplate3, 
-    PromptTemplate4, 
-    PromptTemplate5
+    prompt_template_5
 )
 from typing import List, Optional, Union
 import argparse
-from utils import get_introduction_text, get_paths
-from conspiracies import docs_from_jsonl, docs_to_jsonl, parse
+from utils import find_tweet_in_list_of_dicts, get_paths, get_introduction_text
 
 
 def create_list_dics(tweet: str, triplets: Optional[List[list]]) -> dict:
@@ -55,89 +46,16 @@ def get_prompt_functions(templates: Optional[List[int]] = None):
         template_dicts (dict): dictionary with string of template name as key and the function as value
     """
     template_dicts = {
-        "template1": PromptTemplate1,
-        "template2": PromptTemplate2,
-        "template3": PromptTemplate3,
-        "template4": PromptTemplate4,
-        "template5": PromptTemplate5,
+        "template1": prompt_template_1,
+        "template2": prompt_template_2,
+        "template3": prompt_template_3,
+        "template4": prompt_template_4,
+        "template5": prompt_template_5,
     }
     if templates is None:
         return template_dicts
     else:
         return {f"template{i}": template_dicts[f"template{i}"] for i in templates}
-
-
-def run_triplet_extraction2(
-    data: List[dict],
-    machine: str,
-    dict_functions: dict,
-    openai_key: str,
-    iteration: int
-) -> List[str]:
-    
-    root_path, prediction_path = get_paths(machine)
-    targets, examples = data
-
-    docs_to_jsonl(
-        [tweet["doc"] for tweet in examples], 
-        [tweet["triplets"] for tweet in examples], 
-        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"))
-
-    for key, value in dict_functions.items():
-        print(f"Prompting using {key}\n")
-        gpt_outputs = []
-        template = value(examples=examples, task_description=get_introduction_text())
-
-        print(template.generate_prompt(targets[0]["doc"].text))
-        # while True:
-        #     try:
-        #         for tweet in targets:
-        #             openai.api_key = openai_key
-        #             response = openai.Completion.create(
-        #                 model="text-davinci-002",
-        #                 prompt=template.generate_prompt(tweet["doc"].text),
-        #                 temperature=0.7,
-        #                 max_tokens=500,
-        #             )
-        #             ### How to parse the output back to spacy?? ask kenneth
-        #             # print(parse(response["choices"][0]["text"]))
-        #             # print(parse(response["choices"][0]["text"])["triplets"])
-        #             # print(type(parse(response["choices"][0]["text"])["triplets"]["1"]["subject"]))
-
-        #             gpt_outputs.append(response["choices"][0]["text"])
-        #         break
-        #     except openai.error.InvalidRequestError:
-        #         examples.pop(random.randrange(len(examples)))
-        #         print(f"Too many examples, trying {len(examples)} examples")
-        #         template.set_examples(examples)
-        #         continue
-
-        docs_to_jsonl(
-            [target["doc"] for target in targets], 
-            [parse(pred) for pred in gpt_outputs], 
-            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"))
-
-def main2(
-    machine: str,
-    n_target: int,
-    templates: List[int],
-    iterations: int,
-) -> None:
-
-    root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
-    nlp = spacy.blank("da")
-    path_to_data = os.path.join("/home", os.getlogin(), "conspiracies", "data", "gold_triplets.jsonl")
-    docs, triplets = docs_from_jsonl(path_to_data, nlp)
-    data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
-
-    assert len(data)/n_target >= iterations, f"Cannot extract {n_target} tweets per iteration with {iterations} iterations"
-
-    print(f'Running {iterations} iterations with {n_target} tweets per iteration')
-    targets, examples = extract_spacy_examples(data, n_target, iterations)
-
-    for i in range(iterations):
-        print(f'Iteration {i}')
-        run_triplet_extraction2((targets[i], examples[i]), machine, get_prompt_functions(templates), openai_key, i)
 
 
 def run_triplet_extraction(
@@ -148,6 +66,7 @@ def run_triplet_extraction(
     openai_key: str,
     iteration: int,
     prev_target_tweets: Optional[List[str]] = None,
+    html_tagged: Optional[bool] = False,
 ) -> List[str]:
     """Runs one iteration of triplet extraction given a set of example tweets
     Writes example set with the iteration number and file with prompt outpus to
@@ -168,7 +87,7 @@ def run_triplet_extraction(
 
     root_path, prediction_path = get_paths(machine)
 
-    examples, target_tweets = extract_examples(data, n_tweets, prev_target_tweets)
+    examples, target_tweets = extract_examples(data, n_tweets, prev_target_tweets, html_tagged)
 
     examples_set = []
     for tweet, triplet in examples:
@@ -190,15 +109,17 @@ def run_triplet_extraction(
         print(f"Prompting using {key}\n")
 
         gpt_outputs = []
-        # Creating an instance of the template class
-        template = value(examples=examples, task_description=get_introduction_text())
-
         for tweet in target_tweets:
+            template = value(
+                examples=examples,
+                target_tweet=tweet,
+                introduction=get_introduction_text(html_tagged),
+            )
 
             openai.api_key = openai_key
             response = openai.Completion.create(
                 model="text-davinci-002",
-                prompt=template.generate_prompt(tweet),
+                prompt=template,
                 temperature=0.7,
                 max_tokens=500,
             )
@@ -223,6 +144,7 @@ def main(
     n_tweets: int,
     templates: List[int],
     iterations: int,
+    html_tagged: Optional[bool] = False,
 ) -> None:
     """Runs iterations iterations of the triplet extraction. Uses all templates
     specified. Tries to use n_tweets example tweets, but decreases number if
@@ -233,6 +155,7 @@ def main(
         n_tweets (int): number of tweets to use as examples
         templates (List[int]): list of template number to use
         iterations (int): number of iterations for each template
+        html_tagged (bool, optional): whether the tagged tweets are html tagged or not. Defaults to False.
 
     Returns:
         None
@@ -249,7 +172,7 @@ def main(
         data = json.load(f)
 
     dict_functions = get_prompt_functions(templates)
-
+    
     # Looping over triplet extraction, exception for too long prompt decreases n example tweets
     prev_target_tweets = None
     for i in range(iterations):
@@ -267,6 +190,7 @@ def main(
                         openai_key,
                         i,
                         prev_target_tweets,
+                        html_tagged
                     )
                 else:
                     new_target_tweets = run_triplet_extraction(
@@ -277,6 +201,7 @@ def main(
                         openai_key,
                         i,
                         prev_target_tweets,
+                        html_tagged
                     )
                     prev_target_tweets += new_target_tweets
                 break
@@ -295,10 +220,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-n",
-        "--n_target_tweets",
-        default=10,
+        "--n_tweets",
+        default=20,
         type=int,
-        help="Number of target tweets to use if possible",
+        help="Number of example tweets to use if possible",
     )
     parser.add_argument(
         "-t",
@@ -314,7 +239,13 @@ if __name__ == "__main__":
         type=int,
         help="Number of iterations of sampling and prompting",
     )
-
+    parser.add_argument(
+        "-html",
+        "--html_tagged",
+        default=False,
+        type=bool,
+        help="If true, the tagged tweets are in html format",
+    )
     args = parser.parse_args()
-
-    main2(args.machine, args.n_target_tweets, args.templates, args.iterations)
+    
+    main(args.machine, args.n_tweets, args.templates, args.iterations, args.html_tagged)
