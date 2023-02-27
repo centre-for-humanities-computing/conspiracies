@@ -6,7 +6,7 @@ import random
 import re
 from typing import List, Tuple, Optional
 from utils import find_tweet_in_list_of_dicts
-from spacy.tokens import Doc 
+from spacy.tokens import Doc
 from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
 
 
@@ -53,11 +53,12 @@ def has_multi_word_obj(spacy_triplets: SpanTriplet):
     else:
         return False
 
+
 def extract_examples(
     examples: List[dict],
     n: int,
     prev_target_tweets: Optional[List[str]] = None,
-    html_tagged: Optional[bool]=False,
+    html_tagged: Optional[bool] = False,
 ) -> Tuple[List[Tuple], List[str]]:
     """Extract n examples which fulfill the criteria:
 
@@ -157,7 +158,7 @@ def criteria_sampling(criteria_keys, n_target, example_dicts):
 
             # Filter only examples that fulfill the criteria
             useful_examples = list(
-                filter(lambda x: subset_function(x[function_key]), example_dicts)
+                filter(lambda x: subset_function(x[function_key]), example_dicts),
             )
 
             target = random.choice(useful_examples)
@@ -175,7 +176,7 @@ def extract_spacy_examples(
     examples: List[dict],
     n_target,
     cv=1,
-    ):
+):
     # example_dicts = deepcopy(examples)
     example_dicts = [{"doc": d["doc"], "triplets": d["triplets"]} for d in examples]
 
@@ -191,10 +192,14 @@ def extract_spacy_examples(
             "has_multi_word_subj1": has_multi_word_subj,
             "has_multi_word_obj": has_multi_word_obj,
         }
-        extracted_targets, extracted_examples = criteria_sampling(criteria_keys, n_target, example_dicts)
+        extracted_targets, extracted_examples = criteria_sampling(
+            criteria_keys, n_target, example_dicts
+        )
         # print(f'extracted {len(extracted_targets)} targets and {len(extracted_examples)} examples in cv round {c+1}')
-        example_list.append([ex for prev_target in target_list for ex in prev_target] + extracted_examples)
+        example_list.append(
+            [ex for prev_target in target_list for ex in prev_target]
+            + extracted_examples
+        )
         target_list.append(extracted_targets)
 
-            
     return target_list, example_list
