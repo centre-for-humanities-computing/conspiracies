@@ -39,9 +39,8 @@ class CoreferenceModel(Predictor):
         model_path: Union[Path, str, None] = None,
         device: int = -1,
         open_unverified_connection: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
-
         if model_path is None:
             model_path = download_model(
                 "da_coref_twitter_v1",

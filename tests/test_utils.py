@@ -26,7 +26,6 @@ def test_docs_from_jsonl(path, nlp):
     assert len(docs) == len(triplets)
 
     for doc, _triplets in zip(docs, triplets):
-
         assert isinstance(doc, Doc)
         for triplet in _triplets:
             assert isinstance(triplet, SpanTriplet)

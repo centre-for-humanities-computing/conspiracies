@@ -58,7 +58,6 @@ def extract(args, model, loader, output_path):
                 token_strs,
                 sentences,
             ):
-
                 # generate temporary batch for this sentence and feed to argument module
                 cur_pred_masks = bio.get_pred_mask(cur_pred_tags).to(args.device)
                 n_predicates = cur_pred_masks.shape[0]
@@ -161,7 +160,6 @@ def extract_to_list(args, model, loader):
                 token_strs,
                 sentences,
             ):
-
                 # generate temporary batch for this sentence and feed to argument module
                 cur_pred_masks = bio.get_pred_mask(cur_pred_tags).to(args["device"])
                 n_predicates = cur_pred_masks.shape[0]
@@ -254,7 +252,6 @@ def simple_extract(model, loader, device):
                 token_strs,
                 sentences,
             ):
-
                 # generate temporary batch for this sentence and feed to argument module
                 cur_pred_masks = bio.get_pred_mask(cur_pred_tags).to(device)
                 n_predicates = cur_pred_masks.shape[0]
@@ -357,7 +354,6 @@ def extract_to_dict(args, model, loader):
                 token_strs,
                 sentences,
             ):
-
                 # generate temporary batch for this sentence and feed to argument module
                 cur_pred_masks = bio.get_pred_mask(cur_pred_tags).to(args["device"])
                 n_predicates = cur_pred_masks.shape[0]
