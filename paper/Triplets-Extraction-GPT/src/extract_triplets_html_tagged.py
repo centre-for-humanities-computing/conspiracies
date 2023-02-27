@@ -9,7 +9,7 @@ from create_templates import (
     prompt_template_2,
     prompt_template_3,
     prompt_template_4,
-    prompt_template_5
+    prompt_template_5,
 )
 from typing import List, Optional, Union
 import argparse
@@ -87,7 +87,9 @@ def run_triplet_extraction(
 
     root_path, prediction_path = get_paths(machine)
 
-    examples, target_tweets = extract_examples(data, n_tweets, prev_target_tweets, html_tagged)
+    examples, target_tweets = extract_examples(
+        data, n_tweets, prev_target_tweets, html_tagged
+    )
 
     examples_set = []
     for tweet, triplet in examples:
@@ -172,7 +174,7 @@ def main(
         data = json.load(f)
 
     dict_functions = get_prompt_functions(templates)
-    
+
     # Looping over triplet extraction, exception for too long prompt decreases n example tweets
     prev_target_tweets = None
     for i in range(iterations):
@@ -190,7 +192,7 @@ def main(
                         openai_key,
                         i,
                         prev_target_tweets,
-                        html_tagged
+                        html_tagged,
                     )
                 else:
                     new_target_tweets = run_triplet_extraction(
@@ -201,7 +203,7 @@ def main(
                         openai_key,
                         i,
                         prev_target_tweets,
-                        html_tagged
+                        html_tagged,
                     )
                     prev_target_tweets += new_target_tweets
                 break
@@ -247,5 +249,5 @@ if __name__ == "__main__":
         help="If true, the tagged tweets are in html format",
     )
     args = parser.parse_args()
-    
+
     main(args.machine, args.n_tweets, args.templates, args.iterations, args.html_tagged)

@@ -1,25 +1,28 @@
 from abc import abstractmethod
 from typing import List, Tuple, Optional, Dict
-from spacy.tokens import Doc 
+from spacy.tokens import Doc
 from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
+
 
 class Template:
     """Abstract class for template classes. The class is used to create a
-    template for the triplet extraction task. The template is used to create
-    a prompt for the GPT-3 model.
+    template for the triplet extraction task. The template is used to create a
+    prompt for the GPT-3 model.
 
     Methods:
-        generate_prompt(target_tweet, generate_string):  
+        generate_prompt(target_tweet, generate_string):
             creates a prompt for the GPT-3 model with the given target tweet. boolean option to generate the string over
-        set_examples(examples): 
+        set_examples(examples):
             sets the examples to be used in the prompt
-        set_task_description(task_description): 
+        set_task_description(task_description):
             sets the task description to be used in the prompt
     """
-    
-    def __init__(self,
-    examples: List[Dict[str, str]],
-    task_description: str):
+
+    def __init__(
+        self,
+        examples: List[Dict[str, str]],
+        task_description: str,
+    ):
         self.examples = examples
         self.task_description = task_description
         self.spacy_examples_to_list()
@@ -35,19 +38,25 @@ class Template:
         self.spacy_examples_to_list()
         self.generate_prompt(generate_string=True)
 
-    def __str__(self):
-        return self.__name__
-    
     @staticmethod
     def get_list_triplets(triplets: List[SpanTriplet]):
-        return [[triplet.subject.text, triplet.predicate.text, triplet.object.text] for triplet in triplets]
+        return [
+            [triplet.subject.text, triplet.predicate.text, triplet.object.text]
+            for triplet in triplets
+        ]
 
     def spacy_examples_to_list(self):
-        self.non_spacy = [(example['doc'].text, self.get_list_triplets(example['triplets'])) for example in self.examples]
+        self.non_spacy = [
+            (example["doc"].text, self.get_list_triplets(example["triplets"]))
+            for example in self.examples
+        ]
 
     @abstractmethod
     def generate_prompt(self):
         pass
+
+    def __str__(self):
+        return self.__name__
 
     def __str__(self):
         return self.__name__
@@ -230,8 +239,9 @@ class PromptTemplate4(Template):
 class PromptTemplate5(Template):
     @staticmethod
     def create_html_example(doc: Doc, triplets: List[SpanTriplet]) -> str:
-        """This function creates an html example from a spacy doc and a list of triplets.
-        It inserts html tags around the subject, predicate and object of each triplet based on the start and end index of the span.
+        """This function creates an html example from a spacy doc and a list of
+        triplets. It inserts html tags around the subject, predicate and object
+        of each triplet based on the start and end index of the span.
 
         Args:
             doc (Doc): The spacy doc to insert the html tags into.
@@ -239,23 +249,23 @@ class PromptTemplate5(Template):
 
         Returns:
             str: The doc with html tags around the subjects, predicates and objects of each triplet
-        """    
+        """
         result_string = ""
         for i, d in enumerate(doc):
             for n, triplet in enumerate(triplets, 1):
                 if triplet.subject.end == i:
-                    result_string += f'</subject-{n}>'
+                    result_string += f"</subject-{n}>"
                 if triplet.object.end == i:
-                    result_string += f'</object-{n}>'
+                    result_string += f"</object-{n}>"
                 if triplet.predicate.end == i:
-                    result_string += f'</predicate-{n}>'
-                
+                    result_string += f"</predicate-{n}>"
+
                 if triplet.subject.start == i:
-                    result_string += f'<subject-{n}>'
+                    result_string += f"<subject-{n}>"
                 if triplet.object.start == i:
-                    result_string += f'<object-{n}>'
+                    result_string += f"<object-{n}>"
                 if triplet.predicate.start == i:
-                    result_string += f'<predicate-{n}>'
+                    result_string += f"<predicate-{n}>"
             result_string += d.text_with_ws
         return result_string
 
@@ -281,10 +291,13 @@ class PromptTemplate5(Template):
         if generate_string:
             tweet_string = f"{self.task_description}\n\n"
             for example in self.examples:
-                tweet_string += example["doc"].text + "\n" + self.create_html_example(example["doc"], example["triplets"]) + "\n\n"
+                tweet_string += (
+                    example["doc"].text
+                    + "\n"
+                    + self.create_html_example(example["doc"], example["triplets"])
+                    + "\n\n"
+                )
             self.prompt = tweet_string
 
         if target_tweet:
             return self.prompt + target_tweet + "\n"
-
-

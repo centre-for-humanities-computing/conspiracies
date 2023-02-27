@@ -1,9 +1,8 @@
-"""
-A script which parses semantic triplets froma a text which is annotated in an XLM.
-The function parse() takes a string as input and returns a dict containing the keys,
-"text" and "triplets". The value of "text" is the input string without the tags. The
-value of "triplets" is a list of dicts, each containing the keys "subject", "predicate",
-"object" and "n". 
+"""A script which parses semantic triplets froma a text which is annotated in
+an XLM. The function parse() takes a string as input and returns a dict
+containing the keys, "text" and "triplets". The value of "text" is the input
+string without the tags. The value of "triplets" is a list of dicts, each
+containing the keys "subject", "predicate", "object" and "n".
 
 Example:
     >>> text = "@Berry1952K: @BibsenSkyt @JakobEllemann Synes <subject-1>det</subject-1> <predicate-1>er</predicate-1> total <object-1>mangel på respekt</object-1> for alle andre partiledere."
@@ -26,9 +25,7 @@ from typing import Tuple
 
 
 def extract_tags(text, tags=["subject", "predicate", "object"]):
-    """
-    Extracts all tags on the form:
-    <{tag}-{n}>{content}</{tag}-{n}>
+    """Extracts all tags on the form: <{tag}-{n}>{content}</{tag}-{n}>
 
     and returns a dict on the form:
     {tag: tag, span: (start, end), n: n, is_close: bool}
@@ -48,13 +45,12 @@ def extract_tags(text, tags=["subject", "predicate", "object"]):
 
 
 def remove_tags(text):
-    """remove all tags from a string"""
+    """Remove all tags from a string."""
     return re.sub(r"<[/]?\w+-\d+>", "", text)
 
 
 def update_span(span: Tuple[int, int], deleted_span: Tuple[int, int]):
-    """updates a span by after a part of the text has been deleted"""
-
+    """Updates a span by after a part of the text has been deleted."""
     diff = deleted_span[1] - deleted_span[0]
 
     # if deleted span is before span
@@ -97,7 +93,7 @@ def parse(text: str, tags=["subject", "predicate", "object"]):
     for tag_n in open_tags:
         if tag_n in closed_tags:
             content_span = list(
-                (open_tags[tag_n]["span"][1], closed_tags[tag_n]["span"][0])
+                (open_tags[tag_n]["span"][1], closed_tags[tag_n]["span"][0]),
             )
             content = text[content_span[0] : content_span[1]]
             tag = open_tags[tag_n]["tag"]

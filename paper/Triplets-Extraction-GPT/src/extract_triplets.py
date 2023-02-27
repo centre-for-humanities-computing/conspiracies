@@ -134,7 +134,11 @@ def main2(
     root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
     nlp = spacy.blank("da")
     path_to_data = os.path.join(
-        "/home", os.getlogin(), "conspiracies", "data", "gold_triplets.jsonl"
+        "/home",
+        os.getlogin(),
+        "conspiracies",
+        "data",
+        "gold_triplets.jsonl",
     )
     docs, triplets = docs_from_jsonl(path_to_data, nlp)
     data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
@@ -151,7 +155,11 @@ def main2(
     for i in range(iterations):
         print(f"Iteration {i}")
         run_triplet_extraction2(
-            (targets[i], examples[i]), machine, templates, openai_key, i
+            (targets[i], examples[i]),
+            machine,
+            templates,
+            openai_key,
+            i,
         )
 
 
