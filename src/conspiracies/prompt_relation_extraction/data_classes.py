@@ -15,7 +15,9 @@ def get_text(span: Iterable[Token], ignore_spaces: bool, lowercase: bool) -> str
     """Gets the text of a span or doc.
 
     Args:
-        span (Union[Span, Doc]): a spacy span or doc.
+        span (Iterable[Token]): a spacy span or doc.
+        ignore_spaces (bool): whether to ignore spaces.
+        lowercase (bool): whether to lowercase the text.
 
     Returns:
         str: the text of the span or doc.
@@ -149,6 +151,15 @@ class SpanTriplet(BaseModel):
         html = displacy.render(viz_doc, style="ent", options=options)
         return html
 
+    def is_string_match(self, other) -> bool:
+        if not isinstance(other, SpanTriplet):
+            return False
+
+        triplet_is_string_match = all(
+            s1.text == s2.text for s1, s2 in zip(self.triplet, other.triplet)
+        )
+        return triplet_is_string_match
+
     def visualize(self, overlap: Optional[bool] = None):
         """Visualizes the triplet using displacy."""
         if overlap is None:
@@ -176,36 +187,35 @@ class SpanTriplet(BaseModel):
         span = doc[json["start"] : json["end"]]
         return span
 
-
-    def to_json(self, include_doc=True) -> Dict[str, Any]:
+    def to_dict(self, include_doc=True) -> Dict[str, Any]:
         if include_doc:
-            json = self.span.doc.to_json()
+            data = self.span.doc.to_json()
         else:
-            json = {}
-        json["semantic_triplets"] = self.dict()
-        json["semantic_triplets"]["span"] = self.span_to_json(self.span)
-        json["semantic_triplets"]["subject"] = self.span_to_json(self.subject)
-        json["semantic_triplets"]["predicate"] = self.span_to_json(self.predicate)
-        json["semantic_triplets"]["object"] = self.span_to_json(self.object)
+            data = {}
+        data["semantic_triplets"] = self.dict()
+        data["semantic_triplets"]["span"] = self.span_to_json(self.span)
+        data["semantic_triplets"]["subject"] = self.span_to_json(self.subject)
+        data["semantic_triplets"]["predicate"] = self.span_to_json(self.predicate)
+        data["semantic_triplets"]["object"] = self.span_to_json(self.object)
 
-        return json
+        return data
 
     @staticmethod
-    def from_json(
-        json: Dict[str, Any],
+    def from_dict(
+        data: Dict[str, Any],
         nlp: spacy.Language,
         doc: Optional[Doc] = None,
     ):
 
         if doc is None:
-            doc = Doc(nlp.vocab).from_json(json)
-        span = SpanTriplet.span_from_json(json["semantic_triplets"]["span"], doc)
-        subject = SpanTriplet.span_from_json(json["semantic_triplets"]["subject"], doc)
+            doc = Doc(nlp.vocab).from_json(data)  # type: ignore
+        span = SpanTriplet.span_from_json(data["semantic_triplets"]["span"], doc)
+        subject = SpanTriplet.span_from_json(data["semantic_triplets"]["subject"], doc)
         predicate = SpanTriplet.span_from_json(
-            json["semantic_triplets"]["predicate"],
+            data["semantic_triplets"]["predicate"],
             doc,
         )
-        object = SpanTriplet.span_from_json(json["semantic_triplets"]["object"], doc)
+        object = SpanTriplet.span_from_json(data["semantic_triplets"]["object"], doc)
         subject.label_ = "SUBJECT"
         predicate.label_ = "PREDICATE"
         object.label_ = "OBJECT"
@@ -427,7 +437,7 @@ class SpanTriplet(BaseModel):
         )
 
     @staticmethod
-    def span_triplet_from_doc(
+    def from_doc(
         triplet: Tuple[str, str, str],
         doc: Doc,
         nlp: Optional[spacy.Language] = None,
@@ -463,7 +473,7 @@ class SpanTriplet(BaseModel):
         if any(t.strip() == "" for t in triplet):
             return None
         if method is None:
-            span_triplet = SpanTriplet.span_triplet_from_doc(
+            span_triplet = SpanTriplet.from_doc(
                 triplet,
                 doc,
                 nlp=nlp,
@@ -473,7 +483,7 @@ class SpanTriplet(BaseModel):
             )
             if span_triplet is not None:
                 return span_triplet
-            return SpanTriplet.span_triplet_from_doc(
+            return SpanTriplet.from_doc(
                 triplet,
                 doc,
                 nlp=nlp,
@@ -481,9 +491,11 @@ class SpanTriplet(BaseModel):
                 lowercase=lowercase,
                 ignore_spaces=ignore_spaces,
             )
-
-        if nlp is None and method == "span":
+        if nlp is None:
             nlp = spacy.blank(doc.lang_)
+            nlp.add_pipe("sentencizer")
+
+        if method == "span":
             triplet = tuple([doc[:] for doc in nlp.pipe(triplet)])  # type: ignore
         else:
             triplet = triplet
@@ -508,14 +520,21 @@ class SpanTriplet(BaseModel):
                 return span_triplet
         return span_triplet_from(triplet, doc, lowercase=lowercase)  # type: ignore
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, SpanTriplet):
+            return False
+
+        triplet_is_equal = all(s1 == s2 for s1, s2 in zip(self.triplet, other.triplet))
+        return triplet_is_equal
+
 
 class PromptOutput(BaseModel):
     """A prompt output.
 
     Args:
-        input_text (str): The target of the prompt.
+        text (str): The target of the prompt.
         triplets (List[Tuple[str, str, str]]): A list of triplets.
     """
 
-    input_text: str
+    text: str
     triplets: List[Tuple[str, str, str]]

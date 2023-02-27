@@ -135,4 +135,4 @@ dmypy.json
 
 # data 
 data/gpt_predictions_compare.json
-data/prompt_output_compare_templates.md
+data/prompt_outputs_compare_templates.md
