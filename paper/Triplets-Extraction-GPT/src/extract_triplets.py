@@ -12,14 +12,14 @@ from create_templates import (
     prompt_template_3,
     prompt_template_4,
 )
-from template_class import (
+from conspiracies.prompt_relation_extraction.template_class import (
     PromptTemplate1, 
     PromptTemplate2, 
     PromptTemplate3, 
     PromptTemplate4, 
     PromptTemplate5
 )
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple
 import argparse
 from utils import get_introduction_text, get_paths
 from conspiracies import docs_from_jsonl, docs_to_jsonl, parse
@@ -68,9 +68,9 @@ def get_prompt_functions(templates: Optional[List[int]] = None):
 
 
 def run_triplet_extraction2(
-    data: List[dict],
+    data: Tuple[List[dict], List[dict]],
     machine: str,
-    dict_functions: dict,
+    templates: List[int],
     openai_key: str,
     iteration: int
 ) -> List[str]:
@@ -83,34 +83,33 @@ def run_triplet_extraction2(
         [tweet["triplets"] for tweet in examples], 
         os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"))
 
+    dict_functions = get_prompt_functions(templates)
     for key, value in dict_functions.items():
         print(f"Prompting using {key}\n")
         gpt_outputs = []
-        template = value(examples=examples, task_description=get_introduction_text())
+        html_tagged = True if key == "template5" else False
+        template = value(examples=examples, task_description=get_introduction_text(html_tagged=html_tagged))
 
         print(template.generate_prompt(targets[0]["doc"].text))
-        # while True:
-        #     try:
-        #         for tweet in targets:
-        #             openai.api_key = openai_key
-        #             response = openai.Completion.create(
-        #                 model="text-davinci-002",
-        #                 prompt=template.generate_prompt(tweet["doc"].text),
-        #                 temperature=0.7,
-        #                 max_tokens=500,
-        #             )
-        #             ### How to parse the output back to spacy?? ask kenneth
-        #             # print(parse(response["choices"][0]["text"]))
-        #             # print(parse(response["choices"][0]["text"])["triplets"])
-        #             # print(type(parse(response["choices"][0]["text"])["triplets"]["1"]["subject"]))
+        while True:
+            try:
+                for tweet in targets:
+                    openai.api_key = openai_key
+                    response = openai.Completion.create(
+                        model="text-davinci-002",
+                        prompt=template.generate_prompt(tweet["doc"].text),
+                        temperature=0.7,
+                        max_tokens=500,
+                    )
+                    ### How to parse the output back to spacy?? ask kenneth
 
-        #             gpt_outputs.append(response["choices"][0]["text"])
-        #         break
-        #     except openai.error.InvalidRequestError:
-        #         examples.pop(random.randrange(len(examples)))
-        #         print(f"Too many examples, trying {len(examples)} examples")
-        #         template.set_examples(examples)
-        #         continue
+                    gpt_outputs.append(response["choices"][0]["text"])
+                break
+            except openai.error.InvalidRequestError:
+                examples.pop(random.randrange(len(examples)))
+                print(f"Too many examples, trying {len(examples)} examples")
+                template.set_examples(examples)
+                continue
 
         docs_to_jsonl(
             [target["doc"] for target in targets], 
@@ -130,14 +129,16 @@ def main2(
     docs, triplets = docs_from_jsonl(path_to_data, nlp)
     data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
 
-    assert len(data)/n_target >= iterations, f"Cannot extract {n_target} tweets per iteration with {iterations} iterations"
+    assert len(data)/n_target >= iterations, f"Cannot extract {n_target} target tweets per iteration with {iterations} iterations and {len(data)} tweets"
 
     print(f'Running {iterations} iterations with {n_target} tweets per iteration')
+    
+    # targets and examples will contain cross-validated extracted examples
     targets, examples = extract_spacy_examples(data, n_target, iterations)
 
     for i in range(iterations):
         print(f'Iteration {i}')
-        run_triplet_extraction2((targets[i], examples[i]), machine, get_prompt_functions(templates), openai_key, i)
+        run_triplet_extraction2((targets[i], examples[i]), machine, templates, openai_key, i)
 
 
 def run_triplet_extraction(
