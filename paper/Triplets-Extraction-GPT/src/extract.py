@@ -62,7 +62,7 @@ def criteria_sampling(criteria_keys, n_target, example_dicts):
 
             # Filter only examples that fulfill the criteria
             useful_examples = list(
-                filter(lambda x: subset_function(x[function_key]), example_dicts)
+                filter(lambda x: subset_function(x[function_key]), example_dicts),
             )
 
             target = random.choice(useful_examples)

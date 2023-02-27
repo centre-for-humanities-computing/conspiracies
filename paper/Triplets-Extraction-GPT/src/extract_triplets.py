@@ -140,7 +140,11 @@ def main2(
     for i in range(iterations):
         print(f"Iteration {i}")
         run_triplet_extraction2(
-            (targets[i], examples[i]), machine, templates, openai_key, i
+            (targets[i], examples[i]),
+            machine,
+            templates,
+            openai_key,
+            i,
         )
 
 
