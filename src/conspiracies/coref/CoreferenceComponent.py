@@ -21,7 +21,6 @@ class CoreferenceComponent(TrainablePipe):
         device: int,
         open_unverified_connection: bool,
     ):
-
         self.name = name
         self.vocab = vocab
         self.model = CoreferenceModel(  # type: ignore

@@ -206,7 +206,6 @@ class SpanTriplet(BaseModel):
         nlp: spacy.Language,
         doc: Optional[Doc] = None,
     ):
-
         if doc is None:
             doc = Doc(nlp.vocab).from_json(data)  # type: ignore
         span = SpanTriplet.span_from_json(data["semantic_triplets"]["span"], doc)
