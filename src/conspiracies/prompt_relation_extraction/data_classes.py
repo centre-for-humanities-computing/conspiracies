@@ -75,7 +75,6 @@ def subspan_of_span(
 
 
 class StringTriplet(BaseModel):
-
     subject: str
     predicate: str
     object: str
@@ -367,7 +366,6 @@ class SpanTriplet(BaseModel):
         pred_char_span: Tuple[int, int],
         obj_char_span: Tuple[int, int],
     ) -> Optional["SpanTriplet"]:
-
         """Creates a SpanTriplet from a StringTriplet.
 
         Args:
