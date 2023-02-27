@@ -13,11 +13,14 @@ from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
 def has_multiple_triplets(spacy_triplets: SpanTriplet):
     return len(spacy_triplets) > 1
 
+
 def has_no_triplets(spacy_triplets: SpanTriplet):
     return len(spacy_triplets) == 0
 
+
 def has_one_mention(text_doc: Doc):
     return bool(re.search(r"@[\w]+", text_doc.text))
+
 
 def has_multi_word_verb(spacy_triplets: SpanTriplet):
     for triplet in spacy_triplets:
@@ -26,6 +29,7 @@ def has_multi_word_verb(spacy_triplets: SpanTriplet):
     else:
         return False
 
+
 def has_single_word_verb(spacy_triplets: SpanTriplet):
     for triplet in spacy_triplets:
         if len(triplet.predicate) == 1:
@@ -33,12 +37,14 @@ def has_single_word_verb(spacy_triplets: SpanTriplet):
     else:
         return False
 
+
 def has_multi_word_subj(spacy_triplets: SpanTriplet):
     for triplet in spacy_triplets:
         if len(triplet.subject) > 1:
             return True
     else:
         return False
+
 
 def has_multi_word_obj(spacy_triplets: SpanTriplet):
     for triplet in spacy_triplets:
@@ -150,17 +156,20 @@ def criteria_sampling(criteria_keys, n_target, example_dicts):
             function_key = "doc" if criteria == "has_one_mention" else "triplets"
 
             # Filter only examples that fulfill the criteria
-            useful_examples = list(filter(lambda x: subset_function(x[function_key]), example_dicts))
+            useful_examples = list(
+                filter(lambda x: subset_function(x[function_key]), example_dicts)
+            )
 
             target = random.choice(useful_examples)
             criteria_keys.pop(criteria)
-        
+
         except:
             target = random.choice(example_dicts)
-        
+
         target_examples.append(target)
         example_dicts.remove(target)
     return target_examples, example_dicts
+
 
 def extract_spacy_examples(
     examples: List[dict],
@@ -189,5 +198,3 @@ def extract_spacy_examples(
 
             
     return target_list, example_list
-
-
