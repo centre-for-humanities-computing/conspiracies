@@ -139,8 +139,8 @@ class SpanTriplet(BaseModel):
         for sent in doc.sents:
             if sent.start <= span.start and sent.end >= span.end:
                 return sent
-        else:
-            return doc[:]
+            else:
+                return doc[:]
 
     @property
     def doc(self) -> Doc:
