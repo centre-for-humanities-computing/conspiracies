@@ -386,7 +386,7 @@ class XMLStylePromptTemplate(PromptTemplate):
                 subj_range=triplet["subject"]["span"],
                 pred_range=triplet["predicate"]["span"],
                 obj_range=triplet["object"]["span"],
-                text=parse["doc"],
+                text=parse["text"],
             )
 
         triplets = []
