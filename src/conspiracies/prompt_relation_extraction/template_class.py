@@ -48,6 +48,10 @@ class PromptTemplate:
         """Parse a prompt into a target tweet and triplets."""
         pass
 
+    def set_examples(self, examples: Tuple[List[Doc], List[List[SpanTriplet]]]):
+        """Updates examples"""
+        self.examples = examples
+
 
 class PromptTemplate1(PromptTemplate):
     def create_prompt(
@@ -76,7 +80,7 @@ class PromptTemplate1(PromptTemplate):
             examples_str += f"Tweet: {tweet.text}\n"
 
             if len(triplets) == 0:
-                examples_str += "Triplet: Null \n\n"
+                examples_str += "Triplets: Null \n\n"
             else:
                 for i, triplet in enumerate(triplets):
                     triplet_str = "({subj}) ({pred}) ({obj})"
@@ -97,10 +101,30 @@ class PromptTemplate1(PromptTemplate):
         if target:
             return prompt + f"{target}\nTriplets:"
         return prompt
-
-    def parse_prompt(self, prompt: str) -> List[StringTriplet]:  # type: ignore
+    
+    @staticmethod
+    def create_string_triplets(tweet, triplet):
+        subject, predicate, object = triplet
+        return StringTriplet(
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            text = tweet
+            )
+    
+    def parse_prompt(self, prompt: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
-        pass
+        def strip_triplet(triplet):
+            return [elem for elem in [element.replace(")", "").strip() for element in triplet] if elem not in ["", " "]]
+        
+        data = [row for row in prompt.split("\n") if row not in ["", "---"]]
+        triplets = []
+        for line in data:
+            tmp_triplet = line.split("(")
+            triplet = strip_triplet(tmp_triplet)
+            if len(triplet) == 3:
+                triplets.append(self.create_string_triplets(target_tweet, triplet))
+        return  triplets
 
 
 class PromptTemplate2(PromptTemplate):
@@ -125,13 +149,16 @@ class PromptTemplate2(PromptTemplate):
         '''
         """
         tweets_block = "---\n\n"
-        tweets, tweet_triplets = zip(*self.examples)
+        tweets, tweet_triplets = self.examples
 
         for tweet in tweets:
             tweets_block += f"Tweet: {tweet.text}\n\n"  # type: ignore
 
         triplet_block = ""
         for triplets in tweet_triplets:
+            if len(triplets) == 0:
+                triplet_block += f"Triplets:\n"
+                continue
             for i, triplet in enumerate(triplets):  # type: ignore
                 triplet_str = "({subj}) ({pred}) ({obj})"
                 triplet_str = triplet_str.format(
@@ -140,7 +167,7 @@ class PromptTemplate2(PromptTemplate):
                     obj=triplet.object.text,
                 )
                 if i == 0:
-                    triplet_block += f"Triplet: {triplet_str}\n"
+                    triplet_block += f"Triplets: {triplet_str}\n"
                 else:
                     triplet_block += f"\t{triplet_str}\n"
         triplet_block += "\n---\n\n"
@@ -149,10 +176,30 @@ class PromptTemplate2(PromptTemplate):
         if target:
             return prompt + f"Tweet: {target}\n\nTriplets:"
         return prompt
-
-    def parse_prompt(self, prompt: str) -> List[StringTriplet]:  # type: ignore
+    
+    @staticmethod
+    def create_string_triplets(tweet, triplet):
+        subject, predicate, object = triplet
+        return StringTriplet(
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            text = tweet
+            )
+    
+    def parse_prompt(self, prompt: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
-        pass
+        def strip_triplet(triplet):
+            return [elem for elem in [element.replace(")", "").strip() for element in triplet] if elem not in ["", " "]]
+        
+        data = [row for row in prompt.split("\n") if row not in ["", "---"]]
+        triplets = []
+        for line in data:
+            tmp_triplet = line.split("(")
+            triplet = strip_triplet(tmp_triplet)
+            if len(triplet) == 3:
+                triplets.append(self.create_string_triplets(target_tweet, triplet))
+        return  triplets
 
 
 class MarkdownPromptTemplate1(PromptTemplate):
@@ -177,6 +224,9 @@ class MarkdownPromptTemplate1(PromptTemplate):
         """
         tweet_string = f"{self.task_description}\n| Tweet | Subject | Predicate | Object |\n| --- | --- | --- | --- |"  # noqa: E501
         for example, triplets in zip(*self.examples):
+            if len(triplets) == 0:
+                tweet_string += f"\n| {example} | | | |"
+                continue
             for i, triplet in enumerate(triplets):
                 subj = triplet.subject.text
                 pred = triplet.predicate.text
@@ -191,10 +241,33 @@ class MarkdownPromptTemplate1(PromptTemplate):
         if target:
             return prompt + f"\n| {target} |"
         return prompt
-
-    def parse_prompt(self, prompt: str) -> List[StringTriplet]:  # type: ignore
+    
+    @staticmethod
+    def create_string_triplets(tweet, triplet):
+        subject, predicate, object = triplet
+        return StringTriplet(
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            text = tweet
+            )    
+    def parse_prompt(self, prompt: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
-        pass
+        text = prompt.replace(self.task_description, "")
+        data = [row for row in text.split("\n") if row != ""]
+        triplets = []
+        
+        for row in data:
+            elements = [element.strip() for element in row.split("|") if element not in ["", " "]]
+            # Four elements means the response has added another tweet so return triplets as is now 
+            if len(elements) == 4:
+                return triplets
+            # If there are only three elements they are triplets for the current tweet
+            elif len(elements) == 3:
+                as_string_triplet = self.create_string_triplets(target_tweet, elements)
+                triplets.append(as_string_triplet)
+        
+        return triplets
 
 
 class MarkdownPromptTemplate2(PromptTemplate):
@@ -233,6 +306,9 @@ class MarkdownPromptTemplate2(PromptTemplate):
         tweet_string = f"{self.task_description}\n\n"
         for example, triplets in zip(*self.examples):
             tweet_string += example.text + "\n\n" + header
+            if len(triplets) == 0:
+                tweet_string += "\n\n"
+                continue
             for triplet in triplets:
                 subj = triplet.subject.text
                 pred = triplet.predicate.text
@@ -246,9 +322,36 @@ class MarkdownPromptTemplate2(PromptTemplate):
             return prompt + target + "\n\n" + header + "\n"
         return prompt
 
-    def parse_prompt(self, prompt: str) -> List[StringTriplet]:  # type: ignore
-        """Parse a prompt into a target tweet and triplets."""
-        pass
+    @staticmethod
+    def create_string_triplets(tweet, triplet):
+        subject, predicate, object = triplet
+        return StringTriplet(
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            text = tweet
+            )    
+    
+    def parse_prompt(self, prompt: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
+        """Parse a prompt into a target tweet and triplets.
+        Ignores extracted triplets that do not contain exactly three elements"""
+        
+        # Remove task description
+        text = prompt.replace(self.task_description, "")
+        data = [row for row in text.split("\n") if row != ""]
+        triplets = []
+
+        for row in data:
+            elements = [element.strip() for element in row.split("|") if element != ""]
+            # Four elements means the response has added another tweet so return triplets as is now 
+            if len(elements) == 4:
+                return triplets
+            # If there are only three elements they are triplets for the current tweet
+            elif len(elements) == 3:
+                as_string_triplet = self.create_string_triplets(target_tweet, elements)
+                triplets.append(as_string_triplet)
+            
+        return triplets
 
 
 class XMLStylePromptTemplate(PromptTemplate):
@@ -374,9 +477,9 @@ class XMLStylePromptTemplate(PromptTemplate):
 
         return {"text": remove_tags(text), "triplets": triplets}
 
-    def parse_prompt(self, prompt: str) -> List[StringTriplet]:
+    def parse_prompt(self, prompt_response: str) -> List[StringTriplet]:
         """Parse a prompt into a target tweet and triplets."""
-        parse = self.__parse(prompt, tags=self.tags)
+        parse = self.__parse(prompt_response, tags=self.tags)
 
         def to_string_triplet(triplet):
             return StringTriplet(
