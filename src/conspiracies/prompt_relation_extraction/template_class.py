@@ -109,15 +109,19 @@ class PromptTemplate1(PromptTemplate):
             subject=subject,
             predicate=predicate,
             object=object,
-            text = tweet
-            )
-    
-    def parse_prompt(self, prompt_response: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
+            text=tweet,
+        )
+
+    def parse_prompt(self, prompt_response: str, target_tweet: str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
 
         def strip_triplet(triplet):
-            return [elem for elem in [element.replace(")", "").strip() for element in triplet] if elem not in ["", " "]]
-        
+            return [
+                elem
+                for elem in [element.replace(")", "").strip() for element in triplet]
+                if elem not in ["", " "]
+            ]
+
         data = [row for row in prompt_response.split("\n") if row not in ["", "---"]]
         triplets = []
         for line in data:
@@ -185,15 +189,19 @@ class PromptTemplate2(PromptTemplate):
             subject=subject,
             predicate=predicate,
             object=object,
-            text = tweet
-            )
-    
-    def parse_prompt(self, prompt_response: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
+            text=tweet,
+        )
+
+    def parse_prompt(self, prompt_response: str, target_tweet: str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
 
         def strip_triplet(triplet):
-            return [elem for elem in [element.replace(")", "").strip() for element in triplet] if elem not in ["", " "]]
-        
+            return [
+                elem
+                for elem in [element.replace(")", "").strip() for element in triplet]
+                if elem not in ["", " "]
+            ]
+
         data = [row for row in prompt_response.split("\n") if row not in ["", "---"]]
         triplets = []
         for line in data:
@@ -251,9 +259,10 @@ class MarkdownPromptTemplate1(PromptTemplate):
             subject=subject,
             predicate=predicate,
             object=object,
-            text = tweet
-            )    
-    def parse_prompt(self, prompt_response: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
+            text=tweet,
+        )
+
+    def parse_prompt(self, prompt_response: str, target_tweet: str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets."""
         text = prompt_response.replace(self.task_description, "")
         data = [row for row in text.split("\n") if row != ""]
@@ -335,10 +344,10 @@ class MarkdownPromptTemplate2(PromptTemplate):
             subject=subject,
             predicate=predicate,
             object=object,
-            text = tweet
-            )    
-    
-    def parse_prompt(self, prompt_response: str, target_tweet:str) -> List[StringTriplet]:  # type: ignore
+            text=tweet,
+        )
+
+    def parse_prompt(self, prompt_response: str, target_tweet: str) -> List[StringTriplet]:  # type: ignore
         """Parse a prompt into a target tweet and triplets.
 
         Ignores extracted triplets that do not contain exactly three
@@ -486,9 +495,13 @@ class XMLStylePromptTemplate(PromptTemplate):
 
         return {"text": remove_tags(text), "triplets": triplets}
 
-    def parse_prompt(self, prompt_response: str, target_tweet:str) -> List[StringTriplet]:
+    def parse_prompt(
+        self, prompt_response: str, target_tweet: str
+    ) -> List[StringTriplet]:
         """Parse a prompt into a target tweet and triplets.
-        Does not use the target_tweet, but required for consistency"""
+
+        Does not use the target_tweet, but required for consistency
+        """
         parse = self.__parse(prompt_response, tags=self.tags)
 
         def to_string_triplet(triplet):
