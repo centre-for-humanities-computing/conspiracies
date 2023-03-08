@@ -1,13 +1,7 @@
 import pytest
 import spacy
 
-from conspiracies.prompt_relation_extraction import PromptOutput, SpanTriplet
-
-
-def test_prompt_output():
-    prompt = PromptOutput(text="test", triplets=[["a", "b", "c"], ["d", "e", "f"]])
-    assert prompt.text == "test"
-    assert prompt.triplets == [("a", "b", "c"), ("d", "e", "f")]
+from conspiracies.prompt_relation_extraction import SpanTriplet
 
 
 class TestSpanTriplet:
@@ -25,14 +19,12 @@ class TestSpanTriplet:
             subject=doc[0:1],
             predicate=doc[1:2],
             object=doc[2:3],
-            span=doc[:],
         )
 
         triplet_w_overlap = SpanTriplet(
             subject=doc[0:2],
             predicate=doc[1:2],
             object=doc[2:3],
-            span=doc[:],
         )
 
         return [triplet, triplet_w_overlap]

@@ -5,7 +5,7 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from .prompt_relation_extraction.data_classes import SpanTriplet
+from .prompt_relation_extraction import SpanTriplet
 
 
 def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
