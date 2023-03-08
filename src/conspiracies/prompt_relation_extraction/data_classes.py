@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import spacy
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 from spacy import displacy
 from spacy.tokens import Doc, Span, Token
 
@@ -83,6 +83,9 @@ class StringTriplet(BaseModel):
     object_char_span: Optional[Tuple[int, int]] = None
     text: Optional[str] = None
 
+    class Config:
+        extra=Extra.forbid
+
     @property
     def triplet(self) -> Tuple[str, str, str]:
         return (self.subject, self.predicate, self.object)
@@ -112,6 +115,7 @@ class SpanTriplet(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        extra=Extra.forbid
 
     subject: Span
     predicate: Span
@@ -621,6 +625,7 @@ class DocTriplets(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        extra=Extra.forbid
 
     span_triplets: List[SpanTriplet]
 
