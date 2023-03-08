@@ -17,9 +17,7 @@ def get_examples_task_introduction():
     return examples, task_description, test_tweet
 
 
-def get_expected_prompt(template):
-    if isinstance(template, PromptTemplate1):
-        return """This is a test task description
+PromptTemplate1_expected_prompt = """This is a test task description
 
 ---
 
@@ -50,8 +48,8 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 Triplets:"""  # noqa: E501
-    if isinstance(template, PromptTemplate2):
-        return """This is a test task description
+
+PromptTemplate2_expected_prompt = """This is a test task description
 
 ---
 
@@ -86,8 +84,8 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 
 Triplets:"""  # noqa: E501
-    if isinstance(template, MarkdownPromptTemplate1):
-        return """This is a test task description
+
+MarkdownPromptTemplate1_expected_prompt = """This is a test task description
 | Tweet | Subject | Predicate | Object |
 | --- | --- | --- | --- |
 | @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere. | @Berry1952K | Synes | det er total mangel på respekt |
@@ -106,8 +104,8 @@ Triplets:"""  # noqa: E501
 | | det | skal indføres | nu |
 | @siggithilde: @Ihavequestione @svogdrup @GianniRivera69 @SSTbrostrom Det første punkt under potentielle fordele er alt rigeligt til at indføre mundbindstvang overalt i det offentlige rum. | Det første punkt under potentielle fordele | er | rigeligt til at indføre mundbindstvang overalt i det offentlige rum |
 | @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough. |"""  # noqa: E501
-    if isinstance(template, MarkdownPromptTemplate2):
-        return """This is a test task description
+
+MarkdownPromptTemplate2_expected_prompt = """This is a test task description
 
 @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere.
 
@@ -154,8 +152,8 @@ Triplets:"""  # noqa: E501
 | Subject | Predicate | Object |
 | --- | --- | --- |
 """  # noqa: E501
-    if isinstance(template, XMLStylePromptTemplate):
-        return """This is a test task description
+
+XMLStylePromptTemplate_expected_prompt = """This is a test task description
 
 @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere.
 <subject-1>@Berry1952K</subject-1>: @BibsenSkyt @JakobEllemann <predicate-1>Synes </predicate-1><object-1><subject-2>det </subject-2><predicate-2>er </predicate-2><object-2>total mangel på respekt </object-1></object-2>for alle andre partiledere.
@@ -180,17 +178,52 @@ examples, task_description, test_tweet = get_examples_task_introduction()
 
 
 @pytest.mark.parametrize(
-    "template, target, examples, task_description",
+    "template, target, examples, task_description, expected_prompt",
     [
-        (PromptTemplate1, test_tweet, examples, task_description),
-        (PromptTemplate2, test_tweet, examples, task_description),
-        (MarkdownPromptTemplate1, test_tweet, examples, task_description),
-        (MarkdownPromptTemplate2, test_tweet, examples, task_description),
-        (XMLStylePromptTemplate, test_tweet, examples, task_description),
+        (
+            PromptTemplate1,
+            test_tweet,
+            examples,
+            task_description,
+            PromptTemplate1_expected_prompt,
+        ),
+        (
+            PromptTemplate2,
+            test_tweet,
+            examples,
+            task_description,
+            PromptTemplate2_expected_prompt,
+        ),
+        (
+            MarkdownPromptTemplate1,
+            test_tweet,
+            examples,
+            task_description,
+            MarkdownPromptTemplate1_expected_prompt,
+        ),
+        (
+            MarkdownPromptTemplate2,
+            test_tweet,
+            examples,
+            task_description,
+            MarkdownPromptTemplate2_expected_prompt,
+        ),
+        (
+            XMLStylePromptTemplate,
+            test_tweet,
+            examples,
+            task_description,
+            XMLStylePromptTemplate_expected_prompt,
+        ),
     ],
 )
-def test_PromptTemplate_create_prompt(template, target, examples, task_description):
+def test_PromptTemplate_create_prompt(
+    template,
+    target,
+    examples,
+    task_description,
+    expected_prompt,
+):
     template = template(task_description, examples)
     prompt = template.create_prompt(target)
-    expected_prompt = get_expected_prompt(template)
     assert prompt == expected_prompt
