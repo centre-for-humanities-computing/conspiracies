@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.1 (2023-03-08)
+### Fix
+* Fixed circular import ([`bc2a0f7`](https://github.com/centre-for-humanities-computing/conspiracies/commit/bc2a0f782e96e0f9d70654fa9b6af666e8606b62))
+
 ## v0.3.0 (2023-02-24)
 ### Feature
 * Added gold data to package data ([`ce66666`](https://github.com/centre-for-humanities-computing/conspiracies/commit/ce6666655d9c110216ba1c034d37fc8636e2ff0e))
