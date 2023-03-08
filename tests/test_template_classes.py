@@ -1,4 +1,3 @@
-import pytest
 from conspiracies import (
     PromptTemplate1,
     PromptTemplate2,
@@ -14,7 +13,7 @@ def get_examples_task_introduction():
     docs, triplets = load_gold_triplets()
     examples = (docs[:5], triplets[:5])
     task_description = "This is a test task description"
-    test_tweet = "@user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough."
+    test_tweet = "@user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough."  # noqa: E501
     return examples, task_description, test_tweet
 
 
@@ -52,11 +51,11 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 ---
 
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
-Triplets:"""
+Triplets:"""  # noqa: E501
 
     assert prompt == expected_prompt
 
-    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"
+    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"  # noqa: E501
     extracted_triplets = template.parse_prompt(response, test_tweet)
     expected_triplets = [
         StringTriplet(
@@ -113,11 +112,11 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 
-Triplets:"""
+Triplets:"""  # noqa: E501
 
     assert prompt == expected_prompt
 
-    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"
+    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"  # noqa: E501
     extracted_triplets = template.parse_prompt(response, test_tweet)
     expected_triplets = [
         StringTriplet(
@@ -158,7 +157,7 @@ def test_MarkdownPromptTemplate1():
 | | det | er | underligt det nu skal indføres |
 | | det | skal indføres | nu |
 | @siggithilde: @Ihavequestione @svogdrup @GianniRivera69 @SSTbrostrom Det første punkt under potentielle fordele er alt rigeligt til at indføre mundbindstvang overalt i det offentlige rum. | Det første punkt under potentielle fordele | er | rigeligt til at indføre mundbindstvang overalt i det offentlige rum |
-| @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough. |"""
+| @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough. |"""  # noqa: E501
 
     assert prompt == expected_prompt
 
@@ -240,7 +239,7 @@ def test_MarkdownPromptTemplate2():
 
 | Subject | Predicate | Object |
 | --- | --- | --- |
-"""
+"""  # noqa: E501
 
     assert prompt == expected_prompt
 
@@ -287,11 +286,11 @@ def test_XMLStylePromptTemplate():
 @siggithilde: @Ihavequestione @svogdrup @GianniRivera69 @SSTbrostrom <subject-1>Det første punkt under potentielle fordele </subject-1><predicate-1>er </predicate-1>alt <object-1>rigeligt til at indføre mundbindstvang overalt i det offentlige rum</object-1>.
 
 @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
-"""
+"""  # noqa: E501
 
     assert prompt == expected_prompt
 
-    response = "@user1: <subject-1>This</subject-1> <predicate-1>is</predicate-1> <object-1>a test tweet</object-1>, <subject-2>I</subject-2> <predicate-2>am commenting</predicate-2> <object-2>on something someone else said</object-2>. @user2 <subject-3>this</subject-3> <predicate-3>is not</predicate-3> <object-3>good enough.</object-3>"
+    response = "@user1: <subject-1>This</subject-1> <predicate-1>is</predicate-1> <object-1>a test tweet</object-1>, <subject-2>I</subject-2> <predicate-2>am commenting</predicate-2> <object-2>on something someone else said</object-2>. @user2 <subject-3>this</subject-3> <predicate-3>is not</predicate-3> <object-3>good enough.</object-3>"  # noqa: E501
     extracted_triplets = template.parse_prompt(response, test_tweet)
     expected_triplets = [
         StringTriplet(
