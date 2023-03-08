@@ -121,7 +121,7 @@ class PromptTemplate1(PromptTemplate):
         self,
         prompt_response: str,
         target_tweet: str,
-    ) -> List[StringTriplet]:  # type: ignore
+    ) -> List[StringTriplet]:
         """Parse a prompt into a target tweet and triplets."""
 
         def strip_triplet(triplet):
@@ -166,7 +166,7 @@ class PromptTemplate2(PromptTemplate):
         tweets, tweet_triplets = self.examples
 
         for tweet in tweets:
-            tweets_block += f"Tweet: {tweet.text}\n\n"  # type: ignore
+            tweets_block += f"Tweet: {tweet.text}\n\n"
 
         triplet_block = ""
         for triplets in tweet_triplets:
@@ -205,7 +205,7 @@ class PromptTemplate2(PromptTemplate):
         self,
         prompt_response: str,
         target_tweet: str,
-    ) -> List[StringTriplet]:  # type: ignore
+    ) -> List[StringTriplet]:
         """Parse a prompt into a target tweet and triplets."""
 
         def strip_triplet(triplet):
@@ -283,7 +283,7 @@ class MarkdownPromptTemplate1(PromptTemplate):
         """Parse a prompt into a target tweet and triplets."""
         text = prompt_response.replace(self.task_description, "")
         data = [row for row in text.split("\n") if row != ""]
-        triplets = []  # type: List[StringTriplet]
+        triplets: List[StringTriplet] = []
 
         for row in data:
             elements = [
@@ -377,7 +377,7 @@ class MarkdownPromptTemplate2(PromptTemplate):
         # Remove task description
         text = prompt_response.replace(self.task_description, "")
         data = [row for row in text.split("\n") if row != ""]
-        triplets = []  # type: List[StringTriplet]
+        triplets: List[StringTriplet] = []
 
         for row in data:
             elements = [element.strip() for element in row.split("|") if element != ""]
