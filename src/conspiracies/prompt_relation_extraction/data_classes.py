@@ -75,6 +75,9 @@ def subspan_of_span(
 
 
 class StringTriplet(BaseModel):
+    class Config:
+        extra = Extra.forbid
+
     subject: str
     predicate: str
     object: str
@@ -82,9 +85,6 @@ class StringTriplet(BaseModel):
     predicate_char_span: Optional[Tuple[int, int]] = None
     object_char_span: Optional[Tuple[int, int]] = None
     text: Optional[str] = None
-
-    class Config:
-        extra=Extra.forbid
 
     @property
     def triplet(self) -> Tuple[str, str, str]:
@@ -115,7 +115,7 @@ class SpanTriplet(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-        extra=Extra.forbid
+        extra = Extra.forbid
 
     subject: Span
     predicate: Span
@@ -625,7 +625,7 @@ class DocTriplets(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-        extra=Extra.forbid
+        extra = Extra.forbid
 
     span_triplets: List[SpanTriplet]
 
