@@ -496,7 +496,9 @@ class XMLStylePromptTemplate(PromptTemplate):
         return {"text": remove_tags(text), "triplets": triplets}
 
     def parse_prompt(
-        self, prompt_response: str, target_tweet: str
+        self,
+        prompt_response: str,
+        target_tweet: str,
     ) -> List[StringTriplet]:
         """Parse a prompt into a target tweet and triplets.
 
