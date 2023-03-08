@@ -1,10 +1,10 @@
+import pytest
 from conspiracies import (
     PromptTemplate1,
     PromptTemplate2,
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,
     XMLStylePromptTemplate,
-    StringTriplet,
 )
 from conspiracies.data import load_gold_triplets
 
@@ -17,11 +17,9 @@ def get_examples_task_introduction():
     return examples, task_description, test_tweet
 
 
-def test_PromptTemplate1():
-    examples, task_description, test_tweet = get_examples_task_introduction()
-    template = PromptTemplate1(task_description, examples)
-    prompt = template.create_prompt(test_tweet)
-    expected_prompt = """This is a test task description
+def get_expected_prompt(template):
+    if isinstance(template, PromptTemplate1):
+        return """This is a test task description
 
 ---
 
@@ -52,33 +50,8 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 Triplets:"""  # noqa: E501
-
-    assert prompt == expected_prompt
-
-    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"  # noqa: E501
-    extracted_triplets = template.parse_prompt(response, test_tweet)
-    expected_triplets = [
-        StringTriplet(
-            subject="This",
-            predicate="is",
-            object="a test tweet",
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="this",
-            predicate="is not",
-            object="good enough.",
-            text=test_tweet,
-        ),
-    ]
-    assert extracted_triplets == expected_triplets
-
-
-def test_PromptTemplate2():
-    examples, task_description, test_tweet = get_examples_task_introduction()
-    template = PromptTemplate2(task_description, examples)
-    prompt = template.create_prompt(test_tweet)
-    expected_prompt = """This is a test task description
+    if isinstance(template, PromptTemplate2):
+        return """This is a test task description
 
 ---
 
@@ -113,33 +86,8 @@ Triplets: (Det første punkt under potentielle fordele) (er) (rigeligt til at in
 Tweet: @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 
 Triplets:"""  # noqa: E501
-
-    assert prompt == expected_prompt
-
-    response = "\n\n(This) (is) (a test tweet)\n(I) (am commenting)\n(this) (is not) (good enough.)"  # noqa: E501
-    extracted_triplets = template.parse_prompt(response, test_tweet)
-    expected_triplets = [
-        StringTriplet(
-            subject="This",
-            predicate="is",
-            object="a test tweet",
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="this",
-            predicate="is not",
-            object="good enough.",
-            text=test_tweet,
-        ),
-    ]
-    assert extracted_triplets == expected_triplets
-
-
-def test_MarkdownPromptTemplate1():
-    examples, task_description, test_tweet = get_examples_task_introduction()
-    template = MarkdownPromptTemplate1(task_description, examples)
-    prompt = template.create_prompt(test_tweet)
-    expected_prompt = """This is a test task description
+    if isinstance(template, MarkdownPromptTemplate1):
+        return """This is a test task description
 | Tweet | Subject | Predicate | Object |
 | --- | --- | --- | --- |
 | @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere. | @Berry1952K | Synes | det er total mangel på respekt |
@@ -158,42 +106,8 @@ def test_MarkdownPromptTemplate1():
 | | det | skal indføres | nu |
 | @siggithilde: @Ihavequestione @svogdrup @GianniRivera69 @SSTbrostrom Det første punkt under potentielle fordele er alt rigeligt til at indføre mundbindstvang overalt i det offentlige rum. | Det første punkt under potentielle fordele | er | rigeligt til at indføre mundbindstvang overalt i det offentlige rum |
 | @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough. |"""  # noqa: E501
-
-    assert prompt == expected_prompt
-
-    response = """ This | is | a test tweet |
-| | I | am commenting | on something someone else said |
-| | this | is not | good enough. |
-| | This | is not |"""
-    extracted_triplets = template.parse_prompt(response, test_tweet)
-    expected_triplets = [
-        StringTriplet(
-            subject="This",
-            predicate="is",
-            object="a test tweet",
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="I",
-            predicate="am commenting",
-            object="on something someone else said",
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="this",
-            predicate="is not",
-            object="good enough.",
-            text=test_tweet,
-        ),
-    ]
-    assert extracted_triplets == expected_triplets
-
-
-def test_MarkdownPromptTemplate2():
-    examples, task_description, test_tweet = get_examples_task_introduction()
-    template = MarkdownPromptTemplate2(task_description, examples)
-    prompt = template.create_prompt(test_tweet)
-    expected_prompt = """This is a test task description
+    if isinstance(template, MarkdownPromptTemplate2):
+        return """This is a test task description
 
 @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere.
 
@@ -240,35 +154,8 @@ def test_MarkdownPromptTemplate2():
 | Subject | Predicate | Object |
 | --- | --- | --- |
 """  # noqa: E501
-
-    assert prompt == expected_prompt
-
-    response = """| This | is | a test tweet |
-| I | am commenting | on something someone else said |
-| @user2 | this is not good enough |"""
-    extracted_triplets = template.parse_prompt(response, test_tweet)
-    expected_triplets = [
-        StringTriplet(
-            subject="This",
-            predicate="is",
-            object="a test tweet",
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="I",
-            predicate="am commenting",
-            object="on something someone else said",
-            text=test_tweet,
-        ),
-    ]
-    assert extracted_triplets == expected_triplets
-
-
-def test_XMLStylePromptTemplate():
-    examples, task_description, test_tweet = get_examples_task_introduction()
-    template = XMLStylePromptTemplate(task_description, examples)
-    prompt = template.create_prompt(test_tweet)
-    expected_prompt = """This is a test task description
+    if isinstance(template, XMLStylePromptTemplate):
+        return """This is a test task description
 
 @Berry1952K: @BibsenSkyt @JakobEllemann Synes det er total mangel på respekt for alle andre partiledere.
 <subject-1>@Berry1952K</subject-1>: @BibsenSkyt @JakobEllemann <predicate-1>Synes </predicate-1><object-1><subject-2>det </subject-2><predicate-2>er </predicate-2><object-2>total mangel på respekt </object-1></object-2>for alle andre partiledere.
@@ -288,37 +175,22 @@ def test_XMLStylePromptTemplate():
 @user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 """  # noqa: E501
 
-    assert prompt == expected_prompt
 
-    response = "@user1: <subject-1>This</subject-1> <predicate-1>is</predicate-1> <object-1>a test tweet</object-1>, <subject-2>I</subject-2> <predicate-2>am commenting</predicate-2> <object-2>on something someone else said</object-2>. @user2 <subject-3>this</subject-3> <predicate-3>is not</predicate-3> <object-3>good enough.</object-3>"  # noqa: E501
-    extracted_triplets = template.parse_prompt(response, test_tweet)
-    expected_triplets = [
-        StringTriplet(
-            subject="This",
-            predicate="is",
-            object="a test tweet",
-            subject_char_span=(8, 12),
-            predicate_char_span=(13, 15),
-            object_char_span=(16, 28),
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="I",
-            predicate="am commenting",
-            object="on something someone else said",
-            subject_char_span=(30, 31),
-            predicate_char_span=(32, 45),
-            object_char_span=(46, 76),
-            text=test_tweet,
-        ),
-        StringTriplet(
-            subject="this",
-            predicate="is not",
-            object="good enough.",
-            subject_char_span=(85, 89),
-            predicate_char_span=(90, 96),
-            object_char_span=(97, 109),
-            text=test_tweet,
-        ),
-    ]
-    assert extracted_triplets == expected_triplets
+examples, task_description, test_tweet = get_examples_task_introduction()
+
+
+@pytest.mark.parametrize(
+    "template, target, examples, task_description",
+    [
+        (PromptTemplate1, test_tweet, examples, task_description),
+        (PromptTemplate2, test_tweet, examples, task_description),
+        (MarkdownPromptTemplate1, test_tweet, examples, task_description),
+        (MarkdownPromptTemplate2, test_tweet, examples, task_description),
+        (XMLStylePromptTemplate, test_tweet, examples, task_description),
+    ],
+)
+def test_PromptTemplate_create_prompt(template, target, examples, task_description):
+    template = template(task_description, examples)
+    prompt = template.create_prompt(target)
+    expected_prompt = get_expected_prompt(template)
+    assert prompt == expected_prompt
