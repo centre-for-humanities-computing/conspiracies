@@ -22,7 +22,7 @@ class PromptTemplate:
 
     def __init__(
         self,
-        task_description: Optional[str],
+        task_description: Optional[str] = None,
         examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
         """
@@ -395,7 +395,7 @@ class MarkdownPromptTemplate2(PromptTemplate):
 class XMLStylePromptTemplate(PromptTemplate):
     def __init__(
         self,
-        task_description: Optional[str],
+        task_description: Optional[str] = None,
         examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
         tags: List[str] = ["subject", "predicate", "object"],
     ):
