@@ -95,7 +95,7 @@ class PromptTemplate1(PromptTemplate):
                         examples_str += f"\t{triplet_str}\n"
 
             examples_str += "---\n"
-            tweet_string = f"{self.task_description}\n\n{examples_str}\nTweet:"
+            tweet_string = f"{self.task_description}\n\n{examples_str}\nTweet: "
             prompt = tweet_string
 
         if target:
