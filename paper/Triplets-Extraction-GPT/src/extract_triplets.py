@@ -2,6 +2,7 @@ import os
 import openai
 import random
 import argparse
+from conspiracies.utils import docs_to_jsonl
 from extract import extract_spacy_examples
 
 from conspiracies.prompt_relation_extraction.template_class import (
@@ -129,15 +130,16 @@ def run_triplet_extraction2(
     targets, examples = data
     example_tweets, example_triplets = return_example_tuple(examples)
 
-    # docs_to_jsonl(
-    #     example_tweets,
-    #     example_triplets,
-    #     os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"),
-    # )
+    docs_to_jsonl(
+        example_tweets,
+        example_triplets,
+        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"),
+    )
     dict_functions = get_prompt_functions(templates)
     for key, value in dict_functions.items():
         print(f"Prompting using {key}\n")
         gpt_outputs = []
+        gpt_triplets = []
         html_tagged = True if key == "template5" else False
         template = value(
             examples=return_example_tuple(examples),
@@ -148,26 +150,45 @@ def run_triplet_extraction2(
             try:
                 for tweet in targets:
                     openai.api_key = openai_key
-                    response = openai.Completion.create(
-                        model="text-davinci-002",
-                        prompt=template.create_prompt(tweet["doc"].text),
+                    response = openai.ChatCompletion.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a helpful assistant.",
+                                "role": "user",
+                                "content": template.create_prompt(tweet["doc"].text),
+                            },
+                        ],
                         temperature=0.7,
                         max_tokens=500,
                     )
-
-                    gpt_outputs.append(response["choices"][0]["text"])
+                    gpt_response = response["choices"][0]["message"]["content"]
+                    gpt_parsed = template.parse_prompt(gpt_response, tweet["doc"].text)
+                    gpt_outputs.append(gpt_response)
+                    print(
+                        f"gpt response: {gpt_response}\n gpt response parsed: {gpt_parsed}",
+                    )
+                    if len(gpt_parsed) > 0:
+                        print(
+                            f"type of gpt parsed is {type(gpt_parsed)} and type in it is {type(gpt_parsed[0])}",
+                        )
+                    gpt_triplets.append(
+                        template.parse_prompt(gpt_response, tweet["doc"].text),
+                    )
                 break
             except openai.error.InvalidRequestError:
                 examples.pop(random.randrange(len(examples)))
                 print(f"Too many examples, trying {len(examples)} examples")
                 template.set_examples(return_example_tuple(examples))
                 continue
-
-        # docs_to_jsonl(
-        #     [target["doc"] for target in targets],
-        #     [parse(pred) for pred in gpt_outputs],
-        #     os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"),
-        # )
+        print(f'targets is {type(targets)} with {type(targets[0]["doc"])} in it')
+        # print(f'gpt_triplets is {type(gpt_triplets)} with {type(gpt_triplets[0])} in it and {type(gpt_triplets[0][0])} in that')
+        docs_to_jsonl(
+            [target["doc"] for target in targets],
+            gpt_triplets,
+            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"),
+        )
 
 
 def main2(
