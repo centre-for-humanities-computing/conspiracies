@@ -97,11 +97,13 @@ def extract_spacy_examples(
             "has_multi_word_obj": has_multi_word_obj,
         }
         extracted_targets, extracted_examples = criteria_sampling(
-            criteria_keys, n_target, example_dicts
+            criteria_keys,
+            n_target,
+            example_dicts,
         )
         example_list.append(
             [ex for prev_target in target_list for ex in prev_target]
-            + extracted_examples
+            + extracted_examples,
         )
         target_list.append(extracted_targets)
 

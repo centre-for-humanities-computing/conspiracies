@@ -70,7 +70,6 @@ def run_triplet_extraction2(
     openai_key: str,
     iteration: int,
 ) -> List[str]:
-
     root_path, prediction_path = get_paths(machine)
     targets, examples = data
 
@@ -122,7 +121,6 @@ def main2(
     templates: List[int],
     iterations: int,
 ) -> None:
-
     root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
     docs, triplets = load_gold_triplets()
     data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
@@ -201,7 +199,6 @@ def run_triplet_extraction(
         template = value(examples=examples, task_description=get_introduction_text())
 
         for tweet in target_tweets:
-
             openai.api_key = openai_key
             response = openai.Completion.create(
                 model="text-davinci-002",
