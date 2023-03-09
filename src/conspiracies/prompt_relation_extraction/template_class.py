@@ -38,9 +38,18 @@ class PromptTemplate:
         if task_description:
             self.task_description = task_description
         else:
-            self.task_description = "Extract triplets on the form \
-(Subject - predicate - object) from the following tweet. \
-First, you will see a few examples."
+            self.default_task_descriptions = {
+                "non_xml": """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be put in a markdown table as shown below:""",  # noqa: E501
+                "xml": """Tag the following tweet with triplets using HTML tags.
+Semantic triplets consists of the elements subject, verb phrase and object. The verb phrase includes all particles and modifyers.
+There should always be exactly three elements in a triplet, no more no less.
+The subject is enclosed between <subject-n> and </subject-n>, the verb phrase between <predicate-n> and </predicate-n> and the object between <object-n> and </object-n>.
+n is the number of the triplet, starting at 1. Elements of one triplet can be contained within elements of another triplet.
+The triplets should be tagged in the tweet as shown below:""",  # noqa: E501
+            }
 
     @abstractmethod
     def create_prompt(self, target: str) -> str:
@@ -59,6 +68,15 @@ First, you will see a few examples."
 
 
 class PromptTemplate1(PromptTemplate):
+    def __init__(
+        self,
+        task_description: Optional[str] = None,
+        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
+    ):
+        super().__init__(task_description, examples)
+        if not task_description:
+            self.task_description = self.default_task_descriptions["non_xml"]
+
     def create_prompt(
         self,
         target: str = "",
@@ -142,6 +160,15 @@ class PromptTemplate1(PromptTemplate):
 
 
 class PromptTemplate2(PromptTemplate):
+    def __init__(
+        self,
+        task_description: Optional[str] = None,
+        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
+    ):
+        super().__init__(task_description, examples)
+        if not task_description:
+            self.task_description = self.default_task_descriptions["non_xml"]
+
     def create_prompt(
         self,
         target: str = "",
@@ -226,6 +253,15 @@ class PromptTemplate2(PromptTemplate):
 
 
 class MarkdownPromptTemplate1(PromptTemplate):
+    def __init__(
+        self,
+        task_description: Optional[str] = None,
+        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
+    ):
+        super().__init__(task_description, examples)
+        if not task_description:
+            self.task_description = self.default_task_descriptions["non_xml"]
+
     def create_prompt(
         self,
         target: str = "",
@@ -303,6 +339,15 @@ class MarkdownPromptTemplate1(PromptTemplate):
 
 
 class MarkdownPromptTemplate2(PromptTemplate):
+    def __init__(
+        self,
+        task_description: Optional[str] = None,
+        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
+    ):
+        super().__init__(task_description, examples)
+        if not task_description:
+            self.task_description = self.default_task_descriptions["non_xml"]
+
     def create_prompt(
         self,
         target: str = "",
@@ -401,6 +446,8 @@ class XMLStylePromptTemplate(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         self.tags = tags
+        if not task_description:
+            self.task_description = self.default_task_descriptions["xml"]
 
     @staticmethod
     def create_xml_example(doc: Doc, triplets: List[SpanTriplet]) -> str:
