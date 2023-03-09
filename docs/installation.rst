@@ -7,7 +7,15 @@ To get started using this package install it using pip by running the following 
    pip install conspiracies
 
 
-There is no discrepancy between the latest version installed using pip or the version on GitHub.
+There should be no discrepancy between the latest version installed using pip or the version on GitHub.
+
+To install dependencies for using the prompt relation extraction, run the following command:
+
+.. code-block:: bash
+
+   pip install conspiracies[openai]
+
+
 
 Development Installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^

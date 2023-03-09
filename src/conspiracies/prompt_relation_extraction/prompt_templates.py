@@ -5,9 +5,8 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
+from catalogue import registry
 from spacy.tokens import Doc
-
-from conspiracies.data import load_gold_triplets
 
 from .data_classes import SpanTriplet, StringTriplet
 
@@ -22,8 +21,8 @@ class PromptTemplate:
 
     def __init__(
         self,
+        examples: Tuple[List[Doc], List[List[SpanTriplet]]],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
         """
         Args:
@@ -31,10 +30,8 @@ class PromptTemplate:
             examples: A tuple of a spacy Docs and a corresponding list of their
                 triplets.
         """
-        if examples:
-            self.examples = examples
-        else:
-            self.examples = load_gold_triplets()
+
+        self.examples = examples
         if task_description:
             self.task_description = task_description
         else:
@@ -58,6 +55,7 @@ First, you will see a few examples."
         self.examples = examples
 
 
+@registry.prompt_templates("conspiracies/template_1")
 class PromptTemplate1(PromptTemplate):
     def create_prompt(
         self,
@@ -141,6 +139,7 @@ class PromptTemplate1(PromptTemplate):
         return triplets
 
 
+@registry.prompt_templates("conspiracies/template_2")
 class PromptTemplate2(PromptTemplate):
     def create_prompt(
         self,
@@ -225,6 +224,7 @@ class PromptTemplate2(PromptTemplate):
         return triplets
 
 
+@registry.prompt_templates("conspiracies/markdown_template_1")
 class MarkdownPromptTemplate1(PromptTemplate):
     def create_prompt(
         self,
@@ -302,6 +302,7 @@ class MarkdownPromptTemplate1(PromptTemplate):
         return triplets
 
 
+@registry.prompt_templates("conspiracies/markdown_template_2")
 class MarkdownPromptTemplate2(PromptTemplate):
     def create_prompt(
         self,
@@ -392,14 +393,15 @@ class MarkdownPromptTemplate2(PromptTemplate):
         return triplets
 
 
+@registry.prompt_templates("conspiracies/xml_style_template")
 class XMLStylePromptTemplate(PromptTemplate):
     def __init__(
         self,
+        examples: Tuple[List[Doc], List[List[SpanTriplet]]],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
         tags: List[str] = ["subject", "predicate", "object"],
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         self.tags = tags
 
     @staticmethod

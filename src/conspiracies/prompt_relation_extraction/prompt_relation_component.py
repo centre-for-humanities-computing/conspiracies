@@ -32,10 +32,14 @@ class PromptRelationExtractionComponent:
         """Initialise components."""
         self.name = name
         p_template = registry.prompt_templates.get(
+            "prompt_template",
             prompt_template,
-        )  # TODO set instance of prompt template
+        )
 
-        self.prompt_template = p_template(examples, task_descrtiption=task_descrtiption)
+        self.prompt_template = p_template(
+            task_descrtiption=task_descrtiption,
+            examples=examples,
+        )
 
         # create prompt function using the desired API
         self.prompt_fn = registry.prompt_apis.get(backend)(

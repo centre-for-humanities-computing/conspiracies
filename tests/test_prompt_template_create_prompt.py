@@ -1,19 +1,19 @@
 import pytest
+
 from conspiracies import (
-    PromptTemplate1,
-    PromptTemplate2,
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,
+    PromptTemplate1,
+    PromptTemplate2,
     XMLStylePromptTemplate,
 )
-from conspiracies.data import load_gold_triplets
+
+from .test_data.prompt_data import load_gold_triplets, test_tweet
 
 
 def get_examples_task_introduction():
-    docs, triplets = load_gold_triplets()
-    examples = (docs[:5], triplets[:5])
+    examples = load_gold_triplets()
     task_description = "This is a test task description"
-    test_tweet = "@user1: This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough."  # noqa: E501
     return examples, task_description, test_tweet
 
 
@@ -174,7 +174,7 @@ XMLStylePromptTemplate_expected_prompt = """This is a test task description
 """  # noqa: E501
 
 
-examples, task_description, test_tweet = get_examples_task_introduction()
+examples, task_description, test_tweet = get_examples_task_introduction()  # noqa
 
 
 @pytest.mark.parametrize(
