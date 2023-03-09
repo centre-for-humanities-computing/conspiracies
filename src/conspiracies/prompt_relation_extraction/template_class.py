@@ -37,23 +37,6 @@ class PromptTemplate:
             self.examples = load_gold_triplets()
         if task_description:
             self.task_description = task_description
-        else:
-            self.default_task_descriptions = {
-                "parentheses": """Extract semantic triplets from the following tweet. 
-The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
-There should always be exactly three elements in a triplet, no more no less. 
-They should be presented with each element in parentheses as shown below:""",  # noqa: E501
-                "markdown": """Extract semantic triplets from the following tweet. 
-The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
-There should always be exactly three elements in a triplet, no more no less. 
-They should be put in a markdown table as shown below:""",  # noqa: E501
-                "xml": """Tag the following tweet with triplets using HTML tags.
-Semantic triplets consists of the elements subject, verb phrase and object. The verb phrase includes all particles and modifyers.
-There should always be exactly three elements in a triplet, no more no less.
-The subject is enclosed between <subject-n> and </subject-n>, the verb phrase between <predicate-n> and </predicate-n> and the object between <object-n> and </object-n>.
-n is the number of the triplet, starting at 1. Elements of one triplet can be contained within elements of another triplet.
-The triplets should be tagged in the tweet as shown below:""",  # noqa: E501
-            }
 
     @abstractmethod
     def create_prompt(self, target: str) -> str:
@@ -79,7 +62,10 @@ class PromptTemplate1(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["parentheses"]
+            self.task_description = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be presented with each element in parentheses as shown below:"""  # noqa: E501
 
     def create_prompt(
         self,
@@ -171,7 +157,10 @@ class PromptTemplate2(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["parentheses"]
+            self.task_description = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be presented with each element in parentheses as shown below:"""  # noqa: E501
 
     def create_prompt(
         self,
@@ -264,7 +253,10 @@ class MarkdownPromptTemplate1(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["markdown"]
+            self.task_description = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be put in a markdown table as shown below:"""  # noqa: E501
 
     def create_prompt(
         self,
@@ -350,7 +342,10 @@ class MarkdownPromptTemplate2(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["markdown"]
+            self.task_description = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be put in a markdown table as shown below:"""  # noqa: E501
 
     def create_prompt(
         self,
@@ -451,7 +446,12 @@ class XMLStylePromptTemplate(PromptTemplate):
         super().__init__(task_description, examples)
         self.tags = tags
         if not task_description:
-            self.task_description = self.default_task_descriptions["xml"]
+            self.task_description = """Tag the following tweet with triplets using HTML tags.
+Semantic triplets consists of the elements subject, verb phrase and object. The verb phrase includes all particles and modifyers.
+There should always be exactly three elements in a triplet, no more no less.
+The subject is enclosed between <subject-n> and </subject-n>, the verb phrase between <predicate-n> and </predicate-n> and the object between <object-n> and </object-n>.
+n is the number of the triplet, starting at 1. Elements of one triplet can be contained within elements of another triplet.
+The triplets should be tagged in the tweet as shown below:"""  # noqa: E501
 
     @staticmethod
     def create_xml_example(doc: Doc, triplets: List[SpanTriplet]) -> str:
