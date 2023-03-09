@@ -84,8 +84,8 @@ def extract_spacy_examples(
     # Manually create copy since spacy spans cannot be deepcopied
     example_dicts = [{"doc": d["doc"], "triplets": d["triplets"]} for d in examples]
 
-    target_list = []
-    example_list = []
+    target_list: List[dict] = []
+    example_list: List[dict] = []
     for c in range(cv):
         criteria_keys = {
             "has_multiple_triplets": has_multiple_triplets,
@@ -97,11 +97,13 @@ def extract_spacy_examples(
             "has_multi_word_obj": has_multi_word_obj,
         }
         extracted_targets, extracted_examples = criteria_sampling(
-            criteria_keys, n_target, example_dicts
+            criteria_keys,
+            n_target,
+            example_dicts,
         )
         example_list.append(
             [ex for prev_target in target_list for ex in prev_target]
-            + extracted_examples
+            + extracted_examples,
         )
         target_list.append(extracted_targets)
 

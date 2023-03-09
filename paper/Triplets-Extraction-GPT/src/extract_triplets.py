@@ -1,66 +1,121 @@
-"""Main script for extracting triplets using GPT3."""
-
 import os
 import openai
-import json
-import spacy
 import random
-from extract import extract_examples, extract_spacy_examples
+import argparse
+from extract import extract_spacy_examples
 
 from conspiracies.prompt_relation_extraction.template_class import (
     PromptTemplate1,
     PromptTemplate2,
-    PromptTemplate3,
-    PromptTemplate4,
-    PromptTemplate5,
+    MarkdownPromptTemplate1,
+    MarkdownPromptTemplate2,
+    XMLStylePromptTemplate,
 )
 from conspiracies.data import load_gold_triplets
 from typing import List, Optional, Tuple
-import argparse
-from utils import get_introduction_text, get_paths
-from conspiracies import docs_from_jsonl, docs_to_jsonl, parse
+from spacy.tokens import Doc
+from conspiracies.prompt_relation_extraction.data_classes import SpanTriplet
 
 
-def create_list_dics(tweet: str, triplets: Optional[List[list]]) -> dict:
-    """Takes a tweet and associated triplets (if any is given) and combines to
-    a dict.
+def get_paths(machine: str, get_openai_key: Optional[bool] = False):
+    """Returns appropriate path depending on machine.
 
     Args:
-        tweet (str): the tweet from wich triplets are extracted
-        triplets (Optional[List[list]]): list of list(s) of triplets OR None if no triplets are in the tweet
-
+        machine (str): current machine. Specialized to 'grundtvig' or 'ucloud'
+        get_openai_key (bool, optional): Whether or not to return the open ai key. Defaults to False.
     Returns:
-        dict: a dictionary with the tweet and the triplets on the form
-            {"tweet": tweet,
-            "triplets": List[list] | None}
+        root_path (str): path to where data is stored
+        prediction_path (str): path to where predictions should be saved
+        openai_key (str, optional): the key for accessing open ai. Only returned if get_openai_key is True
     """
-    result = {}
-    result["tweet"] = tweet
-    result["triplets"] = triplets
-    return result
+    if machine == "grundtvig":
+        root_path = os.path.join("/data", "conspiracies", "triplet-extraction-gpt")
+        prediction_path = os.path.join(
+            "/home",
+            os.getlogin(),
+            "data",
+            "predictions",
+        )
+        with open(os.path.join("/home", os.getlogin(), "openai_API_key.txt")) as f:
+            openai_key = f.read()
+
+    elif machine == "ucloud":
+        root_path = os.path.join(
+            "/work",
+            "conspiracies",
+            "data",
+            "triplet-extraction-gpt",
+        )
+        prediction_path = os.path.join(root_path, "predictions")
+        with open(os.path.join("/work", "conspiracies", "openai_API_key.txt")) as f:
+            openai_key = f.read()
+
+    else:
+        root_path = os.getcwd()
+        openai_key = "key"
+        prediction_path = root_path
+        print(
+            f'Invalid machine, using current path ({root_path}) and the openai key "{openai_key}"',
+        )
+
+    if get_openai_key:
+        return root_path, prediction_path, openai_key
+    else:
+        return root_path, prediction_path
+
+
+def get_introduction_text(html_tagged: Optional[bool] = False) -> str:
+    if html_tagged:
+        text = """Tag the following tweet with triplets using HTML tags.
+Semantic triplets consists of the elements subject, verb phrase and object. The verb phrase includes all particles and modifyers.
+There should always be exactly three elements in a triplet, no more no less.
+The subject is enclosed between <subject-n> and </subject-n>, the verb phrase between <predicate-n> and </predicate-n> and the object between <object-n> and </object-n>.
+n is the number of the triplet, starting at 1. Elements of one triplet can be contained within elements of another triplet.
+The triplets should be tagged in the tweet as shown below:"""
+    else:
+        text = """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be put in a markdown table as shown below:"""
+    return text
 
 
 def get_prompt_functions(templates: Optional[List[int]] = None):
-    """Returns a dictionary with specified prompt template functions. If no
-    templates is specified, all available are returned.
+    """Returns a dictionary with specified prompt template functions.
 
+    If no
+    templates is specified, all available are returned.
     Args:
         templates (List[int], optional): templates to include in the dict
-
     Returns:
         template_dicts (dict): dictionary with string of template name as key and the function as value
     """
     template_dicts = {
         "template1": PromptTemplate1,
         "template2": PromptTemplate2,
-        "template3": PromptTemplate3,
-        "template4": PromptTemplate4,
-        "template5": PromptTemplate5,
+        "template3": MarkdownPromptTemplate1,
+        "template4": MarkdownPromptTemplate2,
+        "template5": XMLStylePromptTemplate,
     }
     if templates is None:
         return template_dicts
     else:
         return {f"template{i}": template_dicts[f"template{i}"] for i in templates}
+
+
+def return_example_tuple(
+    examples: List[dict],
+) -> Tuple[List[Doc], List[List[SpanTriplet]]]:
+    """Returns a tuple of example tweets and their corresponding triplets
+    Args:
+        examples (List[dict]): list of dictionaries with tweet and triplets
+    Returns:
+        example_tweets (List[str]): list of example tweets
+        example_triplets (List[List[str]]): list of example triplets
+    """
+    example_tweets = [tweet["doc"] for tweet in examples]
+    example_triplets = [tweet["triplets"] for tweet in examples]
+    return example_tweets, example_triplets
 
 
 def run_triplet_extraction2(
@@ -69,34 +124,33 @@ def run_triplet_extraction2(
     templates: List[int],
     openai_key: str,
     iteration: int,
-) -> List[str]:
-
+) -> None:
     root_path, prediction_path = get_paths(machine)
     targets, examples = data
+    example_tweets, example_triplets = return_example_tuple(examples)
 
-    docs_to_jsonl(
-        [tweet["doc"] for tweet in examples],
-        [tweet["triplets"] for tweet in examples],
-        os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"),
-    )
+    # docs_to_jsonl(
+    #     example_tweets,
+    #     example_triplets,
+    #     os.path.join(prediction_path, f"spacy_examples_set_{iteration}.json"),
+    # )
     dict_functions = get_prompt_functions(templates)
     for key, value in dict_functions.items():
         print(f"Prompting using {key}\n")
         gpt_outputs = []
         html_tagged = True if key == "template5" else False
         template = value(
-            examples=examples,
+            examples=return_example_tuple(examples),
             task_description=get_introduction_text(html_tagged=html_tagged),
         )
 
-        print(template.generate_prompt(targets[0]["doc"].text))
         while True:
             try:
                 for tweet in targets:
                     openai.api_key = openai_key
                     response = openai.Completion.create(
                         model="text-davinci-002",
-                        prompt=template.generate_prompt(tweet["doc"].text),
+                        prompt=template.create_prompt(tweet["doc"].text),
                         temperature=0.7,
                         max_tokens=500,
                     )
@@ -106,14 +160,14 @@ def run_triplet_extraction2(
             except openai.error.InvalidRequestError:
                 examples.pop(random.randrange(len(examples)))
                 print(f"Too many examples, trying {len(examples)} examples")
-                template.set_examples(examples)
+                template.set_examples(return_example_tuple(examples))
                 continue
 
-        docs_to_jsonl(
-            [target["doc"] for target in targets],
-            [parse(pred) for pred in gpt_outputs],
-            os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"),
-        )
+        # docs_to_jsonl(
+        #     [target["doc"] for target in targets],
+        #     [parse(pred) for pred in gpt_outputs],
+        #     os.path.join(prediction_path, f"{key}_gpt_spacy_{iteration}.json"),
+        # )
 
 
 def main2(
@@ -122,7 +176,6 @@ def main2(
     templates: List[int],
     iterations: int,
 ) -> None:
-
     root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
     docs, triplets = load_gold_triplets()
     data = [{"doc": doc, "triplets": triplets} for doc, triplets in zip(docs, triplets)]
@@ -135,6 +188,10 @@ def main2(
 
     # targets and examples will contain cross-validated extracted examples
     targets, examples = extract_spacy_examples(data, n_target, iterations)
+    # print("Targets and examples extracted")
+    # print(type(targets[0][0]))
+    # print(targets[0])
+    # print(type(examples[0][0]))
 
     for i in range(iterations):
         print(f"Iteration {i}")
@@ -145,151 +202,6 @@ def main2(
             openai_key,
             i,
         )
-
-
-def run_triplet_extraction(
-    data: List[dict],
-    machine: str,
-    n_tweets: int,
-    dict_functions: dict,
-    openai_key: str,
-    iteration: int,
-    prev_target_tweets: Optional[List[str]] = None,
-) -> List[str]:
-    """Runs one iteration of triplet extraction given a set of example tweets
-    Writes example set with the iteration number and file with prompt outpus to
-    the prediction_path.
-
-    Args:
-        data (List[dict]): list of dicts containing tweets and tagged triplets
-        machine (str): current machine - are you on ucloud or grundtvig?
-        n_tweets (int): number of tweets to use as examples. The rest will be used as target tweets
-        dict_functions (dict): dictionary with template extraction functions to use
-        openai_key (str): key to accessing openai API
-        iteration (int): current iteration number
-
-    Returns:
-        target_tweets (List[str]): list of the tweets used as target/validation tweets
-    """
-    print(f"Running function with {n_tweets} tweets")
-
-    root_path, prediction_path = get_paths(machine)
-
-    examples, target_tweets = extract_examples(data, n_tweets, prev_target_tweets)
-
-    examples_set = []
-    for tweet, triplet in examples:
-        examples_dict = create_list_dics(tweet, triplet)
-        examples_set.append(examples_dict)
-
-    examples_json = json.dumps(examples_set, ensure_ascii=False, indent=2)
-
-    with open(
-        os.path.join(
-            prediction_path,
-            f"examples_set_{iteration}.json",
-        ),
-        "w",
-    ) as outfile:
-        outfile.write(examples_json)
-
-    for key, value in dict_functions.items():
-        print(f"Prompting using {key}\n")
-
-        gpt_outputs = []
-        # Creating an instance of the template class
-        template = value(examples=examples, task_description=get_introduction_text())
-
-        for tweet in target_tweets:
-
-            openai.api_key = openai_key
-            response = openai.Completion.create(
-                model="text-davinci-002",
-                prompt=template.generate_prompt(tweet),
-                temperature=0.7,
-                max_tokens=500,
-            )
-
-            result = create_list_dics(tweet, response["choices"][0]["text"])
-            gpt_outputs.append(result)
-        outputs_json = json.dumps(gpt_outputs, ensure_ascii=False, indent=2)
-
-        with open(
-            os.path.join(
-                prediction_path,
-                f"{key}_gpt_outputs_{iteration}.json",
-            ),
-            "w",
-        ) as outfile:
-            outfile.write(outputs_json)
-    return target_tweets
-
-
-def main(
-    machine: str,
-    n_tweets: int,
-    templates: List[int],
-    iterations: int,
-) -> None:
-    """Runs iterations iterations of the triplet extraction. Uses all templates
-    specified. Tries to use n_tweets example tweets, but decreases number if
-    that means prompt becomes too long.
-
-    Args:
-        machine (str): current machine - are you on ucloud or grundtvig?
-        n_tweets (int): number of tweets to use as examples
-        templates (List[int]): list of template number to use
-        iterations (int): number of iterations for each template
-
-    Returns:
-        None
-    """
-
-    # Preparing paths, files and folders
-    root_path, prediction_path, openai_key = get_paths(machine, get_openai_key=True)
-
-    with open(
-        os.path.join(root_path, "tagged", "tagged_tweets_with_features.json"),
-        "r",
-        encoding="utf8",
-    ) as f:
-        data = json.load(f)
-
-    dict_functions = get_prompt_functions(templates)
-
-    # Looping over triplet extraction, exception for too long prompt decreases n example tweets
-    prev_target_tweets = None
-    for i in range(iterations):
-        print(f"Iteration {i+1}")
-
-        while True:
-            try:
-                if not prev_target_tweets:
-                    print("Prev target tweets is none")
-                    prev_target_tweets = run_triplet_extraction(
-                        data,
-                        machine,
-                        n_tweets,
-                        dict_functions,
-                        openai_key,
-                        i,
-                        prev_target_tweets,
-                    )
-                else:
-                    new_target_tweets = run_triplet_extraction(
-                        data,
-                        machine,
-                        n_tweets,
-                        dict_functions,
-                        openai_key,
-                        i,
-                        prev_target_tweets,
-                    )
-                    prev_target_tweets += new_target_tweets
-                break
-            except openai.error.InvalidRequestError:
-                n_tweets -= 1
-                continue
 
 
 if __name__ == "__main__":

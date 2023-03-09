@@ -23,6 +23,7 @@ def find_tweet_in_list_of_dicts(
     for d in dict_list:
         if d[key] == tweet:
             return d
+    return {}
 
 
 def get_paths(machine: str, get_openai_key: Optional[bool] = False):
