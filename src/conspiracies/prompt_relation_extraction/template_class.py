@@ -39,7 +39,11 @@ class PromptTemplate:
             self.task_description = task_description
         else:
             self.default_task_descriptions = {
-                "non_xml": """Extract semantic triplets from the following tweet. 
+                "parentheses": """Extract semantic triplets from the following tweet. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less. 
+They should be presented with each element in parentheses as shown below:""",  # noqa: E501
+                "markdown": """Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
 There should always be exactly three elements in a triplet, no more no less. 
 They should be put in a markdown table as shown below:""",  # noqa: E501
@@ -75,7 +79,7 @@ class PromptTemplate1(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["non_xml"]
+            self.task_description = self.default_task_descriptions["parentheses"]
 
     def create_prompt(
         self,
@@ -167,7 +171,7 @@ class PromptTemplate2(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["non_xml"]
+            self.task_description = self.default_task_descriptions["parentheses"]
 
     def create_prompt(
         self,
@@ -260,7 +264,7 @@ class MarkdownPromptTemplate1(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["non_xml"]
+            self.task_description = self.default_task_descriptions["markdown"]
 
     def create_prompt(
         self,
@@ -346,7 +350,7 @@ class MarkdownPromptTemplate2(PromptTemplate):
     ):
         super().__init__(task_description, examples)
         if not task_description:
-            self.task_description = self.default_task_descriptions["non_xml"]
+            self.task_description = self.default_task_descriptions["markdown"]
 
     def create_prompt(
         self,
