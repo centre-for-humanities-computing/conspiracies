@@ -7,7 +7,10 @@ registry.prompt_templates = catalogue.create(  # type: ignore
 )
 # a prompt template class object
 
-split_doc_functions = catalogue.create("conspiracies", "split_functions")
+registry.split_doc_functions = catalogue.create(  # type: ignore
+    "conspiracies",
+    "split_functions",
+)
 # split functions:
 # Callable[[Doc], List[Span]]
 

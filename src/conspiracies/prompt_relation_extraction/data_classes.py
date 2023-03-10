@@ -3,7 +3,7 @@ models."""
 
 from copy import copy
 from functools import partial
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Tuple, Union
 
 import spacy
 from pydantic import BaseModel, Extra
@@ -657,6 +657,9 @@ class DocTriplets(BaseModel):
             if span_triplet is not None:
                 span_triplets.append(span_triplet)
         return DocTriplets(span_triplets=span_triplets)
+
+    def __iter__(self) -> Iterator[SpanTriplet]:  # type: ignore
+        return iter(self.span_triplets)
 
     def __add__(self, other: Union["DocTriplets", "SpanTriplet"]) -> "DocTriplets":
         if self.doc != other.doc:

@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 from confection import registry
-from conspiracies import SpanTriplet
+from conspiracies import SpanTriplet, StringTriplet
 from spacy.language import Language
 
 from .test_prompt_template_parse_prompt import (
@@ -29,11 +29,15 @@ def test_prompt_relation_extraction(
     nlp_da: Language,  # noqa F811
     sample_thread: str,
     api_response: str,
-    expected_triplets: List[SpanTriplet],
+    expected_triplets: List[StringTriplet],
 ):
     nlp = nlp_da
+    expected_span_triplets = [
+        SpanTriplet.from_doc(triplet, nlp(sample_thread))
+        for triplet in expected_triplets
+    ]
 
-    @registry.prompt_apis.register("conspiracies", "test_api")
+    @registry.prompt_apis.register("test_api")
     def create_test_api(prompt_template, api_key, model_name, api_kwargs):
         """a test api for testing purposes.
 
@@ -59,15 +63,14 @@ def test_prompt_relation_extraction(
             "top_p": 1,
             "frequency_penalty": 0,
             "presence_penalty": 0,
-            "stop": ["\n", "Tweet:"],
         },
         "force": True,
     }
-    nlp.add_pipe("prompt_relation_extraction", config=config)
+    nlp.add_pipe("conspiracies/prompt_relation_extraction", config=config)
 
     doc = nlp(sample_thread)
 
-    assert doc._.prompt_relation_extraction is not None
-    for triplet in doc._.relations_triplets:
+    assert doc._.relation_triplets is not None
+    for triplet in doc._.relation_triplets:
         assert isinstance(triplet, SpanTriplet)
-        triplet in expected_triplets
+        triplet in expected_span_triplets

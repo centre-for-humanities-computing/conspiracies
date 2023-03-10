@@ -4,11 +4,11 @@ extraction."""
 
 from typing import Any, Dict, List, Optional
 
-from catalogue import registry
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from .data_classes import SpanTriplet
+from ..registry import registry
+from .data_classes import DocTriplets, SpanTriplet
 
 
 class PromptRelationExtractionComponent:
@@ -21,7 +21,7 @@ class PromptRelationExtractionComponent:
         name: str,
         prompt_template: str,
         examples: Optional[List[List[SpanTriplet]]],
-        task_descrtiption: Optional[str],
+        task_description: Optional[str],
         model_name: str,
         backend: str,
         api_key: str,
@@ -31,18 +31,16 @@ class PromptRelationExtractionComponent:
     ):
         """Initialise components."""
         self.name = name
-        p_template = registry.prompt_templates.get(
-            "prompt_template",
-            prompt_template,
-        )
+        self.nlp = nlp
+        p_template = registry.get("prompt_templates", prompt_template)
 
         self.prompt_template = p_template(
-            task_descrtiption=task_descrtiption,
+            task_description=task_description,
             examples=examples,
         )
 
         # create prompt function using the desired API
-        self.prompt_fn = registry.prompt_apis.get(backend)(
+        self.prompt_fn = registry.get("prompt_apis", backend)(
             self.prompt_template,
             api_key,
             model_name,
@@ -53,12 +51,12 @@ class PromptRelationExtractionComponent:
         self.api_key = api_key
         self.api_kwargs = api_kwargs
         if split_doc_fn is not None:
-            self.split_doc_fn = registry.split_doc_functions.get(split_doc_fn)()
+            self.split_doc_fn = registry.get("split_doc_functions", split_doc_fn)()
         else:
             self.split_doc_fn = None
 
-        if not Doc.has_extension("relation_triplet") or force:
-            Doc.set_extension("relation_triplet", default=None, force=force)
+        if not Doc.has_extension("relation_triplets") or force:
+            Doc.set_extension("relation_triplets", default=None, force=force)
 
     def combine_docs(self, docs: List[Doc]) -> Doc:
         """Combine a list of docs into a single doc."""
@@ -68,10 +66,16 @@ class PromptRelationExtractionComponent:
         """Set the annotation on the doc."""
         spantriplets = []
         for doc_span, prompt in zip(docs, prompt_outputs):
-            triplets = self.prompt_template.prompt_output_to_span_triplet(prompt)
+            triplets = self.prompt_template.parse_prompt(
+                prompt,
+                target_tweet=doc_span.text,
+            )
             spantriplets.extend(triplets)
 
-        doc._.relation_triplet = spantriplets
+        doc._.relation_triplets = DocTriplets.doc_triplet_from_str_triplets(
+            doc,
+            spantriplets,
+        )
         return doc
 
     def __call__(self, doc: Doc):
@@ -89,7 +93,7 @@ class PromptRelationExtractionComponent:
 
 
 @Language.factory(
-    "prompt_relation_extraction",
+    "conspiracies/prompt_relation_extraction",
     default_config={
         "prompt_template": "conspiracies/template1",
         "examples": None,
@@ -97,13 +101,13 @@ class PromptRelationExtractionComponent:
         "model_name": "text-davinci-002",
         "backend": "conspiracies/openai_api",
         "api_key": str,
+        "split_doc_fn": None,
         "api_kwargs": {
             "max_tokens": 500,
             "temperature": 0.7,
             "top_p": 1,
             "frequency_penalty": 0,
             "presence_penalty": 0,
-            "stop": ["\n", "Tweet:"],
         },
         "force": True,
     },
@@ -122,7 +126,7 @@ def create_prompt_relation_extraction_component(
     force: bool,
 ) -> PromptRelationExtractionComponent:
     """Allows PromptRelationExtractionComponent to be added to a spaCy pipe
-    using nlp.add_pipe("prompt_relation_extraction").
+    using nlp.add_pipe("conspiracies/prompt_relation_extraction").
 
     Args:
         nlp (Language): A spaCy Language object.
@@ -152,7 +156,7 @@ def create_prompt_relation_extraction_component(
         ...           "examples": None,
         ...           "task_description": None,
         ...           "force": True}
-        >>> nlp.add_pipe("prompt_relation_extraction", config=config)
+        >>> nlp.add_pipe("conspiracies/prompt_relation_extraction", config=config)
         >>> doc = nlp("This is a test document.")
         >>> doc._.relation_triplet
     """
@@ -162,7 +166,7 @@ def create_prompt_relation_extraction_component(
         name=name,
         prompt_template=prompt_template,
         examples=examples,
-        task_descrtiption=task_description,
+        task_description=task_description,
         model_name=model_name,
         backend=backend,
         api_key=api_key,
