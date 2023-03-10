@@ -1,10 +1,9 @@
 from typing import List
 
 import pytest
-from catalogue import registry
-from spacy.language import Language
-
+from confection import registry
 from conspiracies import SpanTriplet
+from spacy.language import Language
 
 from .test_prompt_template_parse_prompt import (
     MarkdownPromptTemplate1_expected_response,
@@ -24,7 +23,7 @@ expected_triplets = [MarkdownPromptTemplate1_expected_triplets]
 
 @pytest.mark.parametrize(
     "sample_thread, api_response, expected_triplets",
-    list(*zip(sample_threads, api_responses, expected_triplets)),
+    list(zip(sample_threads, api_responses, expected_triplets)),
 )
 def test_prompt_relation_extraction(
     nlp_da: Language,  # noqa F811

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from catalogue import registry
+from confection import registry
 from spacy.tokens import Doc
 
 from .data_classes import SpanTriplet, StringTriplet

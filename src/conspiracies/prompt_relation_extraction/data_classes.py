@@ -103,6 +103,20 @@ class StringTriplet(BaseModel):
     def has_ranges(self) -> bool:
         return all(r is not None for r in self.char_spans)
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, StringTriplet):
+            if self.has_ranges() and other.has_ranges():
+                has_same_char_span = self.char_spans == other.char_spans
+            else:
+                has_same_char_span = True
+
+            return (
+                self.triplet == other.triplet
+                and self.text == other.text
+                and has_same_char_span
+            )
+        return False
+
 
 class SpanTriplet(BaseModel):
     """A class for a semantic triplet with spans.

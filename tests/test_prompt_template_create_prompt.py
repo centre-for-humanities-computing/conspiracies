@@ -1,5 +1,4 @@
 import pytest
-
 from conspiracies import (
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,
@@ -12,9 +11,9 @@ from .test_data.prompt_data import load_gold_triplets, test_tweet
 
 
 def get_examples_task_introduction():
-    examples = load_gold_triplets()
     task_description = "This is a test task description"
-    return examples, task_description, test_tweet
+    gold_triplets = load_gold_triplets()
+    return gold_triplets, task_description, test_tweet
 
 
 PromptTemplate1_expected_prompt = """This is a test task description

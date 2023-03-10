@@ -1,5 +1,5 @@
 import catalogue
-from catalogue import registry
+from confection import registry
 
 registry.prompt_templates = catalogue.create(  # type: ignore
     "conspiracies",
