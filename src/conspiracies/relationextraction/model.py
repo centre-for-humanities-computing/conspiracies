@@ -174,7 +174,6 @@ class Multi2OIE(nn.Module):
         total_pred_labels=None,
         arg_labels=None,
     ):
-
         # predicate extraction
         bert_hidden = self.bert(input_ids, attention_mask)[0]
         pred_logit = self.pred_classifier(self.pred_dropout(bert_hidden))
@@ -280,7 +279,6 @@ class BERTBiLSTM(nn.Module):
         total_pred_labels=None,
         arg_labels=None,
     ):
-
         # predicate extraction
         bert_hidden = self.bert(input_ids, attention_mask)[0]
         pred_logit = self.pred_classifier(self.pred_dropout(bert_hidden))
