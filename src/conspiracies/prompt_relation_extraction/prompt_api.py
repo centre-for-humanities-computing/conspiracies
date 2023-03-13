@@ -4,6 +4,7 @@ from catalogue import registry
 
 import random
 
+
 @registry.prompt_apis.register("conspiracies/openai_api")
 def create_openai_prompt_api(
     prompt_template,  # TODO: add type hint PromptTemplate
@@ -26,7 +27,7 @@ def create_openai_prompt_api(
                     **api_kwargs,
                 )
                 return response
-            
+
             except openai.error.InvalidRequestError:
                 # Randomly select an example to drop
                 current_examples = prompt_template.examples
