@@ -170,7 +170,7 @@ def load_gold_triplets() -> Tuple[List[Doc], List[List[SpanTriplet]]]:
 example_tweet_1 = "@Politician1: @minister @journalist @Politician1 er uenig i det I siger. Man kan ikke bare gøre hvad der passer en. Almindelig sund fornuft er det eneste @Politician1 forlanger."  # noqa: E501
 example_tweet_2 = "@minister: @minister skriver her en kort kommentar en kort kommentar skyder med skarpt på @Politician1."  # noqa: E501
 example_tweet_3 = "@almindelig123: At blande sig i debatten er ikke en god idé. Nogle gange er det bedre at holde sig for sig selv. Men sådan er det, det er der ikke noget at gøre ved."  # noqa: E501
-example_tweet_4 = """@fagperson: @Politician1 @minister @journalist Som fagperson vil @fagperson gerne understrege at mine inputs burde fylde mere.
+example_tweet_4 = """@fagperson: @Politician1 @minister @journalist Som fagperson vil @fagperson gerne understrege at mine inputs burde fylde mere. 
 Det er vigtigt at lytte til hvad @fagperson siger, og I er alle myndighedspersoner der burde vægte sådanne faglige indspark ekstra højt."""  # noqa: E501
 example_tweet_5 = "@minister: @minister lytter til @fagperson og @almindelig123. @minister er enig med dem. Solid argumentation har overbevist mig om at flertallet nok har ret."  # noqa: E501
 
