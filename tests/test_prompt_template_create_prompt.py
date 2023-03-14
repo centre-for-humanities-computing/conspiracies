@@ -8,20 +8,20 @@ from conspiracies import (
 )
 
 from .test_data.prompt_data import (
-    test_tweet,
-    load_examples,
-    PromptTemplate2_expected_prompt,
-    PromptTemplate1_expected_prompt,
     MarkdownPromptTemplate1_expected_prompt,
     MarkdownPromptTemplate2_expected_prompt,
+    PromptTemplate1_expected_prompt,
+    PromptTemplate2_expected_prompt,
     XMLStylePromptTemplate_expected_prompt,
+    load_examples,
+    test_tweet,
 )
 
 
 def get_examples_task_introduction():
     task_description = "This is a test task description"
-    examples, triplets = load_examples()
-    return (examples, triplets), task_description, test_tweet
+    examples = load_examples()
+    return examples, task_description, test_tweet
 
 
 examples, task_description, test_tweet = get_examples_task_introduction()  # noqa

@@ -21,7 +21,7 @@ class PromptTemplate:
 
     def __init__(
         self,
-        examples: Tuple[List[Doc], List[List[SpanTriplet]]],
+        examples: List[Doc],
         task_description: Optional[str] = None,
     ):
         """
@@ -50,7 +50,7 @@ First, you will see a few examples."
         """Parse a prompt into a target tweet and triplets."""
         pass
 
-    def set_examples(self, examples: Tuple[List[Doc], List[List[SpanTriplet]]]):
+    def set_examples(self, examples: List[Doc]):
         """Updates examples."""
         self.examples = examples
 
@@ -79,7 +79,8 @@ class PromptTemplate1(PromptTemplate):
             target: The tweet to be annotated.
         """
         examples_str = "---\n\n"
-        for tweet, triplets in zip(*self.examples):
+        for tweet in self.examples:
+            triplets = tweet._.relation_triplets
             examples_str += f"Tweet: {tweet.text}\n"
 
             if len(triplets) == 0:
@@ -162,8 +163,8 @@ class PromptTemplate2(PromptTemplate):
         '''
         """
         tweets_block = "---\n\n"
-        tweets, tweet_triplets = self.examples
-
+        tweets = self.examples
+        tweet_triplets = [tweet._.relation_triplets for tweet in tweets]
         for tweet in tweets:
             tweets_block += f"Tweet: {tweet.text}\n\n"
 
@@ -246,7 +247,8 @@ class MarkdownPromptTemplate1(PromptTemplate):
         ```
         """
         tweet_string = f"{self.task_description}\n| Tweet | Subject | Predicate | Object |\n| --- | --- | --- | --- |"  # noqa: E501
-        for example, triplets in zip(*self.examples):
+        for example in self.examples:
+            triplets = example._.relation_triplets
             if len(triplets) == 0:
                 tweet_string += f"\n| {example} | | | |"
                 continue
@@ -337,7 +339,8 @@ class MarkdownPromptTemplate2(PromptTemplate):
         header = "| Subject | Predicate | Object |\n| --- | --- | --- |"
 
         tweet_string = f"{self.task_description}\n\n"
-        for example, triplets in zip(*self.examples):
+        for example in self.examples:
+            triplets = example._.relation_triplets
             tweet_string += example.text + "\n\n" + header
             if len(triplets) == 0:
                 tweet_string += "\n\n"
@@ -397,7 +400,7 @@ class MarkdownPromptTemplate2(PromptTemplate):
 class XMLStylePromptTemplate(PromptTemplate):
     def __init__(
         self,
-        examples: Tuple[List[Doc], List[List[SpanTriplet]]],
+        examples: List[Doc],
         task_description: Optional[str] = None,
         tags: List[str] = ["subject", "predicate", "object"],
     ):
@@ -458,10 +461,8 @@ class XMLStylePromptTemplate(PromptTemplate):
         {target tweet}
         """
         prompt = f"{self.task_description}\n\n"
-        for (
-            doc,
-            triplets,
-        ) in zip(*self.examples):
+        for doc in self.examples:
+            triplets = doc._.relation_triplets
             prompt += doc.text + "\n" + self.create_xml_example(doc, triplets) + "\n\n"
 
         if target:

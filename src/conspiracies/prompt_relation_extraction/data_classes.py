@@ -2,8 +2,20 @@
 models."""
 
 from copy import copy
+from difflib import SequenceMatcher
 from functools import partial
-from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import spacy
 from pydantic import BaseModel, Extra
@@ -116,6 +128,12 @@ class StringTriplet(BaseModel):
                 and has_same_char_span
             )
         return False
+
+
+def _lcs_size(a: Sequence, b: Sequence) -> int:
+    """Return the size of the longest common subsequence."""
+    s = SequenceMatcher(None, a, b)
+    return s.find_longest_match().size
 
 
 class SpanTriplet(BaseModel):
@@ -625,6 +643,50 @@ class SpanTriplet(BaseModel):
                 return span_triplet
         return span_triplet_from(triplet, doc, lowercase=lowercase)  # type: ignore
 
+    def normalized_span_overlap(self, other: "SpanTriplet") -> float:
+        """Calculates the normalized span overlap between two span triplets.
+        This is defined as:
+
+        $$
+        \frac{\sum_{i=1}^3 \text{overlap}(s_i, o_i)}{\sum_{i=1}^3 \text{length}(s_i)}
+        $$
+        where $\text{overlap}(s_i, o_i)$ is the length of the longest common
+        subsequence between the spans $s_i$ and $o_i$.
+
+        Args:
+            other: The other span triplet.
+
+        Returns:
+            The normalized span overlap between the two span triplets. The normalized
+                is normalized between 0 and 1.
+        """
+        return sum(
+            _lcs_size(s_t, o_t) for s_t, o_t in zip(self.triplet, other.triplet)
+        ) / sum(len(t) for t in self.triplet)
+
+    def normalized_char_overlap(self, other: "SpanTriplet") -> float:
+        """Calculates the normalized span overlap between two span triplets.
+        This is defined as:
+
+        $$
+        \frac{\sum_{i=1}^3 \text{overlap}(s_i, o_i)}{\sum_{i=1}^3 \text{length}(s_i)}
+        $$
+        where $\text{overlap}(s_i, o_i)$ is the length of the longest common
+        subsequence between the text of $s_i$ and $o_i$.
+
+        Args:
+            other: The other span triplet.
+
+        Returns:
+            The normalized span overlap between the two span triplets. The normalized
+                is normalized between 0 and 1.
+        """
+
+        return sum(
+            _lcs_size(s_t.text, o_t.text)
+            for s_t, o_t in zip(self.triplet, other.triplet)
+        ) / sum(len(t) for t in self.triplet)
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, SpanTriplet):
             return False
@@ -657,6 +719,73 @@ class DocTriplets(BaseModel):
             if span_triplet is not None:
                 span_triplets.append(span_triplet)
         return DocTriplets(span_triplets=span_triplets)
+
+    def score_relations(self, reference: "DocTriplets") -> Dict[str, Any]:
+        """Score the relations of the doctriplet against the relations of the
+        current doctriplet."""
+        self_relations = list(self)
+        reference_relations = list(reference)
+        self_relations.sort(key=lambda x: x.subject.text)
+        reference_relations.sort(key=lambda x: x.subject.text)
+
+        score = {
+            "exact_span_match": 0,
+            "exact_text_match": 0,
+            "normalized_span_overlap": 0.0,
+            "normalized_char_overlap": 0.0,
+            "length_self": len(self_relations),
+            "length_reference": len(reference_relations),
+        }
+
+        for rel in self_relations:
+            normalized_span_match = []
+            normalized_char_match = []
+
+            for i, doc_rel in enumerate(reference_relations):
+                if rel == doc_rel:
+                    score["exact_span_match"] += 1
+                    score["exact_text_match"] += 1
+                    score["normalized_span_match"] += 1
+                    score["normalized_text_match"] += 1
+                    break
+                if rel.is_string_match(doc_rel):
+                    score["exact_text_match"] += 1
+                    score["normalized_text_match"] += 1
+                    break
+                normalized_span_match.append(rel.normalized_span_overlap(doc_rel))
+                normalized_char_match.append(rel.normalized_char_overlap(doc_rel))
+            else:
+                score["normalized_span_overlap"] += max(normalized_span_match)
+                score["normalized_char_overlap"] += max(normalized_char_match)
+
+        # calculate precision recall and f1
+        for key in [
+            "exact_span_match",
+            "exact_text_match",
+            "normalized_span_overlap",
+            "normalized_char_overlap",
+        ]:
+            if score["length_self"]:
+                score[f"{key}_precision"] = score[key] / score["length_self"]
+            else:
+                # in case there are no relations in the self doctriplet
+                # the precision should be 1
+                score[f"{key}_precision"] = 1.0
+            if score["length_reference"]:
+                score[f"{key}_recall"] = score[key] / score["length_reference"]
+            else:
+                score[f"{key}_recall"] = 1.0
+            if score[f"{key}_precision"] + score[f"{key}_recall"]:
+                score[f"{key}_f1"] = (
+                    2
+                    * score[f"{key}_precision"]
+                    * score[f"{key}_recall"]
+                    / (score[f"{key}_precision"] + score[f"{key}_recall"])
+                )
+            else:
+                score[f"{key}_f1"] = 0.0
+
+        return score
 
     def __iter__(self) -> Iterator[SpanTriplet]:  # type: ignore
         return iter(self.span_triplets)

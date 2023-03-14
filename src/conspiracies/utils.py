@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import jsonlines
 from spacy.language import Language
@@ -8,7 +8,11 @@ from spacy.tokens import Doc
 from .prompt_relation_extraction import SpanTriplet
 
 
-def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
+def _doc_to_json(doc: Doc):
+    if Doc.has_extension("relation_triplets"):
+        triplets = doc._.relation_triplets
+    else:
+        triplets = []
     json = doc.to_json()
     json["semantic_triplets"] = [
         triplet.to_dict(include_doc=False) for triplet in triplets
@@ -16,28 +20,30 @@ def _doc_to_json(doc: Doc, triplets: List[SpanTriplet]):
     return json
 
 
-def _doc_from_json(json: dict, nlp: Language) -> Tuple[Doc, List[SpanTriplet]]:
+def _doc_from_json(json: dict, nlp: Language) -> Doc:
     doc = Doc(nlp.vocab).from_json(json)
     triplets = [
         SpanTriplet.from_dict(triplet_json, nlp=nlp, doc=doc)
         for triplet_json in json["semantic_triplets"]
     ]
-    return doc, triplets
+    if not Doc.has_extension("relation_triplets"):
+        Doc.set_extension("relation_triplets", default=[], force=True)
+    doc._.relation_triplets = triplets
+    return doc
 
 
 def docs_to_jsonl(
     docs: List[Doc],
-    triplets: List[List[SpanTriplet]],
     path: Union[Path, str],
 ) -> None:
     """Write docs and triplets to a jsonl file.
 
     Args:
-        docs (List[Doc]): a list of docs.
-        triplets (List[List[SpanTriplet]]): a list of lists of triplets.
-        path (Union[Path, str]): path to the jsonl file.
+        docs: a list of docs. If the docs have the extension
+            "relation_triplets", the triplets will written to the jsonl file.
+        path: path to the jsonl file.
     """
-    jsonl = [_doc_to_json(doc, triplets_) for doc, triplets_ in zip(docs, triplets)]
+    jsonl = [_doc_to_json(doc) for doc in docs]
     with jsonlines.open(path, "w") as writer:
         writer.write_all(jsonl)
 
@@ -45,22 +51,21 @@ def docs_to_jsonl(
 def docs_from_jsonl(
     path: Union[Path, str],
     nlp: Language,
-) -> Tuple[List[Doc], List[List[SpanTriplet]]]:
+) -> List[Doc]:
     """Read docs and triplets from a jsonl file.
 
     Args:
-        path (Union[Path, str]): path to the jsonl file.
-        nlp (Language): a spacy language model.
+        path: path to the jsonl file.
+        nlp: a spacy language model.
 
     Returns:
-        Tuple[List[Doc], List[List[SpanTriplet]]]: a tuple of a list of docs and a list
-            of lists of triplets.
+        A list of docs with the extension `doc._.relation_triplets` set.
     """
+    if not Doc.has_extension("relation_triplets"):
+        Doc.set_extension("relation_triplets", default=[], force=True)
     docs = []
-    triplets = []
     with jsonlines.open(path, "r") as reader:
         for json in reader:
-            doc, _triplets = _doc_from_json(json, nlp)
+            doc = _doc_from_json(json, nlp)
             docs.append(doc)
-            triplets.append(_triplets)
-    return docs, triplets
+    return docs

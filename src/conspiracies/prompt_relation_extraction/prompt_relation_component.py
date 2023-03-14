@@ -2,13 +2,73 @@
 extraction."""
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from spacy.language import Language
 from spacy.tokens import Doc
+from spacy.training.example import Example
 
 from ..registry import registry
 from .data_classes import DocTriplets, SpanTriplet
+
+
+def score_open_relations(examples: Iterable[Example]) -> Dict[str, Any]:
+    """Score the predicted relations against the gold relations."""
+    keys = [
+        "exact_span_match",
+        "exact_text_match",
+        "normalized_span_overlap",
+        "normalized_char_overlap",
+    ]
+    f1_micro: Dict[str, List[float]] = {f"{key}_f1": [] for key in keys}
+    hits = {key: 0 for key in keys}
+    n_pred = 0
+    n_ref = 0
+    sample_scores = []
+
+    for example in examples:
+        gold_doc_triplets = example.reference._.relation_triplets
+        pred_doc_triplets = example.predicted._.relation_triplets
+
+        _score = pred_doc_triplets.score_relations(gold_doc_triplets)
+        sample_scores.append(_score)
+
+        for key in f1_micro:
+            f1_micro[key].append(_score[key])
+
+        hits["exact_span_match"] += _score["exact_span_match"]
+        hits["exact_text_match"] += _score["exact_text_match"]
+        hits["normalized_span_overlap"] += _score["normalized_span_overlap"]
+        hits["normalized_char_overlap"] += _score["normalized_char_overlap"]
+        n_pred += _score["length_self"]
+        n_ref += _score["length_reference"]
+
+    scores: Dict[str, Any] = {}
+
+    for key in f1_micro:
+        scores[f"{key}_f1_micro"] = f1_micro[key]
+    # calculat precision, recall, f1_macro
+    for key in hits:
+        if n_pred:
+            scores[f"{key}_precision"] = hits[key] / n_pred
+        else:
+            scores[f"{key}_precision"] = 1.0
+        if n_ref:
+            scores[f"{key}_recall"] = hits[key] / n_ref
+        else:
+            scores[f"{key}_recall"] = 1.0
+
+        scores[f"{key}_f1_macro"] = (
+            2
+            * (scores[f"{key}_precision"] * scores[f"{key}_recall"])
+            / (scores[f"{key}_precision"] + scores[f"{key}_recall"])
+        )
+
+    scores["sample_scores"] = sample_scores
+    scores["n_predictions"] = n_pred
+    scores["n_references"] = n_ref
+
+    return scores
 
 
 class PromptRelationExtractionComponent:
@@ -77,6 +137,32 @@ class PromptRelationExtractionComponent:
             spantriplets,
         )
         return doc
+
+    def score(self, examples: Iterable[Example]) -> Dict[str, Any]:
+        """Score the predicted relations against the gold relations. Scores
+        using the following attributes:
+
+        - `exact_span_match`: Whether there is an exact span match of the all three of
+            the triplets (1 or 0).
+        - `exact_string_match`: Whether there is an exact string match of the all three
+            of the triplets (1 or 0).
+        - `normalized_span_overlap`: The normalized span overlap between the predicted
+            and gold relations. A value of 1 indicates an exact match (0-1, exact span
+            match is 1).
+        - `normalized_string_token_overlap`: The normalized string token overlap between
+            the predicted and gold relations. A value of 1 indicates an exact match
+            (0-1, exact string match is 1).
+
+        For each of these and `{score}.f1_macro`, `{score}.f1_micro`, `{score}.recall`,
+        `{score}.precision` are calculated.
+
+        Args:
+            examples (Iterable[Example]): A list of spaCy Examples.
+
+        Returns:
+            Dict[str, Any]: A dictionary of scores.
+        """
+        return score_open_relations(examples)
 
     def __call__(self, doc: Doc):
         """Run the pipeline component."""

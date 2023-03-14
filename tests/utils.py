@@ -21,6 +21,5 @@ def nlp_da():
 
 
 @pytest.fixture
-def docs_and_triplets():
-    docs, triplets = load_gold_triplets()
-    return docs, triplets
+def docs_with_triplets():
+    return load_gold_triplets()

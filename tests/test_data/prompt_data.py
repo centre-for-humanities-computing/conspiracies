@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import spacy
 from conspiracies import SpanTriplet, StringTriplet
@@ -88,35 +88,6 @@ MarkdownPromptTemplate2_expected_triplets = [
 ]
 
 XMLStylePromptTemplate_expected_response = "@user1: @user2 <subject-1>This</subject-1> <predicate-1>is</predicate-1> <object-1>a test tweet</object-1>, <subject-2>I</subject-2> <predicate-2>am commenting</predicate-2> <object-2>on something someone else said</object-2>. @user2 <subject-3>this</subject-3> <predicate-3>is not</predicate-3> <object-3>good enough.</object-3>"  # noqa: E501
-XMLStylePromptTemplate_expected_triplets = [
-    StringTriplet(
-        subject="This",
-        predicate="is",
-        object="a test tweet",
-        subject_char_span=(14, 18),
-        predicate_char_span=(19, 21),
-        object_char_span=(22, 34),
-        text=test_tweet,
-    ),
-    StringTriplet(
-        subject="I",
-        predicate="am commenting",
-        object="on something someone else said",
-        subject_char_span=(36, 37),
-        predicate_char_span=(38, 51),
-        object_char_span=(52, 82),
-        text=test_tweet,
-    ),
-    StringTriplet(
-        subject="this",
-        predicate="is not",
-        object="good enough.",
-        subject_char_span=(91, 95),
-        predicate_char_span=(96, 102),
-        object_char_span=(103, 115),
-        text=test_tweet,
-    ),
-]
 
 XMLStylePromptTemplate_expected_triplets = [
     StringTriplet(
@@ -149,7 +120,11 @@ XMLStylePromptTemplate_expected_triplets = [
 ]
 
 
-def load_gold_triplets() -> Tuple[List[Doc], List[List[SpanTriplet]]]:
+def load_gold_triplets() -> List[Doc]:
+    """Load two examples of docs with gold annotations in the.
+
+    ._.relation_triplets attribute.
+    """
     nlp = spacy.blank("da")
     nlp.add_pipe("sentencizer")
     # gold annotations
@@ -161,8 +136,12 @@ def load_gold_triplets() -> Tuple[List[Doc], List[List[SpanTriplet]]]:
     ]
     span_triplets = [triplet for triplet in span_triplets_ if triplet is not None]
 
+    if not Doc.has_extension("relation_triplets"):
+        Doc.set_extension("relation_triplets", default=[], force=True)
+    doc._.relation_triplets = span_triplets
+
     # copy them to test with multiple examples.
-    return [doc, doc], [span_triplets, span_triplets]
+    return [doc, doc]
 
 
 ### For testing prompt creation ###
@@ -200,11 +179,13 @@ example_triplets_5 = [
 ]
 
 
-def load_examples() -> Tuple[List[Doc], List[List[SpanTriplet]]]:
+def load_examples() -> List[Doc]:
     nlp = spacy.blank("da")
     nlp.add_pipe("sentencizer")
+
+    if not Doc.has_extension("relation_triplets"):
+        Doc.set_extension("relation_triplets", default=[], force=True)
     examples: List[Doc] = []
-    triplets: List[List[SpanTriplet]] = []
     for example, triplet_list in [
         (example_tweet_1, example_triplets_1),
         (example_tweet_2, example_triplets_2),
@@ -219,8 +200,8 @@ def load_examples() -> Tuple[List[Doc], List[List[SpanTriplet]]]:
             for t in triplet_list
         ]
         span_triplets = [triplet for triplet in span_triplets_ if triplet is not None]
-        triplets.append(span_triplets)
-    return examples, triplets
+        doc._.relation_triplets = span_triplets
+    return examples
 
 
 PromptTemplate1_expected_prompt = """This is a test task description

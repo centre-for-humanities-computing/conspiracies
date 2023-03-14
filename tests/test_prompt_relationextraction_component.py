@@ -9,7 +9,7 @@ from .test_prompt_template_parse_prompt import (
     MarkdownPromptTemplate1_expected_response,
     MarkdownPromptTemplate1_expected_triplets,
 )
-from .utils import nlp_da  # noqa F401
+from .utils import docs_with_triplets, nlp_da  # noqa F401
 
 thread1 = """
 @user1: This is a test tweet, I am commenting on something someone else said. END
@@ -37,7 +37,7 @@ def test_prompt_relation_extraction(
         for triplet in expected_triplets
     ]
 
-    @registry.prompt_apis.register("test_api")
+    @registry.prompt_apis.register("test_api")  # type: ignore
     def create_test_api(prompt_template, api_key, model_name, api_kwargs):
         """a test api for testing purposes.
 

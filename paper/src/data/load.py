@@ -1,15 +1,14 @@
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import spacy
+from conspiracies import docs_from_jsonl
 from spacy.tokens import Doc
-
-from conspiracies import SpanTriplet, docs_from_jsonl
 
 
 def load_gold_triplets(
     path: Optional[str] = None,
-) -> Tuple[List[Doc], List[List[SpanTriplet]]]:
+) -> List[Doc]:
     nlp = spacy.blank("en")
     nlp.add_pipe("sentencizer")
     if path is None:
@@ -20,5 +19,4 @@ def load_gold_triplets(
             f"File {path} not found. You are probably not running this from Grundtvig"
             + ", in which case you will have to specify the path.",
         )
-    docs, triplets = docs_from_jsonl(path, nlp)
-    return docs, triplets
+    return docs_from_jsonl(path, nlp)

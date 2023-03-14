@@ -20,7 +20,7 @@ from .test_data.prompt_data import (
     XMLStylePromptTemplate_expected_triplets,
     test_tweet,
 )
-from .utils import docs_and_triplets  # noqa: F401
+from .utils import docs_with_triplets  # noqa: F401
 
 
 @pytest.mark.parametrize(
@@ -63,9 +63,9 @@ def test_PromptTemplate_parse_prompt(
     target,
     response,
     expected_triplets,
-    docs_and_triplets,  # noqa: F811
+    docs_with_triplets,  # noqa: F811
 ):
-    template_instance = template(examples=docs_and_triplets)
+    template_instance = template(examples=docs_with_triplets)
     parsed_triplets = template_instance.parse_prompt(response, target)
     for parsed_triplet, expected_triplet in zip(parsed_triplets, expected_triplets):
         assert parsed_triplet == expected_triplet
