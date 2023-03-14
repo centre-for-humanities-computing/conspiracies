@@ -1,7 +1,7 @@
 import random
 from typing import Any, Dict, List, Tuple
 
-from catalogue import registry
+from ..registry import registry
 from spacy.tokens import Doc
 
 from conspiracies.prompt_relation_extraction import PromptTemplate, SpanTriplet

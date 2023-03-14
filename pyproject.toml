@@ -79,7 +79,7 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.entry-points.prompt_apis]
-"conspiracies/openai_api" = "conspiracies.prompt_relation_extraction.prompt_apis:openai_api"
+"conspiracies/openai_gpt3_api" = "conspiracies.prompt_relation_extraction.prompt_apis:conspiracies/openai_gpt3_api"
 
 [project.entry-points.split_functions]
 "conspiracies/split_thread_to_tweets" = "conspiracies.prompt_relation_extraction.utils:split_thread_to_tweets"
