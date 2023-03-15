@@ -180,7 +180,7 @@ class PromptRelationExtractionComponent:
         "examples": None,
         "task_description": None,
         "model_name": "text-davinci-002",
-        "backend": "conspiracies/openai_api",
+        "backend": "conspiracies/openai_gpt3_api",
         "api_key": str,
         "split_doc_fn": None,
         "api_kwargs": {
