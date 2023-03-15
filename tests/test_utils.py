@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 import spacy
-from conspiracies import SpanTriplet, docs_from_jsonl, docs_to_jsonl
+from conspiracies import DocTriplets, SpanTriplet, docs_from_jsonl, docs_to_jsonl
 from spacy.tokens import Doc
 
 from .utils import docs_with_triplets  # noqa: F401
@@ -44,6 +44,10 @@ def test_docs_to_jsonl(nlp, docs_with_triplets):  # noqa: F811
         assert doc.text == _doc.text
         triplets = doc._.relation_triplets
         _triplets = _doc._.relation_triplets
+
+        assert isinstance(triplets, DocTriplets)
+        assert isinstance(_triplets, DocTriplets)
+
         assert len(triplets) == len(_triplets)
         for triplet, _triplet in zip(triplets, _triplets):
             assert triplet.is_string_match(_triplet)

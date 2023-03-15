@@ -10,6 +10,7 @@ from .prompt_relation_extraction import (  # noqa F401
     chatGPTPromptTemplate,
     SpanTriplet,
     StringTriplet,
+    DocTriplets,
 )
 from .utils import docs_from_jsonl, docs_to_jsonl  # noqa F401
 from .wordpiece_length_normalization import wordpiece_length_normalization  # noqa F401

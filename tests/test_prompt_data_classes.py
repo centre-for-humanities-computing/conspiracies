@@ -1,34 +1,64 @@
 import pytest
 import spacy
+from conspiracies.prompt_relation_extraction import (
+    DocTriplets,
+    SpanTriplet,
+    StringTriplet,
+)
+from spacy.tokens import Doc
 
-from conspiracies.prompt_relation_extraction import SpanTriplet
+
+@pytest.fixture
+def nlp():
+    nlp = spacy.blank("en")
+    nlp.add_pipe("sentencizer")
+    return nlp
+
+
+@pytest.fixture
+def doc(nlp):
+    return nlp("I am happy today")
+
+
+@pytest.fixture
+def span_triplets(doc):
+    triplet = SpanTriplet(
+        subject=doc[0:1],
+        predicate=doc[1:2],
+        object=doc[2:3],
+    )
+
+    triplet_w_overlap = SpanTriplet(
+        subject=doc[0:2],
+        predicate=doc[1:2],
+        object=doc[2:3],
+    )
+
+    return [triplet, triplet_w_overlap]
+
+
+@pytest.fixture
+def string_triplets(doc):
+    text = doc.text
+
+    triplet = StringTriplet(
+        subject="I",
+        predicate="am",
+        object="happy",
+        text=text,
+    )
+
+    triplet_w_overlap = StringTriplet(
+        subject="I am",
+        predicate="am",
+        object="happy",
+        text=text,
+    )
+
+    return [triplet, triplet_w_overlap]
 
 
 class TestSpanTriplet:
-    @pytest.fixture(scope="class")
-    def nlp(self):
-        nlp = spacy.blank("en")
-        nlp.add_pipe("sentencizer")
-        return nlp
-
-    @pytest.fixture(scope="class")
-    def span_triplets(self, nlp):
-        doc = nlp("I am happy today")
-
-        triplet = SpanTriplet(
-            subject=doc[0:1],
-            predicate=doc[1:2],
-            object=doc[2:3],
-        )
-
-        triplet_w_overlap = SpanTriplet(
-            subject=doc[0:2],
-            predicate=doc[1:2],
-            object=doc[2:3],
-        )
-
-        return [triplet, triplet_w_overlap]
-
     def test_visualize(self, span_triplets):
         for triplet in span_triplets:
             triplet.visualize()
@@ -60,3 +90,86 @@ class TestSpanTriplet:
         assert triplet.subject.text == str_triplet[0]
         assert triplet.predicate.text == str_triplet[1]
         assert triplet.object.text == str_triplet[2]
+
+
+class TestDocTriplet:
+    def test_init(self, span_triplets):
+        doc = span_triplets[0].doc
+        # test empty triplets
+        doc_triplets_empty = DocTriplets(span_triplets=[], doc=doc)
+        assert len(doc_triplets_empty) == 0
+        doc_triplets = DocTriplets(span_triplets=span_triplets, doc=doc)
+        assert len(doc_triplets) == 2
+
+        # test add
+        new_doc_triplets = doc_triplets_empty + doc_triplets
+        assert new_doc_triplets == doc_triplets
+
+        doc_triplets_ = [doc_triplets_empty, doc_triplets, new_doc_triplets]
+        for dt in doc_triplets_:
+            assert isinstance(dt.doc, Doc)
+
+    def test_doc_triplet_from_str_triplets(self, string_triplets, doc: Doc):
+        doc_triplets = DocTriplets.from_str_triplets(triplets=string_triplets, doc=doc)
+        assert len(doc_triplets) == 2
+
+    def test_score_relations(self, nlp: spacy.Language):
+        doc = nlp("I am happy today I am happy today")
+
+        triplet = SpanTriplet(
+            subject=doc[0:1],
+            predicate=doc[1:2],
+            object=doc[2:3],
+        )
+
+        # exact match
+        doc_triplets_gold = DocTriplets(span_triplets=[triplet], doc=doc)
+        doc_triplets_pred = DocTriplets(span_triplets=[triplet], doc=doc)
+
+        scores = doc_triplets_pred.score_relations(doc_triplets_gold)
+        scores["exact_span_match"] = 1
+        scores["exact_text_match"] = 1
+        scores["normalized_span_overlap"] = 1
+        scores["normalized_char_overlap"] = 1
+
+        # exact string match
+        triplet_string_match = SpanTriplet(
+            subject=doc[4:5],
+            predicate=doc[5:6],
+            object=doc[6:7],
+        )
+
+        doc_triplets_pred = DocTriplets(span_triplets=[triplet_string_match], doc=doc)
+        scores = doc_triplets_pred.score_relations(doc_triplets_gold)
+        scores["exact_span_match"] = 0
+        scores["exact_text_match"] = 1
+        scores["normalized_span_overlap"] = 0
+        scores["normalized_char_overlap"] = 1
+
+        # partial span match
+        triplet_part_span = SpanTriplet(
+            subject=doc[0:1],
+            predicate=doc[1:2],
+            object=doc[2:4],
+        )
+
+        doc_triplets_pred = DocTriplets(span_triplets=[triplet_part_span], doc=doc)
+        scores = doc_triplets_pred.score_relations(doc_triplets_gold)
+        scores["exact_span_match"] = 0
+        scores["exact_text_match"] = 0
+        scores["normalized_span_overlap"] = 0
+        scores["normalized_char_overlap"] = 0.8
+
+        # partial string match
+        triplet_part_char = SpanTriplet(
+            subject=doc[4:5],
+            predicate=doc[5:6],
+            object=doc[6:8],
+        )
+
+        doc_triplets_pred = DocTriplets(span_triplets=[triplet_part_char], doc=doc)
+        scores = doc_triplets_pred.score_relations(doc_triplets_gold)
+        scores["exact_span_match"] = 0
+        scores["exact_text_match"] = 0
+        scores["normalized_span_overlap"] = 0
+        scores["normalized_char_overlap"] = 0.8
