@@ -4,6 +4,7 @@ extraction."""
 
 from typing import Any, Dict, Iterable, List, Optional
 
+import numpy as np
 from spacy.language import Language
 from spacy.tokens import Doc
 from spacy.training.example import Example
@@ -16,11 +17,10 @@ def score_open_relations(examples: Iterable[Example]) -> Dict[str, Any]:
     """Score the predicted relations against the gold relations."""
     keys = [
         "exact_span_match",
-        "exact_text_match",
+        "exact_string_match",
         "normalized_span_overlap",
-        "normalized_char_overlap",
+        "normalized_string_overlap",
     ]
-    f1_micro: Dict[str, List[float]] = {f"{key}_f1": [] for key in keys}
     hits = {key: 0 for key in keys}
     n_pred = 0
     n_ref = 0
@@ -33,32 +33,27 @@ def score_open_relations(examples: Iterable[Example]) -> Dict[str, Any]:
         _score = pred_doc_triplets.score_relations(gold_doc_triplets)
         sample_scores.append(_score)
 
-        for key in f1_micro:
-            f1_micro[key].append(_score[key])
-
         hits["exact_span_match"] += _score["exact_span_match"]
-        hits["exact_text_match"] += _score["exact_text_match"]
+        hits["exact_string_match"] += _score["exact_string_match"]
         hits["normalized_span_overlap"] += _score["normalized_span_overlap"]
-        hits["normalized_char_overlap"] += _score["normalized_char_overlap"]
+        hits["normalized_string_overlap"] += _score["normalized_string_overlap"]
         n_pred += _score["length_self"]
         n_ref += _score["length_reference"]
 
     scores: Dict[str, Any] = {}
 
-    for key in f1_micro:
-        scores[f"{key}_f1_micro"] = f1_micro[key]
-    # calculat precision, recall, f1_macro
+    # calculate precision, recall, f1_macro
     for key in hits:
         if n_pred:
             scores[f"{key}_precision"] = hits[key] / n_pred
         else:
-            scores[f"{key}_precision"] = 1.0
+            scores[f"{key}_precision"] = np.nan
         if n_ref:
             scores[f"{key}_recall"] = hits[key] / n_ref
         else:
-            scores[f"{key}_recall"] = 1.0
+            scores[f"{key}_recall"] = np.nan
 
-        scores[f"{key}_f1_macro"] = (
+        scores[f"{key}_f1"] = (
             2
             * (scores[f"{key}_precision"] * scores[f"{key}_recall"])
             / (scores[f"{key}_precision"] + scores[f"{key}_recall"])
@@ -132,7 +127,7 @@ class PromptRelationExtractionComponent:
             )
             spantriplets.extend(triplets)
 
-        doc._.relation_triplets = DocTriplets.doc_triplet_from_str_triplets(
+        doc._.relation_triplets = DocTriplets.from_str_triplets(
             doc,
             spantriplets,
         )

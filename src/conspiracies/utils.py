@@ -5,7 +5,7 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from .prompt_relation_extraction import SpanTriplet
+from .prompt_relation_extraction import DocTriplets, SpanTriplet
 
 
 def _doc_to_json(doc: Doc):
@@ -28,7 +28,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
     ]
     if not Doc.has_extension("relation_triplets"):
         Doc.set_extension("relation_triplets", default=[], force=True)
-    doc._.relation_triplets = triplets
+    doc._.relation_triplets = DocTriplets(span_triplets=triplets, doc=doc)
     return doc
 
 

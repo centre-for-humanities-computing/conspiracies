@@ -1,7 +1,7 @@
 from typing import List
 
 import spacy
-from conspiracies import SpanTriplet, StringTriplet
+from conspiracies import DocTriplets, SpanTriplet, StringTriplet
 from spacy.tokens import Doc
 
 test_thread = """@user2: I was hurt. END
@@ -138,7 +138,7 @@ def load_gold_triplets() -> List[Doc]:
 
     if not Doc.has_extension("relation_triplets"):
         Doc.set_extension("relation_triplets", default=[], force=True)
-    doc._.relation_triplets = span_triplets
+    doc._.relation_triplets = DocTriplets(span_triplets=span_triplets, doc=doc)
 
     # copy them to test with multiple examples.
     return [doc, doc]
