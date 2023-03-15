@@ -6,6 +6,7 @@ from .prompt_templates import (  # noqa F401
     PromptTemplate1,
     PromptTemplate2,
     XMLStylePromptTemplate,
+    chatGPTPromptTemplate,
 )
 
 from .prompt_relation_component import (  # noqa F401

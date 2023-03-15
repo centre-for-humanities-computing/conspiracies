@@ -7,6 +7,7 @@ from .prompt_relation_extraction import (  # noqa F401
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,
     XMLStylePromptTemplate,
+    chatGPTPromptTemplate,
     SpanTriplet,
     StringTriplet,
 )

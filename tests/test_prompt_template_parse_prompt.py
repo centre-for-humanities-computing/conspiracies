@@ -5,6 +5,7 @@ from conspiracies import (
     PromptTemplate1,
     PromptTemplate2,
     XMLStylePromptTemplate,
+    chatGPTPromptTemplate,
 )
 
 from .test_data.prompt_data import (
@@ -18,6 +19,8 @@ from .test_data.prompt_data import (
     PromptTemplate2_expected_triplets,
     XMLStylePromptTemplate_expected_response,
     XMLStylePromptTemplate_expected_triplets,
+    chatGPTPromptTemplate_expected_response,
+    chatGPTPromptTemplate_expected_triplets,
     test_tweet,
 )
 from .utils import docs_with_triplets  # noqa: F401
@@ -55,6 +58,12 @@ from .utils import docs_with_triplets  # noqa: F401
             test_tweet,
             XMLStylePromptTemplate_expected_response,
             XMLStylePromptTemplate_expected_triplets,
+        ),
+        (
+            chatGPTPromptTemplate,
+            test_tweet,
+            chatGPTPromptTemplate_expected_response,
+            chatGPTPromptTemplate_expected_triplets,
         ),
     ],
 )

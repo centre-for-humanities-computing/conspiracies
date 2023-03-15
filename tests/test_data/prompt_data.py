@@ -119,6 +119,26 @@ XMLStylePromptTemplate_expected_triplets = [
     ),
 ]
 
+chatGPTPromptTemplate_expected_response = """I extracted the following triplets:
+	@user1 - commenting on - something someone else said
+	@user2 - this is - not good enough. 
+Note that the verb phrase "commenting on" includes the particles "on" and "something else"."""  # noqa: E501
+
+chatGPTPromptTemplate_expected_triplets = [
+    StringTriplet(
+        subject="@user1",
+        predicate="commenting on",
+        object="something someone else said",
+        text=test_tweet,
+    ),
+    StringTriplet(
+        subject="@user2",
+        predicate="this is",
+        object="not good enough.",
+        text=test_tweet,
+    ),
+]
+
 
 def load_gold_triplets() -> List[Doc]:
     """Load two examples of docs with gold annotations in the.
@@ -180,6 +200,10 @@ example_triplets_5 = [
 
 
 def load_examples() -> List[Doc]:
+    """Load five examples of docs with gold triplet annotations.
+
+    The examples are made up mock tweets.
+    """
     nlp = spacy.blank("da")
     nlp.add_pipe("sentencizer")
 
@@ -359,3 +383,66 @@ Det er vigtigt at lytte til hvad @fagperson siger, og I er alle myndighedsperson
 
 @user1: @user2 This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.
 """  # noqa: E501
+
+
+chatGPTPromptTemplate_expected_prompt = [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant who is also an expert linguist. ",
+    },
+    {"role": "user", "content": "Hi, I need your help on a linguistic question."},
+    {"role": "assistant", "content": "Sure, what is the task?"},
+    {
+        "role": "user",
+        "content": "This is a test task description",
+    },
+    {
+        "role": "assistant",
+        "content": "That sounds like something I can help you with.\
+                     Let me try the first example!",
+    },
+    {
+        "role": "user",
+        "content": "The tweet is:\n@Politician1: @minister @journalist @Politician1 er uenig i det I siger. Man kan ikke bare gøre hvad der passer en. Almindelig sund fornuft er det eneste @Politician1 forlanger.\n",  # noqa: E501
+    },
+    {
+        "role": "assistant",
+        "content": "I extracted the following triplets:\n\t@Politician1 - er uenig - i det I siger\n\t@Politician1 - forlanger - Almindelig sund fornuft\n",  # noqa: E501
+    },
+    {
+        "role": "user",
+        "content": "Correct! The next tweet is:\n@minister: @minister skriver her en kort kommentar en kort kommentar skyder med skarpt på @Politician1.\n",  # noqa: E501
+    },
+    {
+        "role": "assistant",
+        "content": "I extracted the following triplets:\n\t@minister - skriver - en kort kommentar\n\ten kort kommentar - skyder - med skarpt\n",  # noqa: E501
+    },
+    {
+        "role": "user",
+        "content": "Correct! The next tweet is:\n@almindelig123: At blande sig i debatten er ikke en god idé. Nogle gange er det bedre at holde sig for sig selv. Men sådan er det, det er der ikke noget at gøre ved.\n",  # noqa: E501
+    },
+    {
+        "role": "assistant",
+        "content": "I extracted the following triplets:\n\tAt blande sig - er ikke - en god idé\n\tdet - er - bedre at holde sig for sig selv\n",  # noqa: E501
+    },
+    {
+        "role": "user",
+        "content": "Correct! The next tweet is:\n@fagperson: @Politician1 @minister @journalist Som fagperson vil @fagperson gerne understrege at mine inputs burde fylde mere. \nDet er vigtigt at lytte til hvad @fagperson siger, og I er alle myndighedspersoner der burde vægte sådanne faglige indspark ekstra højt.\n",  # noqa: E501
+    },
+    {
+        "role": "assistant",
+        "content": "I extracted the following triplets:\n\t@fagperson - vil - gerne understrege\n\tmine inputs - burde fylde - mere\n\tDet - er vigtigt - at lytte til hvad @fagperson siger\n\tmyndighedspersoner - burde vægte - sådanne faglige indspark ekstra højt\n",  # noqa: E501
+    },
+    {
+        "role": "user",
+        "content": "Correct! The next tweet is:\n@minister: @minister lytter til @fagperson og @almindelig123. @minister er enig med dem. Solid argumentation har overbevist mig om at flertallet nok har ret.\n",  # noqa: E501
+    },
+    {
+        "role": "assistant",
+        "content": "I extracted the following triplets:\n\t@minister - lytter - til @fagperson og @almindelig123\n\t@minister - er enig - med dem\n\tSolid argumentation - har overbevist - mig om at flertallet nok har ret\n",  # noqa: E501
+    },
+    {
+        "role": "user",
+        "content": "The tweet is:\n@user1: @user2 This is a test tweet, I am commenting on something someone else said. @user2 this is not good enough.\n",  # noqa: E501
+    },
+]

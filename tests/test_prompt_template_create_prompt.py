@@ -5,6 +5,7 @@ from conspiracies import (
     PromptTemplate1,
     PromptTemplate2,
     XMLStylePromptTemplate,
+    chatGPTPromptTemplate,
 )
 
 from .test_data.prompt_data import (
@@ -13,6 +14,7 @@ from .test_data.prompt_data import (
     PromptTemplate1_expected_prompt,
     PromptTemplate2_expected_prompt,
     XMLStylePromptTemplate_expected_prompt,
+    chatGPTPromptTemplate_expected_prompt,
     load_examples,
     test_tweet,
 )
@@ -28,7 +30,7 @@ examples, task_description, test_tweet = get_examples_task_introduction()  # noq
 
 
 @pytest.mark.parametrize(
-    "template, target, examples, task_description, expected_prompt",
+    "Template, target, examples, task_description, expected_prompt",
     [
         (
             PromptTemplate1,
@@ -65,15 +67,22 @@ examples, task_description, test_tweet = get_examples_task_introduction()  # noq
             task_description,
             XMLStylePromptTemplate_expected_prompt,
         ),
+        (
+            chatGPTPromptTemplate,
+            test_tweet,
+            examples,
+            task_description,
+            chatGPTPromptTemplate_expected_prompt,
+        ),
     ],
 )
 def test_PromptTemplate_create_prompt(
-    template,
+    Template,
     target,
     examples,
     task_description,
     expected_prompt,
 ):
-    template = template(examples, task_description)
+    template = Template(task_description=task_description, examples=examples)
     prompt = template.create_prompt(target)
     assert prompt == expected_prompt
