@@ -25,7 +25,7 @@ def test_prompt_relation_evaluate(docs_with_triplets):  # noqa: F811
         assert score[f"{key}_precision"] == 1.0
         assert score[f"{key}_recall"] == 1.0
 
-    # # no match
+    # no match
     doc_no_triplets = doc[:].as_doc()
     doc_no_triplets._.relation_triplets = DocTriplets(span_triplets=[], doc=doc)
     example = Example(reference=doc, predicted=doc_no_triplets)
