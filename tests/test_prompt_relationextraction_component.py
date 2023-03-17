@@ -105,7 +105,7 @@ def test_create_pipeline():
         "force": True,
     }
 
-    relation_component = nlp.add_pipe(
+    nlp.add_pipe(
         "conspiracies/prompt_relation_extraction",
         last=True,
         config=config,
