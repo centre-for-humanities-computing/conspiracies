@@ -793,7 +793,7 @@ class DocTriplets(BaseModel):
                 ref_i, match = _missing_matches.pop()
                 score["normalized_string_overlap"] += match["string_norm_overlap"]
                 score["normalized_span_overlap"] += match["span_norm_overlap"]
-                _self_relations.pop() # just pop any self relation
+                _self_relations.pop()  # just pop any self relation
         return score
 
     def __getitem__(self, index: int) -> SpanTriplet:
