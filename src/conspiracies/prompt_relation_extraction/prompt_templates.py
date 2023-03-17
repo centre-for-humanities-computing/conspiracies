@@ -662,7 +662,7 @@ The semantic triplets should be on the form (Subject - Verb Phrase - Object), wh
 There should always be exactly three elements in a triplet, no more no less, and they should be presented in a markdown table.
 First, I will provide you with a few examples."""  # noqa: E501
 
-    def create_prompt(self, target: str) -> List[dict[str, str]]:
+    def create_prompt(self, target: str) -> List[Dict[str, str]]:
         """Create a prompt for the chatGPT model. Form is:
         [
         {"role": "system",
