@@ -11,6 +11,7 @@ from spacy.training.example import Example
 
 from ..registry import registry
 from .data_classes import DocTriplets, SpanTriplet
+from .prompt_apis import create_openai_chatgpt_prompt_api  # noqa: F401
 
 
 def score_open_relations(examples: Iterable[Example]) -> Dict[str, Any]:
@@ -53,11 +54,14 @@ def score_open_relations(examples: Iterable[Example]) -> Dict[str, Any]:
         else:
             scores[f"{key}_recall"] = np.nan
 
-        scores[f"{key}_f1"] = (
-            2
-            * (scores[f"{key}_precision"] * scores[f"{key}_recall"])
-            / (scores[f"{key}_precision"] + scores[f"{key}_recall"])
-        )
+        if scores[f"{key}_precision"] == 0 and scores[f"{key}_recall"] == 0:
+            scores[f"{key}_f1"] = np.nan
+        else:
+            scores[f"{key}_f1"] = (
+                2
+                * (scores[f"{key}_precision"] * scores[f"{key}_recall"])
+                / (scores[f"{key}_precision"] + scores[f"{key}_recall"])
+            )
 
     scores["sample_scores"] = sample_scores
     scores["n_predictions"] = n_pred
@@ -168,7 +172,7 @@ class PromptRelationExtractionComponent:
             doc_spans = [doc]
 
         # prompt
-        responses = [self.prompt_fn(span) for span in doc_spans]
+        responses = self.prompt_fn([span.text for span in doc_spans])
         doc = self.set_annotation(doc, doc_spans, responses)
         return doc
 
@@ -176,12 +180,11 @@ class PromptRelationExtractionComponent:
 @Language.factory(
     "conspiracies/prompt_relation_extraction",
     default_config={
-        "prompt_template": "conspiracies/template1",
+        "prompt_template": "conspiracies/template_1",
         "examples": None,
         "task_description": None,
         "model_name": "text-davinci-002",
         "backend": "conspiracies/openai_gpt3_api",
-        "api_key": str,
         "split_doc_fn": None,
         "api_kwargs": {
             "max_tokens": 500,

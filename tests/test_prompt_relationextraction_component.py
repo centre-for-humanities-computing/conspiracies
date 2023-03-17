@@ -9,6 +9,7 @@ from .test_prompt_template_parse_prompt import (
     MarkdownPromptTemplate1_expected_response,
     MarkdownPromptTemplate1_expected_triplets,
 )
+import spacy
 from .utils import docs_with_triplets, nlp_da  # noqa F401
 
 thread1 = """
@@ -74,3 +75,36 @@ def test_prompt_relation_extraction(
     for triplet in doc._.relation_triplets:
         assert isinstance(triplet, SpanTriplet)
         triplet in expected_span_triplets
+
+
+def test_create_pipeline():
+    nlp = spacy.blank("da")
+    config = {"api_key": ""}
+
+    nlp.add_pipe("conspiracies/prompt_relation_extraction", config=config)
+
+    # remove pipeline
+    nlp.remove_pipe("conspiracies/prompt_relation_extraction")
+
+    # add pipeline with speicifc config
+    config = {
+        "prompt_template": "conspiracies/template_1",
+        "examples": None,
+        "task_description": None,
+        "model_name": "text-davinci-002",
+        "backend": "conspiracies/openai_gpt3_api",
+        "api_key": "",
+        "split_doc_fn": None,
+        "api_kwargs": {
+            "max_tokens": 500,
+            "temperature": 0.7,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+        },
+        "force": True,
+    }
+
+    relation_component = nlp.add_pipe(
+        "conspiracies/prompt_relation_extraction", last=True, config=config
+    )

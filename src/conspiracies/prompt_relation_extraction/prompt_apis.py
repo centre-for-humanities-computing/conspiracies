@@ -40,7 +40,9 @@ def create_openai_gpt3_prompt_api(
                     responses.append(response["choices"][0]["text"])
                     break
 
-                except openai.error.InvalidRequestError:
+                except openai.error.InvalidRequestError as e:
+                    print("Invalid request got error: ", e)
+                    print("Retrying with fewer examples...")
                     # Randomly select an example to drop
                     current_examples: List[Tuple[Doc, List[SpanTriplet]]] = list(
                         *zip(prompt_template.examples)

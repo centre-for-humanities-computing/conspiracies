@@ -225,7 +225,7 @@ class SpanTriplet(BaseModel):
             "OBJECT": "#aa9cfc",
         }
         sent = self.sentence
-        copy_doc = copy(self.doc)  # to avoid overwriting the original doc
+        copy_doc = self.doc[:].as_doc()  # to avoid overwriting the original doc
         options = {"ents": ["SUBJECT", "PREDICATE", "OBJECT"], "colors": colors}
         copy_doc.ents = [self.subject, self.predicate, self.object]
         viz_doc = copy_doc[sent.start : sent.end].as_doc()
@@ -791,10 +791,9 @@ class DocTriplets(BaseModel):
 
             while _missing_matches and _self_relations:
                 ref_i, match = _missing_matches.pop()
-                self_i = match["self_i"]
                 score["normalized_string_overlap"] += match["string_norm_overlap"]
                 score["normalized_span_overlap"] += match["span_norm_overlap"]
-                _self_relations.pop(self_i)
+                _self_relations.pop() # just pop any self relation
         return score
 
     def __getitem__(self, index: int) -> SpanTriplet:
