@@ -81,8 +81,13 @@ def subspan_of_span(
             potential_spans.append(_span)
 
     if ignore_spaces:  # reconstruct to spans instead of list[token]
-        doc = span[0].doc
-        potential_spans = [doc[span[0].i : span[-1].i + 1] for span in potential_spans]
+        try:
+            doc = span[0].doc
+            potential_spans = [
+                doc[span[0].i : span[-1].i + 1] for span in potential_spans
+            ]
+        except IndexError:
+            return []
 
     return potential_spans
 

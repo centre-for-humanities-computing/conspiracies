@@ -587,8 +587,14 @@ The triplets should be tagged in the tweet as shown below:"""  # noqa: E501
         triplets = []
 
         for n, triplet in parse["triplets"].items():
-            str_triplet = to_string_triplet(triplet)
-            triplets.append(str_triplet)
+            # NB Shouldnt this be taken care of earlier??
+            if (
+                triplet["subject"] is not None
+                and triplet["predicate"] is not None
+                and triplet["object"] is not None
+            ):
+                str_triplet = to_string_triplet(triplet)
+                triplets.append(str_triplet)
         return triplets
 
     @staticmethod
