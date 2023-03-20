@@ -398,8 +398,8 @@ chatGPTPromptTemplate_expected_prompt = [
     },
     {
         "role": "assistant",
-        "content": "That sounds like something I can help you with.\
-                     Let me try the first example!",
+        "content": "That sounds like something I can help you with. \
+Let me try the first example!",
     },
     {
         "role": "user",

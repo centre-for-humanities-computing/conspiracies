@@ -700,8 +700,8 @@ First, I will provide you with a few examples."""  # noqa: E501
         message_dicts = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant\
-                            who is also an expert linguist. ",
+                "content": "You are a helpful assistant \
+who is also an expert linguist. ",
             },
             {
                 "role": "user",
@@ -718,7 +718,7 @@ First, I will provide you with a few examples."""  # noqa: E501
             {
                 "role": "assistant",
                 "content": "That sounds like something I can help you with. \
-                            Let me try the first example!",
+Let me try the first example!",
             },
         ]
         for i, example in enumerate(self.examples):
