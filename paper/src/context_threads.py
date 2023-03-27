@@ -173,9 +173,9 @@ if __name__ == "__main__":
     '''
     #CHATGPT
     #run the tweet thread extraction 
-    gpt_contexts = context_window_thread(tweets, args.context_len)
+    contexts = context_window_thread(tweets, args.context_len)
 
     #write contests to ndjson
     with open(os.path.join(f"tweet_threads_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson"), "w") as f:
-        ndjson.dump(gpt_contexts, f) #the ndjson of contexts has the format: List[Dict[str, Any]]
+        ndjson.dump(contexts, f) #the ndjson of contexts has the format: List[Dict[str, Any]]
     
