@@ -23,6 +23,11 @@ def tweet_from_context(context: List[dict]) -> dict:
     return context[-1]
 
 
+def tweet_from_context_text(context: str, end_token: str = " [END] ") -> str:
+    tweets_list = context.split(end_token)
+    return tweets_list[-1]
+
+
 if __name__ == "__main__":
     # test functions
     context_path = "tweet_threads_2019-05-22_2019-06-05.ndjson"
@@ -33,4 +38,5 @@ if __name__ == "__main__":
         concat_context_ = concat_context(context)
         print(concat_context_, "\n")
         tweet = tweet_from_context(context)
-        print(tweet["text"], "\n\n")
+        tweet_text = tweet_from_context_text(concat_context_)
+        print(tweet["text"] == tweet_text, "\n\n")
