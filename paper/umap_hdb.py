@@ -403,6 +403,9 @@ def main(
         shuffle=True,
     )
 
+    if save:
+        save = path.replace("triplets.txt", f"{embedding_model}_nodes_edges.json")  # type: ignore
+
     model = (
         "vesteinn/DanskBERT"
         if embedding_model == "danskBERT"
@@ -436,8 +439,7 @@ def main(
 
     # Create nodes and edges
     print("Creating nodes and edges")
-    if save:
-        save = path.replace("triplets.txt", "nodes_edges.json")  # type: ignore
+
     assert (
         len(subjects) == len(objects) == len(predicates)
     ), "Subjects, objects and predicates must have the same length"

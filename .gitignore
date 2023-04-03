@@ -136,3 +136,4 @@ dmypy.json
 # data 
 data/gpt_predictions_compare.json
 data/prompt_outputs_compare_templates.md
+paper/extracted_triplets_papers/*
