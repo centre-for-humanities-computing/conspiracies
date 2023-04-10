@@ -404,7 +404,10 @@ def main(
     )
 
     if save:
-        save = path.replace("triplets.txt", f"{embedding_model}_nodes_edges.json")  # type: ignore
+        save = path.replace(
+            "triplets.txt",
+            f"{embedding_model}_dim={dim}_neigh={n_neighbors}_clust={min_cluster_size}_samp={min_samples}_nodes_edges.json",
+        )  # type: ignore
 
     model = (
         "vesteinn/DanskBERT"
@@ -412,6 +415,10 @@ def main(
         else "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     )
 
+    print(
+        f"Dimensions: {dim}, neighbors: {n_neighbors}, min cluster size: {min_cluster_size}, samples: {min_samples}, min topic size: {min_topic_size}",
+    )
+    print("\n_________________\n")
     print("Embedding and clustering predicates")
     # For predicate, we wanna keep all clusters -> min_topic_size=1
     predicate_clusters = embed_and_cluster(
@@ -425,6 +432,7 @@ def main(
         predicates=True,
     )
 
+    print("\n_________________\n")
     print("Embedding and clustering subjects and objects together")
     subj_obj = subjects + objects
     subj_obj_clusters = embed_and_cluster(
@@ -463,10 +471,9 @@ if __name__ == "__main__":
         "-emb",
         "--embedding_model",
         type=str,
-        default="danskBERT",
-        help="""Which embedding model to use, default is danskBERT. 
-        If any other string is given, 
-        sentence-transformers/paraphrase-multilingual-mpnet-base-v2 is used""",
+        default="paraphrase",
+        help="""Which embedding model to use, default is paraphrase. 
+        The other option is danskBERT""",
     )
     parser.add_argument(
         "-dim",

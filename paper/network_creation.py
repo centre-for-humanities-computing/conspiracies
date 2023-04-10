@@ -5,20 +5,41 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import typing
+from typing import Dict, Tuple
 
 
-def load_json(file_path: str):
+def load_json(file_path: str) -> dict:
+    """Loads a json file.
+
+    Args:
+        file_path (str): path to the json file
+
+    Returns:
+        data (dict): the data from the file as a dictionary
+    """
     with open(file_path, mode="r", encoding="utf8") as f:
         data = json.load(f)
     return data
 
 
-def most_frequent_tuples(node_dict: dict, n):
-    counter: typing.Counter = Counter()
+def most_frequent_tuples(node_dict: Dict[int, tuple], n: int) -> Dict[int, tuple]:
+    """Find the tuples that contain one of the n most frequent elements.
+
+    Args:
+        node_dict (dict): dictionary with node ids as keys and node pairs as values
+        n (int): The number of most frequent elements to keep
+
+    Returns:
+        result (dict): filtered dictionary with node ids as keys and node pairs as values
+    """
+    element_counter: typing.Counter = Counter()
+    # Count the frequency for all elements and identify the n most frequent
     for i, tup in node_dict.items():
         for string in tup:
-            counter[string] += 1
-    most_common_strings = set(string for string, count in counter.most_common(n))
+            element_counter[string] += 1
+    most_common_strings = set(string for string, _ in element_counter.most_common(n))
+
+    # Only keep the nodes that contain one of the most frequent elements
     result = {}
     for i, tup in node_dict.items():
         if any(string in most_common_strings for string in tup):
@@ -31,7 +52,20 @@ def get_nodes_edges(
     file: str,
     remove_self_edges: bool = True,
     n_most_frequent: int = 10,
-):
+) -> Tuple[Dict[int, tuple], Dict[int, tuple]]:
+    """Loads nodes and edges from a json file, removes self edges and only
+    keeps the n most frequent nodes.
+
+    Args:
+        event (str): the name of the event
+        file (str): the specific file to load. Must be placed in a folder with the event name
+        remove_self_edges (bool, optional): Whether or not to remove self edges. Defaults to True.
+        n_most_frequent (int, optional): The number of most frequent elements to include. Defaults to 10.
+
+    Returns:
+        Tuple[Dict[int, tuple], Dict[int, tuple]]: a dictionary with the most frequent nodes and
+        a dictionary with the associated edges
+    """
     nodes_edges = load_json(
         os.path.join("extracted_triplets_papers", event, file),
     )
@@ -56,10 +90,12 @@ def quantile_min_value(lst, quantile):
 def create_network_graph(
     node_list,
     edge_list,
+    title: str = "Narrative network graph",
     k=0.3,
     node_size_mult=4,
     fontsize=12,
     color="#2a89d6",
+    plot_coordinates=False,
 ):
     G = nx.Graph()
     G.add_edges_from(list(node_list.values()))
@@ -80,13 +116,14 @@ def create_network_graph(
     degrees = nx.degree(G)
 
     plt.figure(figsize=(8, 8))
+    plt.title(title, color="#115691")
     nx.draw(
         G,
         pos,
         node_size=[k[1] ** node_size_mult for k in degrees],
         node_color=color,
         edge_color=color + "80",
-        width=[d["weight"] * 2 for _, _, d in G.edges(data=True)],
+        width=[d["weight"] ** 2 for _, _, d in G.edges(data=True)],
     )
     nx.draw_networkx_edge_labels(
         G,
@@ -102,7 +139,7 @@ def create_network_graph(
         ),
     )
 
-    offset = 0.01
+    offset = 0.015
     for node, (x, y) in pos.items():
         h_align = "center"
         v_align = "center"
@@ -118,70 +155,128 @@ def create_network_graph(
         if y > 0:
             y += offset
             v_align = "bottom"
+        if plot_coordinates:
+            label = f"{node} ({x:.2f}, {y:.2f})"
+        else:
+            label = node
         plt.text(
             x,
             y,
-            node,
+            label,
             fontsize=fontsize,
             color="#404040",
             ha=h_align,
             va=v_align,
-            bbox=dict(
-                facecolor="white",
-                edgecolor="#404040",
-                alpha=0.8,
-                boxstyle="round,pad=0.1",
-            ),
+            # bbox=dict(
+            #     facecolor="white",
+            #     edgecolor="#404040",
+            #     alpha=0.8,
+            #     boxstyle="round,pad=0.1",
+            # ),
         )
     return G
 
 
-week_1_dansk_nodes, week_1_dansk_edges = get_nodes_edges(
+week_1_nodes, week_1_edges = get_nodes_edges(
     "covid_week_1",
-    "danskBERT_nodes_edges.json",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
 )
-week_1_para_nodes, week_1_para_edges = get_nodes_edges(
-    "covid_week_1",
-    "paraphrase_nodes_edges.json",
-)
-week_2_dansk_nodes, week_2_dansk_edges = get_nodes_edges(
+
+week_2_nodes, week_2_edges = get_nodes_edges(
     "covid_week_2",
-    "danskBERT_nodes_edges.json",
-)
-week_2_para_nodes, week_2_para_edges = get_nodes_edges(
-    "covid_week_2",
-    "paraphrase_nodes_edges.json",
+    # "paraphrase_nodes_edges.json",
+    "paraphrase_dim=40_neigh=15_clust=15_samp=5_nodes_edges.json",
 )
 
 
-week_1_dansk_graph = create_network_graph(
-    week_1_dansk_nodes,
-    week_1_dansk_edges,
+week_1_graph = create_network_graph(
+    week_1_nodes,
+    week_1_edges,
+    title="Week 1 of the COVID-19 lockdown",
+    k=0.8,
+    node_size_mult=2.5,
+    fontsize=10,
+)
+
+week_2_graph = create_network_graph(
+    week_2_nodes,
+    week_2_edges,
     k=0.6,
     node_size_mult=2.5,
     fontsize=11,
 )
 
-week_1_para_graph = create_network_graph(
-    week_1_para_nodes,
-    week_1_para_edges,
+
+### Using danskbert instead
+# week_1_dansk_nodes, week_1_dansk_edges = get_nodes_edges(
+#     "covid_week_1",
+#     "danskBERT_nodes_edges.json",
+# )
+
+# week_2_dansk_nodes, week_2_dansk_edges = get_nodes_edges(
+#     "covid_week_2",
+#     "danskBERT_nodes_edges.json",
+# )
+
+### Testing different hyperparameters
+
+week_1_nodes_15, week_1_edges_15 = get_nodes_edges(
+    "covid_week_1",
+    "paraphrase_dim=40_neigh=15_clust=15_samp=5_nodes_edges.json",
+)
+week_1_nodes_10, week_1_edges_10 = get_nodes_edges(
+    "covid_week_1",
+    "paraphrase_dim=40_neigh=15_clust=10_samp=5_nodes_edges.json",
+)
+week_1_nodes_8, week_1_edges_8 = get_nodes_edges(
+    "covid_week_1",
+    "paraphrase_dim=40_neigh=15_clust=8_samp=5_nodes_edges.json",
+)
+week_1_nodes_5, week_1_edges_5 = get_nodes_edges(
+    "covid_week_1",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=5_nodes_edges.json",
+)
+week_1_para_graph_15 = create_network_graph(
+    week_1_nodes_15,
+    week_1_edges_15,
+    k=1,
+    node_size_mult=2.5,
+    fontsize=10,
+)
+week_1_para_graph_10 = create_network_graph(
+    week_1_nodes_10,
+    week_1_edges_10,
+    k=1,
+    node_size_mult=2.5,
+    fontsize=10,
+)
+week_1_para_graph_8 = create_network_graph(
+    week_1_nodes_8,
+    week_1_edges_8,
+    k=1,
+    node_size_mult=2.5,
+    fontsize=10,
+)
+week_1_para_graph_5 = create_network_graph(
+    week_1_nodes_5,
+    week_1_edges_5,
     k=1,
     node_size_mult=2.5,
     fontsize=10,
 )
 
-week_2_dansk_graph = create_network_graph(
-    week_2_dansk_nodes,
-    week_2_dansk_edges,
-    k=0.6,
-    node_size_mult=2.5,
-    fontsize=11,
-)
 
-week_2_para_graph = create_network_graph(
-    week_2_para_nodes,
-    week_2_para_edges,
-    k=0.6,
-    node_size_mult=2.5,
-    fontsize=11,
-)
+# week_1_dansk_graph = create_network_graph(
+#     week_1_dansk_nodes,
+#     week_1_dansk_edges,
+#     k=0.6,
+#     node_size_mult=2.5,
+#     fontsize=11,
+# )
+# week_2_dansk_graph = create_network_graph(
+#     week_2_dansk_nodes,
+#     week_2_dansk_edges,
+#     k=0.6,
+#     node_size_mult=2.5,
+#     fontsize=11,
+# )
