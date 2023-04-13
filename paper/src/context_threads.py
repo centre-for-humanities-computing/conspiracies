@@ -6,19 +6,18 @@ import argparse
 import datetime
 import re
 
+
 def ndjson_gen(filepath: str):
-    """
-    Creates a generator for ndjson files and yields the tweets
-    """
+    """Creates a generator for ndjson files and yields the tweets."""
     for file in glob(filepath):
         print("Reading file:", file)
         with open(file) as f:
             reader = ndjson.reader(f)
             for post in reader:
-                
                 if re.search("^RT", post["text"]):  # remove retweets
                     continue
                 yield post
+
 
 '''
 ### context window thread ###
@@ -90,6 +89,8 @@ def context_window_thread(tweets, context_len, start_date, extra_days):
             break
     return contexts
 '''
+
+
 def context_window_thread(tweets, context_len):
     """
     Extracts a thread of context tweets; the last tweet in the thread is the one that the context relates to
@@ -114,7 +115,9 @@ def context_window_thread(tweets, context_len):
         if context_length == 0 or "referenced_tweets" not in tweet:
             return [tweet]
 
-        replied_to_refs = [ref for ref in tweet["referenced_tweets"] if ref["type"] == "replied_to"]
+        replied_to_refs = [
+            ref for ref in tweet["referenced_tweets"] if ref["type"] == "replied_to"
+        ]
         if replied_to_refs:
             reply_to_id = next(ref["id"] for ref in replied_to_refs)
             try:
@@ -122,60 +125,95 @@ def context_window_thread(tweets, context_len):
             except KeyError:
                 return [tweet]
 
-            context = find_context(reply_to, conversation, context_length=context_length - 1)
+            context = find_context(
+                reply_to,
+                conversation,
+                context_length=context_length - 1,
+            )
             context.append(tweet)
             return context
         else:
             # handle the case where no replied_to reference is found
             return [tweet]
 
-    contexts = [find_context(tweet, conversations[tweet["conversation_id"]]) for tweet in tweets if len(find_context(tweet, conversations[tweet["conversation_id"]])) > 1]
+    contexts = [
+        find_context(tweet, conversations[tweet["conversation_id"]])
+        for tweet in tweets
+        if len(find_context(tweet, conversations[tweet["conversation_id"]])) > 1
+    ]
     return contexts
 
 
-
-
 def range_of_dates(start_date, extra_days):
-    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
     date_range = [start_date + datetime.timedelta(days=x) for x in range(extra_days)]
-    return date_range        
+    return date_range
+
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser(description='Get tweets + context from date range')
-    parser.add_argument('--start_date', type=str, default= "2019-05-22", help='start date in format YYYY-MM-DD')
-    parser.add_argument('--extra_days', type=int, default= 15, help='number of days to include from start date and after')
-    parser.add_argument('--data_path', type=str, default="da_stopwords_part?_2019-01-01_2020-12-31.ndjson", help='path to ndjson file; for all: "*.ndjson"')
-    parser.add_argument('--context_len', type=int, default= 4, help='number of tweets to include in context')
+    parser = argparse.ArgumentParser(description="Get tweets + context from date range")
+    parser.add_argument(
+        "--start_date",
+        type=str,
+        default="2019-05-22",
+        help="start date in format YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "--extra_days",
+        type=int,
+        default=15,
+        help="number of days to include from start date and after",
+    )
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="da_stopwords_part?_2019-01-01_2020-12-31.ndjson",
+        help='path to ndjson file; for all: "*.ndjson"',
+    )
+    parser.add_argument(
+        "--context_len",
+        type=int,
+        default=4,
+        help="number of tweets to include in context",
+    )
     args = parser.parse_args()
 
     path = os.path.join("/data", "004_twitter-stopword", args.data_path)
 
     date_range = range_of_dates(args.start_date, args.extra_days)
     print(date_range)
-    print(f"Looking for tweets from {args.start_date} and {args.extra_days} days forward (to and indcluding: {datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)})")
+    print(
+        f"Looking for tweets from {args.start_date} and {args.extra_days} days forward (to and indcluding: {datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)})",
+    )
     tweets = []
-    
+
     for i, post in enumerate(ndjson_gen(path)):
         # get the date of the tweet and append the tweet if it is within the date range
-        date_ = datetime.datetime.strptime(post["created_at"][0:10], '%Y-%m-%d').date()
+        date_ = datetime.datetime.strptime(post["created_at"][0:10], "%Y-%m-%d").date()
         if date_ in date_range:
-            tweets.append(post)    
+            tweets.append(post)
 
     print(f"Found {len(tweets)} tweets in the date range (out of {i} tweets total)")
-    '''
+    """
     #run the tweet thread extraction 
     contexts = context_window_thread(tweets, args.context_len, args.start_date, args.extra_days)
 
     #write contests to ndjson
     with open(os.path.join(f"tweetcontexts_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson"), "w") as f:
         ndjson.dump(contexts, f) #the ndjson of contexts has the format: List[Dict[str, Any]]
-    '''
-    #CHATGPT
-    #run the tweet thread extraction 
+    """
+    # CHATGPT
+    # run the tweet thread extraction
     contexts = context_window_thread(tweets, args.context_len)
 
-    #write contests to ndjson
-    with open(os.path.join(f"tweet_threads_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson"), "w") as f:
-        ndjson.dump(contexts, f) #the ndjson of contexts has the format: List[Dict[str, Any]]
-    
+    # write contests to ndjson
+    with open(
+        os.path.join(
+            f"tweet_threads_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson",
+        ),
+        "w",
+    ) as f:
+        ndjson.dump(
+            contexts,
+            f,
+        )  # the ndjson of contexts has the format: List[Dict[str, Any]]
