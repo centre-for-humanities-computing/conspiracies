@@ -4,8 +4,9 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import ndjson
 import typing
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Union
 from networkx.drawing.layout import (
     fruchterman_reingold_layout,
     spring_layout,
@@ -54,8 +55,9 @@ def most_frequent_tuples(
     for i, tup in node_dict.items():
         if any(string in most_common_strings for string in tup):
             fr = sum([element_counter[tup[0]], element_counter[tup[1]]])
-            if hard_filter and fr >= highest_freq:
-                result[i] = tup
+            if hard_filter:
+                if fr >= highest_freq:
+                    result[i] = tup
             else:
                 result[i] = tup
     return result
@@ -67,6 +69,7 @@ def get_nodes_edges(
     remove_self_edges: bool = True,
     n_most_frequent: int = 10,
     hard_filter: bool = False,
+    save: Optional[str] = None,
 ) -> Tuple[Dict[int, tuple], Dict[int, tuple]]:
     """Loads nodes and edges from a json file, removes self edges and only
     keeps the n most frequent nodes.
@@ -94,6 +97,15 @@ def get_nodes_edges(
     associated_edges = {
         i: edge for i, edge in edges.items() if i in most_frequent_nodes.keys()
     }
+    if save:
+        with open(save, "w") as f:
+            ndjson.dump(
+                {
+                    "nodes": list(most_frequent_nodes.values()),
+                    "edges": list(associated_edges.values()),
+                },
+                f,
+            )
     return most_frequent_nodes, associated_edges
 
 
@@ -150,7 +162,7 @@ def create_network_graph(
         G,
         pos,
         node_size=[
-            k[1] ** node_size_mult if k[1] ** node_size_mult < 1000 else 1000
+            k[1] ** node_size_mult  # if k[1] ** node_size_mult < 1000 else 1000
             for k in degrees
         ],
         node_color=color,
@@ -217,6 +229,7 @@ twitter_week_1_nodes, twitter_week_1_edges = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
     hard_filter=True,
+    save="twitter_week_1_nodes_edges.ndjson",
 )
 
 twitter_week_1_graph = create_network_graph(
@@ -226,9 +239,9 @@ twitter_week_1_graph = create_network_graph(
     layout=spring_layout,
     # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=2.5,
+    node_size_mult=2,
     fontsize=11,
-    save="fig/twitter_week_1_graph",
+    # save="fig/twitter_week_1_graph",
 )
 
 # News papers
@@ -236,6 +249,7 @@ twitter_week_1_graph = create_network_graph(
 news_week_1_nodes, news_week_1_edges = get_nodes_edges(
     "extracted_triplets_papers/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    save="news_week_1_nodes_edges.ndjson",
 )
 
 news_week_2_nodes, news_week_2_edges = get_nodes_edges(
@@ -250,7 +264,7 @@ news_week_1_graph = create_network_graph(
     news_week_1_edges,
     title="Covid-19 lockdown week 1 - Newspapers",
     k=1.5,
-    node_size_mult=2.5,
+    node_size_mult=2,
     fontsize=10,
     save="fig/news_week_1_graph",
 )
@@ -262,7 +276,7 @@ news_week_2_graph = create_network_graph(
     # layout=spring_layout,
     # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=2.5,
+    node_size_mult=2,
     fontsize=10,
     save="fig/news_week_2_graph",
 )
