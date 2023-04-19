@@ -24,19 +24,6 @@ def build_coref_pipeline():
     return nlp_coref
 
 
-def build_relation_extraction_pipeline():
-    nlp = spacy.load("da_core_news_sm")
-    nlp.add_pipe("sentencizer")
-    nlp.add_pipe(
-        "heads_extraction",
-        config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
-    )
-    config = {"confidence_threshold": 2.7, "model_args": {"batch_size": 10}}
-    nlp.add_pipe("relation_extractor", config=config)
-
-    return nlp
-
-
 def yield_one_article(articles: List[dict]) -> Generator:
     for article in articles:
         yield article["text"]

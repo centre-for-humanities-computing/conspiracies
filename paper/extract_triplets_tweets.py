@@ -2,10 +2,11 @@ import time
 import os
 import random
 from pathlib import Path
-from typing import List, Optional, Generator, Union
+from typing import List, Optional, Generator, Union, Dict
 import spacy
-from spacy.tokens import Doc
+from spacy.tokens import Doc, Span
 import argparse
+import sys
 
 from data import load_gold_triplets
 import spacy
@@ -18,6 +19,7 @@ import openai
 
 # Conspiracies
 from conspiracies.coref import CoreferenceComponent
+from conspiracies.relationextraction import SpacyRelationExtractor
 
 from extract_utils import write_txt, ndjson_gen
 from src.concat_split_contexts import (
@@ -123,7 +125,7 @@ def concatenate_tweets(file_path: str):
     return context_tweets
 
 
-def extract_save_triplets(
+def extract_save_triplets_gpt(
     responses: dict,
     template: PromptTemplate,
     event: str,
@@ -164,51 +166,45 @@ def extract_save_triplets(
     )
 
 
-def main(
-    file_path: str,
+def prompt_gpt3(
+    concatenated_tweets: Generator,
+    api_key: Union[str, None],
     event: str,
-    api_key: str,
-    template_batch_size: int = 20,
-    sample_size: Union[None, int] = None,
+    batch_size: int = 20,
     org_id: Optional[str] = None,
 ):
-    """Main function for extracting triplets from tweets Uses GPT3 prompting.
+    """Prompts GPT-3 with a template and a generator of concatenated tweets.
+    The tweets are resolved with coreference resolution, and then the template
+    is used to create a prompt for each tweet. The prompts are then sent to
+    GPT-3, and the responses are parsed and saved.
 
     Args:
-        file_path (str): path to where the contexts are stored
-        event (str): name of the event. Used when saving the extracted triplets
-        template_batch_size (int, optional): Number of tweets to prompt GPT3 with at a time.
-            Defaults to 20 (max length for list of prompts).
+        template (PromptTemplate): Template to use for prompting
+        concatenated_tweets (Generator): Generator of concatenated tweets
+        api_key (str): API key for GPT-3
+        event (str): Event name
+        batch_size (int, optional): Number of tweets to send in each batch.
+            Defaults to 20.
+        org_id (Optional[str], optional): Organization ID for GPT-3. Defaults to None.
     """
-    # Check if the folder for the event exists, if not create it
-    Path(os.path.join("extracted_triplets_tweets", event)).mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-    print("Loading gold docs and setting up template")
-    template = prepare_template(MarkdownPromptTemplate2)
-    print("Concatenating tweets")
-    concatenated = concatenate_tweets(file_path)
-
-    # Downsampling
-    if sample_size:
-        if len(concatenated) < sample_size:
-            print(
-                f"Sample size ({sample_size}) is larger than the number of tweets ({len(concatenated)}), using all tweets",
-            )
-        else:
-            concatenated = random.sample(concatenated, sample_size)
-            print(f"Downsampled to {len(concatenated)} tweets")
+    assert api_key, "Please provide an API key when using GPT-3"
 
     # Setup
+    print("Loading gold docs and setting up template")
+    template = prepare_template(MarkdownPromptTemplate2)
     coref_nlp = build_coref_pipeline()
     head_nlp = build_headword_extraction_pipeline()
     if org_id:
         openai.org_id = org_id
     openai.api_key = api_key
+    # Check if the folder for the event exists, if not create it
+    Path(os.path.join("extracted_triplets_tweets", event)).mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     print("batching")
-    for i, batch in enumerate(batch_generator(concatenated, template_batch_size)):
+    for i, batch in enumerate(batch_generator(concatenated_tweets, batch_size)):
         start = time.time()
         coref_docs = coref_nlp.pipe(batch)
         resolved_docs = (d._.resolve_coref for d in coref_docs)
@@ -230,7 +226,7 @@ def main(
                 )
 
                 print("parsing response and saving")
-                extract_save_triplets(responses, template, event, head_nlp)
+                extract_save_triplets_gpt(responses, template, event, head_nlp)
                 print(f"batch {i} done in {time.time() - start} seconds\n")
                 break
 
@@ -249,6 +245,146 @@ def main(
             except openai.error.APIConnectionError:
                 print("Connection reset, waiting 20 sec then retrying...")
                 time.sleep(20)
+
+
+def multi2oie_extraction(
+    concatenated_tweets: list,
+    event: str,
+):
+    # Check if the folder for the event exists, if not create it
+    Path(os.path.join("extracted_triplets_tweets", f"{event}_multi")).mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    print("Building pipeline")
+    nlp = spacy.load("da_core_news_sm")
+    nlp.add_pipe("sentencizer")
+    nlp.add_pipe(
+        "heads_extraction",
+        config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
+    )
+    config = {"confidence_threshold": 2.7, "model_args": {"batch_size": 10}}
+    nlp.add_pipe("relation_extractor", config=config)
+
+    docs = nlp.pipe(concatenated_tweets)
+    start = time.time()
+    while True:
+        try:
+            for i, doc in enumerate(docs):
+                subjects, predicates, objects, triplets = [], [], [], []
+                try:
+                    for triplet in doc._.relation_triplets:
+                        if not all(isinstance(element, Span) for element in triplet):
+                            continue
+                        if len(triplet) != 3:
+                            continue
+                        subject = triplet[0]._.most_common_ancestor.text
+                        predicate = triplet[1]._.most_common_ancestor.text
+                        obj = triplet[2]._.most_common_ancestor.text
+                        subjects.append(subject)
+                        predicates.append(predicate)
+                        objects.append(obj)
+                        triplets.append((subject, predicate, obj))
+
+                    if len(triplets) > 0:
+                        write_txt(
+                            os.path.join(
+                                "extracted_triplets_tweets",
+                                f"{event}_multi",
+                                "subjects.txt",
+                            ),
+                            subjects,
+                            "a+",
+                        )
+                        write_txt(
+                            os.path.join(
+                                "extracted_triplets_tweets",
+                                f"{event}_multi",
+                                "predicates.txt",
+                            ),
+                            predicates,
+                            "a+",
+                        )
+                        write_txt(
+                            os.path.join(
+                                "extracted_triplets_tweets",
+                                f"{event}_multi",
+                                "objects.txt",
+                            ),
+                            objects,
+                            "a+",
+                        )
+                        write_txt(
+                            os.path.join(
+                                "extracted_triplets_tweets",
+                                f"{event}_multi",
+                                "triplets.txt",
+                            ),
+                            triplets,
+                            "a+",
+                        )
+                    if i % 20 == 0 and i != 0:
+                        print(
+                            f"batch {i} done. Processed 20 tweets in {time.time() - start} seconds\n",
+                        )
+                        start = time.time()
+                except KeyError:
+                    print("KeyError: Skipping doc")
+                    continue
+            break
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
+
+
+def main(
+    file_path: str,
+    event: str,
+    api_key: Optional[str] = None,
+    template_batch_size: int = 20,
+    sample_size: Union[None, int] = None,
+    org_id: Optional[str] = None,
+    extraction_method: str = "gpt3",
+):
+    """Main function for extracting triplets from tweets Uses GPT3 prompting.
+
+    Args:
+        file_path (str): path to where the contexts are stored
+        event (str): name of the event. Used when saving the extracted triplets
+        template_batch_size (int, optional): Number of tweets to prompt GPT3 with at a time.
+            Defaults to 20 (max length for list of prompts).
+    """
+    print("Concatenating tweets")
+    concatenated = concatenate_tweets(file_path)
+
+    # Downsampling
+    if sample_size:
+        if len(concatenated) < sample_size:
+            print(
+                f"Sample size ({sample_size}) is larger than the number of tweets ({len(concatenated)}), using all tweets",
+            )
+        else:
+            concatenated = random.sample(concatenated, sample_size)
+            print(f"Downsampled to {len(concatenated)} tweets")
+
+    print(f"Extracting triplets with {extraction_method}")
+    if extraction_method == "gpt3":
+        prompt_gpt3(
+            concatenated,
+            api_key,
+            event,
+            template_batch_size,
+            org_id,
+        )
+    elif extraction_method == "Multi2OIE":
+        multi2oie_extraction(
+            concatenated,
+            event,
+        )
+    else:
+        raise ValueError(
+            f"Extraction method {extraction_method} not supported. Please choose between 'gpt3' and 'Multi2OIE'.",
+        )
 
 
 if __name__ == "__main__":
@@ -287,13 +423,23 @@ if __name__ == "__main__":
         type=str,
         required=False,
         default=None,
-        help="OpenAI organization ID",
+        help="OpenAI organization ID. Defaults to None.",
     )
     parser.add_argument(
         "-api_key",
         "--api_key",
         type=str,
-        help="OpenAI API key",
+        required=False,
+        default=None,
+        help="OpenAI API key. Defaults to None.",
+    )
+    parser.add_argument(
+        "-x",
+        "--extraction_method",
+        type=str,
+        required=False,
+        default="gpt3",
+        help="Extraction method. Defaults to gpt3. Other option is 'Multi2OIE'",
     )
     # file_path = os.path.join("src", "TESTnew_tweet_threads_2019-03-10_2019-03-17.ndjson")
     # event="covid_week_1"
@@ -306,4 +452,5 @@ if __name__ == "__main__":
         template_batch_size=args.template_batch_size,
         sample_size=args.sample_size,
         org_id=args.org_id,
+        extraction_method=args.extraction_method,
     )
