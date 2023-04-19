@@ -6,7 +6,7 @@ import os
 import numpy as np
 import ndjson
 import typing
-from typing import Dict, Tuple, Optional, Union
+from typing import Dict, Tuple, Optional, List
 from networkx.drawing.layout import (
     fruchterman_reingold_layout,
     spring_layout,
@@ -67,6 +67,7 @@ def get_nodes_edges(
     event: str,
     file: str,
     remove_self_edges: bool = True,
+    remove_custom_nodes: Optional[List[str]] = None,
     n_most_frequent: int = 10,
     hard_filter: bool = False,
     save: Optional[str] = None,
@@ -93,6 +94,12 @@ def get_nodes_edges(
     # Removing self edges and only keeping the most frequent nodes
     if remove_self_edges:
         nodes = {i: (e1, e2) for i, (e1, e2) in nodes.items() if e1 != e2}
+    if remove_custom_nodes:
+        nodes = {
+            i: (e1, e2)
+            for i, (e1, e2) in nodes.items()
+            if e1 not in remove_custom_nodes and e2 not in remove_custom_nodes
+        }
     most_frequent_nodes = most_frequent_tuples(nodes, n_most_frequent, hard_filter)
     associated_edges = {
         i: edge for i, edge in edges.items() if i in most_frequent_nodes.keys()
@@ -236,12 +243,33 @@ twitter_week_1_graph = create_network_graph(
     twitter_week_1_nodes,
     twitter_week_1_edges,
     title="Covid-19 lockdown week 1 - Twitter",
-    layout=spring_layout,
+    # layout=spring_layout,
     # layout=kamada_kawai_layout,
     k=2.5,
     node_size_mult=2,
     fontsize=11,
-    # save="fig/twitter_week_1_graph",
+    save="fig/twitter_week_1_graph",
+)
+
+# No få
+twitter_week_1_nodes_rm_få, twitter_week_1_edges_rm_få = get_nodes_edges(
+    "extracted_triplets_tweets/covid_week_1",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    remove_custom_nodes=["få"],
+    hard_filter=True,
+    save="twitter_week_1_nodes_edges.ndjson",
+)
+
+twitter_week_1_graph = create_network_graph(
+    twitter_week_1_nodes_rm_få,
+    twitter_week_1_edges_rm_få,
+    title="Covid-19 lockdown week 1 - Twitter",
+    # layout=spring_layout,
+    # layout=kamada_kawai_layout,
+    k=2.5,
+    node_size_mult=2,
+    fontsize=11,
+    save="fig/twitter_week_1_graph_rm_få.png",
 )
 
 # News papers
