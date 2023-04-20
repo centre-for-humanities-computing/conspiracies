@@ -268,73 +268,75 @@ def multi2oie_extraction(
 
     docs = nlp.pipe(concatenated_tweets)
     start = time.time()
-    while True:
+    i = 0
+    run = True
+    while run:
         try:
-            for i, doc in enumerate(docs):
-                subjects, predicates, objects, triplets = [], [], [], []
-                try:
-                    for triplet in doc._.relation_triplets:
-                        if not all(isinstance(element, Span) for element in triplet):
-                            continue
-                        if len(triplet) != 3:
-                            continue
-                        subject = triplet[0]._.most_common_ancestor.text
-                        predicate = triplet[1]._.most_common_ancestor.text
-                        obj = triplet[2]._.most_common_ancestor.text
-                        subjects.append(subject)
-                        predicates.append(predicate)
-                        objects.append(obj)
-                        triplets.append((subject, predicate, obj))
+            i += 1
+            doc = next(docs)
+        except KeyError:
+            print("Received a KeyError, skipping tweet")
+            docs = nlp.pipe(concatenated_tweets[i:])
+            continue
+        except StopIteration:
+            print("Stopping iteration because of StopIteration exception")
+            run = False
+        subjects, predicates, objects, triplets = [], [], [], []
+        for triplet in doc._.relation_triplets:
+            if not all(isinstance(element, Span) for element in triplet):
+                continue
+            if len(triplet) != 3:
+                continue
+            subject = triplet[0]._.most_common_ancestor.text
+            predicate = triplet[1]._.most_common_ancestor.text
+            obj = triplet[2]._.most_common_ancestor.text
+            subjects.append(subject)
+            predicates.append(predicate)
+            objects.append(obj)
+            triplets.append((subject, predicate, obj))
 
-                    if len(triplets) > 0:
-                        write_txt(
-                            os.path.join(
-                                "extracted_triplets_tweets",
-                                f"{event}_multi",
-                                "subjects.txt",
-                            ),
-                            subjects,
-                            "a+",
-                        )
-                        write_txt(
-                            os.path.join(
-                                "extracted_triplets_tweets",
-                                f"{event}_multi",
-                                "predicates.txt",
-                            ),
-                            predicates,
-                            "a+",
-                        )
-                        write_txt(
-                            os.path.join(
-                                "extracted_triplets_tweets",
-                                f"{event}_multi",
-                                "objects.txt",
-                            ),
-                            objects,
-                            "a+",
-                        )
-                        write_txt(
-                            os.path.join(
-                                "extracted_triplets_tweets",
-                                f"{event}_multi",
-                                "triplets.txt",
-                            ),
-                            triplets,
-                            "a+",
-                        )
-                    if i % 20 == 0 and i != 0:
-                        print(
-                            f"batch {i} done. Processed 20 tweets in {time.time() - start} seconds\n",
-                        )
-                        start = time.time()
-                except KeyError:
-                    print("KeyError: Skipping doc")
-                    continue
-            break
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
+        if len(triplets) > 0:
+            write_txt(
+                os.path.join(
+                    "extracted_triplets_tweets",
+                    f"{event}_multi",
+                    "subjects.txt",
+                ),
+                subjects,
+                "a+",
+            )
+            write_txt(
+                os.path.join(
+                    "extracted_triplets_tweets",
+                    f"{event}_multi",
+                    "predicates.txt",
+                ),
+                predicates,
+                "a+",
+            )
+            write_txt(
+                os.path.join(
+                    "extracted_triplets_tweets",
+                    f"{event}_multi",
+                    "objects.txt",
+                ),
+                objects,
+                "a+",
+            )
+            write_txt(
+                os.path.join(
+                    "extracted_triplets_tweets",
+                    f"{event}_multi",
+                    "triplets.txt",
+                ),
+                triplets,
+                "a+",
+            )
+        if i % 20 == 0 and i != 0:
+            print(
+                f"Tweet {i} done. Processed 20 tweets in {time.time() - start} seconds\n",
+            )
+            start = time.time()
 
 
 def main(
