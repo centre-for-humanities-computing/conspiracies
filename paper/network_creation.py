@@ -55,6 +55,8 @@ def most_frequent_tuples(
     for i, tup in node_dict.items():
         if any(string in most_common_strings for string in tup):
             fr = sum([element_counter[tup[0]], element_counter[tup[1]]])
+            # If hard_filter, keep only pairs of nodes at least at frequent
+            # as the most frequent node
             if hard_filter:
                 if fr >= highest_freq:
                     result[i] = tup
@@ -79,7 +81,11 @@ def get_nodes_edges(
         event (str): the name of the event
         file (str): the specific file to load. Must be placed in a folder with the event name
         remove_self_edges (bool, optional): Whether or not to remove self edges. Defaults to True.
+        remove_custom_nodes (list, optional): A list of nodes to remove from the graph. Defaults to None.
         n_most_frequent (int, optional): The number of most frequent elements to include. Defaults to 10.
+        hard_filter (bool, optional): Passed to most_frequent_tuples. Whether or not to filter away
+            pairs of nodes that are less frequent than the single most frequent. Defaults to False.
+        save (str, optional): If provided, the filtered nodes and edges will be saved to this path.
 
     Returns:
         Tuple[Dict[int, tuple], Dict[int, tuple]]: a dictionary with the most frequent nodes and
@@ -128,7 +134,9 @@ def create_network_graph(
     layout=fruchterman_reingold_layout,
     k: float = 0.3,
     node_size_mult: float = 4,
+    edge_weight_mult: float = 2,
     fontsize: int = 12,
+    quantile_value: float = 0.90,
     color: str = "#2a89d6",
     plot_coordinates: bool = False,
     seed: Optional[int] = None,
@@ -141,22 +149,13 @@ def create_network_graph(
         # Make the graph undirected - for some reason, the tuples are sometimes reversed in the edge list
         d["weight"] = c[(u, v)] + c[(v, u)]
 
-    edge_label_weight_cutoff = quantile_min_value(list(c.values()), 0.90)
+    edge_label_weight_cutoff = quantile_min_value(list(c.values()), quantile_value)
     edges_to_draw = {}
     for n, nodes in node_list.items():
         if c[nodes] >= edge_label_weight_cutoff:
             edges_to_draw[nodes] = edge_list[n]
 
     if layout == kamada_kawai_layout:
-        # element_counter: typing.Counter = Counter()
-        # for tup in node_list.values():
-        #     for string in tup:
-        #         element_counter[string] += 1
-        # most_common = element_counter.most_common(5)
-
-        # value_dict = {k:100 for k,_ in most_common[1:]}
-        # dist = {most_common[0][1]:value_dict}
-        # pos = layout(G, dist=dist)
         pos = layout(G, scale=2)
     else:
         pos = layout(G, k=k, seed=seed)
@@ -164,7 +163,11 @@ def create_network_graph(
     degrees = nx.degree(G)
 
     plt.figure(figsize=(10, 10))
-    plt.title(title, color="#115691")
+    plt.title(
+        title,
+        color="#115691",
+        fontsize=fontsize + 2,
+    )
     nx.draw(
         G,
         pos,
@@ -174,7 +177,7 @@ def create_network_graph(
         ],
         node_color=color,
         edge_color=color + "80",
-        width=[d["weight"] ** 2 for _, _, d in G.edges(data=True)],
+        width=[d["weight"] ** edge_weight_mult for _, _, d in G.edges(data=True)],
     )
     nx.draw_networkx_edge_labels(
         G,
@@ -270,6 +273,30 @@ twitter_week_1_graph = create_network_graph(
     node_size_mult=2,
     fontsize=11,
     save="fig/twitter_week_1_graph_rm_få.png",
+)
+
+# With old triplet extraction instead of GPT
+twitter_week_1_nodes_multi, twitter_week_1_edges_multi = get_nodes_edges(
+    "extracted_triplets_tweets/covid_week_1_multi",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    # remove_custom_nodes=["få"],
+    hard_filter=False,
+    n_most_frequent=10,
+    # save="twitter_week_1_nodes_edges_multi.ndjson",
+)
+
+twitter_week_1_graph_multi = create_network_graph(
+    twitter_week_1_nodes_multi,
+    twitter_week_1_edges_multi,
+    title="Covid-19 lockdown week 1 - Twitter",
+    # layout=spring_layout,
+    # layout=kamada_kawai_layout,
+    k=2.5,
+    node_size_mult=3,
+    edge_weight_mult=0.7,
+    fontsize=12,
+    quantile_value=0.6,
+    # save="fig/twitter_week_1_graph_rm_få.png",
 )
 
 # News papers
