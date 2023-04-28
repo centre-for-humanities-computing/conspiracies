@@ -127,14 +127,32 @@ def quantile_min_value(lst, quantile):
     return min(filter(lambda x: x >= q, lst))
 
 
+def min_max_normalize(list_to_normalize: list, min_constant=0.5) -> list:
+    """Normalizes a list between 0 and 1 using min-max normalization.
+
+    Args:
+        list_to_normalize (list): The list to normalize
+
+    Returns:
+        list: The normalized list
+    """
+    min_value = min(list_to_normalize)
+    max_value = max(list_to_normalize)
+    if min_value == max_value:
+        return list_to_normalize
+    scaled_list = [(x - min_value) / (max_value - min_value) for x in list_to_normalize]
+    return [x + min_constant for x in scaled_list]
+
+
 def create_network_graph(
     node_list,
     edge_list,
     title: str = "Narrative network graph",
     layout=fruchterman_reingold_layout,
     k: float = 0.3,
-    node_size_mult: float = 4,
-    edge_weight_mult: float = 2,
+    node_size_mult: float = 3000,
+    node_size_min: float = 0.001,
+    edge_weight_mult: float = 5,
     fontsize: int = 12,
     quantile_value: float = 0.90,
     node_color: str = "#2a89d6",
@@ -163,23 +181,26 @@ def create_network_graph(
         pos = layout(G, k=k, seed=seed)
 
     degrees = nx.degree(G)
-
+    normalized_degrees = min_max_normalize(
+        [d[1] for d in degrees],
+        min_constant=node_size_min,
+    )
     plt.figure(figsize=(fig_size, fig_size))
     plt.title(
         title,
         color="k",
         fontsize=fontsize + 4,
     )
+    edge_weights = min_max_normalize([d["weight"] for _, _, d in G.edges(data=True)])
     nx.draw(
         G,
         pos,
-        node_size=[
-            k[1] ** node_size_mult  # if k[1] ** node_size_mult < 1000 else 1000
-            for k in degrees
-        ],
+        # node_size=non_norm_degrees,
+        node_size=[d * node_size_mult for d in normalized_degrees],
         node_color=node_color,
         edge_color=edge_color + "80",
-        width=[d["weight"] ** edge_weight_mult for _, _, d in G.edges(data=True)],
+        # width=[d["weight"] ** edge_weight_mult for _, _, d in G.edges(data=True)],
+        width=[e * edge_weight_mult for e in edge_weights],
     )
     nx.draw_networkx_edge_labels(
         G,
@@ -241,8 +262,8 @@ twitter_week_1_nodes, twitter_week_1_edges = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
     hard_filter=True,
-    save="twitter_week_1_nodes_edges.ndjson",
 )
+
 twitter_week_1_graph = create_network_graph(
     twitter_week_1_nodes,
     twitter_week_1_edges,
@@ -250,54 +271,44 @@ twitter_week_1_graph = create_network_graph(
     # layout=spring_layout,
     # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=2,
     node_color="#A82800",
     fontsize=11,
     save="fig/twitter_week_1_graph",
 )
+
 # No få
 twitter_week_1_nodes_rm_få, twitter_week_1_edges_rm_få = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
     remove_custom_nodes=["få"],
     hard_filter=True,
-    save="twitter_week_1_nodes_edges.ndjson",
 )
-twitter_week_1_graph = create_network_graph(
+twitter_week_1_rm_få = create_network_graph(
     twitter_week_1_nodes_rm_få,
     twitter_week_1_edges_rm_få,
     title="Covid-19 lockdown week 1 - Twitter",
-    # layout=spring_layout,
-    # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=2,
     node_color="#A82800",
     fontsize=11,
-    save="fig/twitter_week_1_graph_rm_få.png",
+    save="fig/twitter_week_1_graph_rm_få",
 )
 # With old triplet extraction instead of GPT
 twitter_week_1_nodes_multi, twitter_week_1_edges_multi = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1_multi",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    # remove_custom_nodes=["få"],
     hard_filter=False,
     n_most_frequent=10,
-    # save="twitter_week_1_nodes_edges_multi.ndjson",
 )
 
 twitter_week_1_graph_multi = create_network_graph(
     twitter_week_1_nodes_multi,
     twitter_week_1_edges_multi,
     title="Covid-19 lockdown week 1 - Twitter",
-    # layout=spring_layout,
-    # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=3,
-    edge_weight_mult=0.7,
     node_color="#A82800",
     fontsize=12,
     quantile_value=0.6,
-    save="fig/twitter_week_1_graph_multi.png",
+    save="fig/twitter_week_1_graph_multi",
 )
 
 ### News papers
@@ -317,13 +328,37 @@ news_mink_start_graph = create_network_graph(
     layout=spring_layout,
     # layout=kamada_kawai_layout,
     node_color="#A82800",
+    # node_size_mult=3000,
     k=4,
-    node_size_mult=2.5,
-    edge_weight_mult=1,
     fontsize=12,
-    fig_size=9,
-    quantile_value=0.6,
-    save="fig/news_mink_start.png",
+    # fig_size=9,
+    quantile_value=0.83,
+    save="fig/news_mink_start",
+)
+
+# mink - Mogens Jensen resigning
+
+news_mink_mj_nodes, news_mink_mj_edges = get_nodes_edges(
+    "extracted_triplets_papers/mink_mogens_jensen",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    hard_filter=True,
+    # n_most_frequent=20
+)
+
+news_mink_mj_graph = create_network_graph(
+    news_mink_mj_nodes,
+    news_mink_mj_edges,
+    title="Mink case, Mogens Jensen resigning - Newspapers",
+    layout=spring_layout,
+    # layout=kamada_kawai_layout,
+    node_color="#A82800",
+    k=4,
+    node_size_mult=2000,
+    # edge_weight_mult=1,
+    fontsize=12,
+    # fig_size=9,
+    # quantile_value=0.6,
+    save="fig/news_mink_mj",
 )
 
 # Covid week 1
@@ -345,8 +380,6 @@ news_week_1_graph = create_network_graph(
     news_week_1_nodes,
     news_week_1_edges,
     title="Covid-19 lockdown week 1 - Newspapers",
-    k=1.5,
-    node_size_mult=2,
     node_color="#A82800",
     fontsize=10,
     save="fig/news_week_1_graph",
@@ -356,12 +389,8 @@ news_week_2_graph = create_network_graph(
     news_week_2_nodes,
     news_week_2_edges,
     title="Week 2 of the COVID-19 lockdown",
-    # layout=spring_layout,
-    # layout=kamada_kawai_layout,
     k=2.5,
-    node_size_mult=2,
     node_color="#A82800",
-    fontsize=10,
     save="fig/news_week_2_graph",
 )
 
