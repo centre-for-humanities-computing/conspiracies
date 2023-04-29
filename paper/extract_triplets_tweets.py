@@ -108,7 +108,7 @@ def concat_resolve_unconcat_contexts(file_path: str):
     return resolved_tweets
 
 
-def concatenate_tweets(file_path: str):
+def concatenate_tweets(file_path: str, save_path: Optional[str] = None):
     """Concatenates tweets in a file.
 
     Args:
@@ -121,6 +121,8 @@ def concatenate_tweets(file_path: str):
     for context in ndjson_gen(file_path):
         concatenated = concat_context(context)
         context_tweets.append(concatenated)
+        if save_path:
+            write_txt(save_path, [context[-1]["id"]], "a+")
 
     return context_tweets
 
@@ -357,7 +359,7 @@ def main(
             Defaults to 20 (max length for list of prompts).
     """
     print("Concatenating tweets")
-    concatenated = concatenate_tweets(file_path)
+    concatenated = concatenate_tweets(file_path, f"processed_tweets_{file_path}.txt")
 
     # Downsampling
     if sample_size:
