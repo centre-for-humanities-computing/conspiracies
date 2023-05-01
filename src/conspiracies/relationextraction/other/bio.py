@@ -292,7 +292,7 @@ def _find_begins(idxs):
 
 
 def get_confidence_score(pred_probs, arg_probs, extraction_idxs):
-    """get the confidence score of each extraction for drawing PR-curve.
+    """Get the confidence score of each extraction for drawing PR-curve.
 
     :param pred_probs: (sequence length, # of predicate labels)
     :param arg_probs: (# of predicates, sequence length, # of argument labels)

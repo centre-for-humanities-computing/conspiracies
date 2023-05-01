@@ -18,7 +18,7 @@ from .util import (
 
 
 class SpacyRelationExtractor(TrainablePipe):
-    """spaCy pipeline component that adds a multilingual relation-extraction
+    """SpaCy pipeline component that adds a multilingual relation-extraction
     component. The extractions are saved in the doc._.relation_triplets,
 
     ._.relation_head,
