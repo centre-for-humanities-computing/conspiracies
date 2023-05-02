@@ -311,6 +311,28 @@ twitter_week_1_graph_multi = create_network_graph(
     save="fig/twitter_week_1_graph_multi",
 )
 
+# Mink start
+twitter_mink_start_nodes, twitter_mink_start_edges = get_nodes_edges(
+    "extracted_triplets_tweets/mink_start",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    hard_filter=True,
+)
+
+twitter_mink_start_graph = create_network_graph(
+    twitter_mink_start_nodes,
+    twitter_mink_start_edges,
+    title="Mink case start - Twitter",
+    layout=spring_layout,
+    # layout=kamada_kawai_layout,
+    node_color="#A82800",
+    # node_size_mult=3000,
+    k=4,
+    fontsize=12,
+    # fig_size=9,
+    quantile_value=0.83,
+    save="fig/twitter_mink_start",
+)
+
 ### News papers
 
 # Mink start
