@@ -326,11 +326,29 @@ twitter_mink_start_graph = create_network_graph(
     # layout=kamada_kawai_layout,
     node_color="#A82800",
     # node_size_mult=3000,
-    k=4,
+    k=3,
     fontsize=12,
     # fig_size=9,
     quantile_value=0.83,
+    seed=34,
     save="fig/twitter_mink_start",
+)
+
+twitter_mink_start_nodes_multi, twitter_mink_start_edges_multi = get_nodes_edges(
+    "extracted_triplets_tweets/mink_start_multi",
+    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+    hard_filter=False,
+)
+
+twitter_mink_start_graph_multi = create_network_graph(
+    twitter_mink_start_nodes_multi,
+    twitter_mink_start_edges_multi,
+    title="Mink case start - Twitter",
+    # layout=spring_layout,
+    node_color="#A82800",
+    k=3,
+    fontsize=12,
+    save="fig/twitter_mink_start_multi",
 )
 
 ### News papers
@@ -348,9 +366,7 @@ news_mink_start_graph = create_network_graph(
     news_mink_start_edges,
     title="Mink case start - Newspapers",
     layout=spring_layout,
-    # layout=kamada_kawai_layout,
     node_color="#A82800",
-    # node_size_mult=3000,
     k=4,
     fontsize=12,
     # fig_size=9,
@@ -376,7 +392,6 @@ news_mink_mj_graph = create_network_graph(
     node_color="#A82800",
     k=4,
     node_size_mult=2000,
-    # edge_weight_mult=1,
     fontsize=12,
     # fig_size=9,
     # quantile_value=0.6,
