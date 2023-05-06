@@ -134,17 +134,31 @@ def extract_save_triplets_gpt(
     nlp: spacy.Language,
 ):
     subjects, predicates, objects, triplets = [], [], [], []
+    subjects_full, predicates_full, objects_full, triplets_full = [], [], [], []
     for response in responses["choices"]:
         for triplet in template.parse_prompt(response["text"], target_tweet=""):
             if "" in (triplet.subject, triplet.predicate, triplet.object):
                 continue
-            subject = nlp(triplet.subject)._.most_common_ancestor.text
-            predicate = nlp(triplet.predicate)._.most_common_ancestor.text
-            obj = nlp(triplet.object)._.most_common_ancestor.text
-            subjects.append(subject)
-            predicates.append(predicate)
-            objects.append(obj)
-            triplets.append(f"{subject}, {predicate}, {obj}")
+            # Extract elements
+            subject = nlp(triplet.subject)
+            predicate = nlp(triplet.predicate)
+            obj = nlp(triplet.object)
+
+            # Save non-headword reduced
+            subjects_full.append(triplet.subject)
+            predicates_full.append(triplet.predicate)
+            objects_full.append(triplet.object)
+            triplets_full.append(
+                f"{triplet.subject}, {triplet.predicate}, {triplet.object}",
+            )
+
+            # Save headword reduced
+            subjects.append(subject._.most_common_ancestor.text)
+            predicates.append(predicate._.most_common_ancestor.text)
+            objects.append(obj._.most_common_ancestor.text)
+            triplets.append(
+                f"{subject._.most_common_ancestor.text}, {predicate._.most_common_ancestor.text}, {obj._.most_common_ancestor.text}",
+            )
 
     write_txt(
         os.path.join("extracted_triplets_tweets", event, "subjects.txt"),
@@ -164,6 +178,26 @@ def extract_save_triplets_gpt(
     write_txt(
         os.path.join("extracted_triplets_tweets", event, "triplets.txt"),
         triplets,
+        "a+",
+    )
+    write_txt(
+        os.path.join("extracted_triplets_tweets", event, "subjects_full.txt"),
+        subjects_full,
+        "a+",
+    )
+    write_txt(
+        os.path.join("extracted_triplets_tweets", event, "predicates_full.txt"),
+        predicates_full,
+        "a+",
+    )
+    write_txt(
+        os.path.join("extracted_triplets_tweets", event, "objects_full.txt"),
+        objects_full,
+        "a+",
+    )
+    write_txt(
+        os.path.join("extracted_triplets_tweets", event, "triplets_full.txt"),
+        triplets_full,
         "a+",
     )
 
@@ -247,6 +281,14 @@ def prompt_gpt3(
             except openai.error.APIConnectionError:
                 print("Connection reset, waiting 20 sec then retrying...")
                 time.sleep(20)
+            except openai.error.APIError:
+                print("API error, waiting 20 sec then retrying...")
+                time.sleep(20)
+                continue
+            except openai.error.RateLimitError:
+                print("RateLimitError, waiting 20 sec then retrying...")
+                time.sleep(20)
+                continue
 
 
 def multi2oie_extraction(
