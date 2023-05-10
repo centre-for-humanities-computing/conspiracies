@@ -2,6 +2,7 @@ import networkx as nx
 import json
 from collections import Counter
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import os
 import numpy as np
 import ndjson
@@ -147,19 +148,21 @@ def min_max_normalize(list_to_normalize: list, min_constant=0.5) -> list:
 def create_network_graph(
     node_list,
     edge_list,
-    title: str = "Narrative network graph",
+    title: Optional[str] = None,
     layout=fruchterman_reingold_layout,
     k: float = 0.3,
     node_size_mult: float = 3000,
     node_size_min: float = 0.001,
     edge_weight_mult: float = 5,
     fontsize: int = 12,
-    quantile_value: float = 0.90,
-    node_color: str = "#2a89d6",
-    edge_color: str = "#FE9322",
+    edge_quantile_value: float = 0.90,
+    node_quantile_value: Optional[float] = None,
+    node_color: str = "#146D25",
+    edge_color: str = "#54A463",
     fig_size: int = 10,
     plot_coordinates: bool = False,
     seed: Optional[int] = None,
+    draw_labels: bool = True,
     save=False,
 ):
     G = nx.Graph()
@@ -169,7 +172,7 @@ def create_network_graph(
         # Make the graph undirected - for some reason, the tuples are sometimes reversed in the edge list
         d["weight"] = c[(u, v)] + c[(v, u)]
 
-    edge_label_weight_cutoff = quantile_min_value(list(c.values()), quantile_value)
+    edge_label_weight_cutoff = quantile_min_value(list(c.values()), edge_quantile_value)
     edges_to_draw = {}
     for n, nodes in node_list.items():
         if c[nodes] >= edge_label_weight_cutoff:
@@ -185,13 +188,17 @@ def create_network_graph(
         [d[1] for d in degrees],
         min_constant=node_size_min,
     )
+
     plt.figure(figsize=(fig_size, fig_size))
-    plt.title(
-        title,
-        color="k",
-        fontsize=fontsize + 4,
-    )
+    if title:
+        plt.title(
+            title,
+            color="k",
+            fontsize=fontsize + 8,
+        )
+
     edge_weights = min_max_normalize([d["weight"] for _, _, d in G.edges(data=True)])
+
     nx.draw(
         G,
         pos,
@@ -202,58 +209,85 @@ def create_network_graph(
         # width=[d["weight"] ** edge_weight_mult for _, _, d in G.edges(data=True)],
         width=[e * edge_weight_mult for e in edge_weights],
     )
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        edge_labels=edges_to_draw,
-        font_size=fontsize - 2,
-        label_pos=0.5,
-        # font_color=edge_color,
-        bbox=dict(
-            facecolor="white",
-            edgecolor=edge_color,
-            alpha=0.8,
-            boxstyle="round,pad=0.2",
-        ),
-    )
-
-    offset = 0.015
-    for node, (x, y) in pos.items():
-        h_align = "center"
-        v_align = "center"
-        if x < 0:
-            x -= offset
-            h_align = "right"
-        if x > 0:
-            x += offset
-            h_align = "left"
-        if y < 0:
-            y -= offset
-            v_align = "top"
-        if y > 0:
-            y += offset
-            v_align = "bottom"
-        if plot_coordinates:
-            label = f"{node} ({x:.2f}, {y:.2f})"
-        else:
-            label = node
-        plt.text(
-            x,
-            y,
-            label,
-            fontsize=fontsize,
-            color="k",
-            ha=h_align,
-            va=v_align,
+    if draw_labels:
+        nx.draw_networkx_edge_labels(
+            G,
+            pos,
+            edge_labels=edges_to_draw,
+            font_size=fontsize - 1,
+            label_pos=0.5,
             bbox=dict(
                 facecolor="white",
-                edgecolor=node_color,
+                edgecolor=edge_color,
                 alpha=0.8,
-                boxstyle="round,pad=0.1",
+                boxstyle="round,pad=0.2",
             ),
         )
+
+        offset = 0.015
+        for node, (x, y) in pos.items():
+            h_align = "center"
+            v_align = "center"
+            if x < 0:
+                x -= offset
+                h_align = "right"
+            if x > 0:
+                x += offset
+                h_align = "left"
+            if y < 0:
+                y -= offset
+                v_align = "top"
+            if y > 0:
+                y += offset
+                v_align = "bottom"
+            if plot_coordinates:
+                label = f"{node} ({x:.2f}, {y:.2f})"
+            else:
+                label = node
+            if node_quantile_value:
+                node_label_draw_cutoff = quantile_min_value(
+                    [value for key, value in degrees],
+                    node_quantile_value,
+                )
+                if degrees[node] >= node_label_draw_cutoff:
+                    plt.text(
+                        x,
+                        y,
+                        label,
+                        fontsize=fontsize,
+                        color="k",
+                        ha=h_align,
+                        va=v_align,
+                        bbox=dict(
+                            facecolor="white",
+                            edgecolor=node_color,
+                            alpha=0.8,
+                            boxstyle="round,pad=0.1",
+                        ),
+                    )
+            else:
+                plt.text(
+                    x,
+                    y,
+                    label,
+                    fontsize=fontsize,
+                    # fontname="Helvetica",
+                    color="k",
+                    ha=h_align,
+                    va=v_align,
+                    bbox=dict(
+                        facecolor="white",
+                        edgecolor=node_color,
+                        alpha=0.8,
+                        boxstyle="round,pad=0.1",
+                    ),
+                )
     if save:
-        plt.savefig(f"{save}.png", format="PNG")
+        plt.savefig(
+            f"{save}.png",
+            format="PNG",
+            bbox_inches="tight",
+        )
     return G
 
 
@@ -261,54 +295,52 @@ def create_network_graph(
 twitter_week_1_nodes, twitter_week_1_edges = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    hard_filter=True,
+    n_most_frequent=3,
 )
 
+# GReens
 twitter_week_1_graph = create_network_graph(
     twitter_week_1_nodes,
     twitter_week_1_edges,
-    title="Covid-19 lockdown week 1 - Twitter",
-    # layout=spring_layout,
-    # layout=kamada_kawai_layout,
+    title="Twitter (GPT-3): First week of the lockdown",
     k=2.5,
-    node_color="#A82800",
-    fontsize=11,
-    save="fig/twitter_week_1_graph",
+    edge_quantile_value=0.9,
+    save="fig/twitter_week_1",
 )
 
-# No få
-twitter_week_1_nodes_rm_få, twitter_week_1_edges_rm_få = get_nodes_edges(
-    "extracted_triplets_tweets/covid_week_1",
-    "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    remove_custom_nodes=["få"],
-    hard_filter=True,
-)
-twitter_week_1_rm_få = create_network_graph(
-    twitter_week_1_nodes_rm_få,
-    twitter_week_1_edges_rm_få,
-    title="Covid-19 lockdown week 1 - Twitter",
-    k=2.5,
-    node_color="#A82800",
-    fontsize=11,
-    save="fig/twitter_week_1_graph_rm_få",
-)
+
+# # No få
+# twitter_week_1_nodes_rm_få, twitter_week_1_edges_rm_få = get_nodes_edges(
+#     "extracted_triplets_tweets/covid_week_1",
+#     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
+#     remove_custom_nodes=["få"],
+#     hard_filter=True,
+# )
+# twitter_week_1_rm_få = create_network_graph(
+#     twitter_week_1_nodes_rm_få,
+#     twitter_week_1_edges_rm_få,
+#     title="Covid-19 lockdown week 1 - Twitter",
+#     k=2.5,
+#     node_color="#A82800",
+#     fontsize=11,
+#     save="fig/twitter_week_1_graph_rm_få",
+# )
+
+
 # With old triplet extraction instead of GPT
 twitter_week_1_nodes_multi, twitter_week_1_edges_multi = get_nodes_edges(
     "extracted_triplets_tweets/covid_week_1_multi",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    hard_filter=False,
-    n_most_frequent=10,
 )
 
 twitter_week_1_graph_multi = create_network_graph(
     twitter_week_1_nodes_multi,
     twitter_week_1_edges_multi,
-    title="Covid-19 lockdown week 1 - Twitter",
-    k=2.5,
-    node_color="#A82800",
-    fontsize=12,
-    quantile_value=0.6,
-    save="fig/twitter_week_1_graph_multi",
+    title="Twitter (Multi2OIE): First week of the lockdown",
+    k=3.5,
+    edge_quantile_value=0.8,
+    save="fig/twitter_week_1_multi_no_labels",
+    draw_labels=False,
 )
 
 # Mink start
@@ -321,33 +353,23 @@ twitter_mink_start_nodes, twitter_mink_start_edges = get_nodes_edges(
 twitter_mink_start_graph = create_network_graph(
     twitter_mink_start_nodes,
     twitter_mink_start_edges,
-    title="Mink case start - Twitter",
+    title="Twitter (GPT-3): First week of the mink case",
     layout=spring_layout,
-    # layout=kamada_kawai_layout,
-    node_color="#A82800",
-    # node_size_mult=3000,
-    k=3,
-    fontsize=12,
-    # fig_size=9,
-    quantile_value=0.83,
-    seed=34,
+    k=4,
+    edge_quantile_value=0.83,
     save="fig/twitter_mink_start",
 )
 
 twitter_mink_start_nodes_multi, twitter_mink_start_edges_multi = get_nodes_edges(
     "extracted_triplets_tweets/mink_start_multi",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    hard_filter=False,
 )
 
 twitter_mink_start_graph_multi = create_network_graph(
     twitter_mink_start_nodes_multi,
     twitter_mink_start_edges_multi,
-    title="Mink case start - Twitter",
-    # layout=spring_layout,
-    node_color="#A82800",
+    title="Twitter (Multi2OIE): First week of the mink case",
     k=3,
-    fontsize=12,
     save="fig/twitter_mink_start_multi",
 )
 
@@ -364,13 +386,10 @@ news_mink_start_nodes, news_mink_start_edges = get_nodes_edges(
 news_mink_start_graph = create_network_graph(
     news_mink_start_nodes,
     news_mink_start_edges,
-    title="Mink case start - Newspapers",
+    title="Newspapers: First week of the mink case",
     layout=spring_layout,
-    node_color="#A82800",
-    k=4,
-    fontsize=12,
-    # fig_size=9,
-    quantile_value=0.83,
+    k=3,
+    edge_quantile_value=0.83,
     save="fig/news_mink_start",
 )
 
@@ -380,21 +399,14 @@ news_mink_mj_nodes, news_mink_mj_edges = get_nodes_edges(
     "extracted_triplets_papers/mink_mogens_jensen",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
     hard_filter=True,
-    # n_most_frequent=20
 )
 
 news_mink_mj_graph = create_network_graph(
     news_mink_mj_nodes,
     news_mink_mj_edges,
-    title="Mink case, Mogens Jensen resigning - Newspapers",
+    title="Newspapers: Mogens Jensen's resignation",
     layout=spring_layout,
-    # layout=kamada_kawai_layout,
-    node_color="#A82800",
-    k=4,
-    node_size_mult=2000,
-    fontsize=12,
-    # fig_size=9,
-    # quantile_value=0.6,
+    k=2,
     save="fig/news_mink_mj",
 )
 
@@ -403,12 +415,10 @@ news_mink_mj_graph = create_network_graph(
 news_week_1_nodes, news_week_1_edges = get_nodes_edges(
     "extracted_triplets_papers/covid_week_1",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
-    # save="news_week_1_nodes_edges.ndjson",
 )
 
 news_week_2_nodes, news_week_2_edges = get_nodes_edges(
     "extracted_triplets_papers/covid_week_2",
-    # "paraphrase_nodes_edges.json",
     "paraphrase_dim=40_neigh=15_clust=5_samp=3_nodes_edges.json",
 )
 
@@ -416,92 +426,15 @@ news_week_2_nodes, news_week_2_edges = get_nodes_edges(
 news_week_1_graph = create_network_graph(
     news_week_1_nodes,
     news_week_1_edges,
-    title="Covid-19 lockdown week 1 - Newspapers",
-    node_color="#A82800",
-    fontsize=10,
-    save="fig/news_week_1_graph",
+    title="Newspapers: First week of the lockdown",
+    save="fig/news_week_1",
+    k=2.5,
 )
 
 news_week_2_graph = create_network_graph(
     news_week_2_nodes,
     news_week_2_edges,
-    title="Week 2 of the COVID-19 lockdown",
+    title="Newspapers: Second week of the lockdown",
     k=2.5,
-    node_color="#A82800",
-    save="fig/news_week_2_graph",
+    save="fig/news_week_2",
 )
-
-
-### Using danskbert instead
-# week_1_dansk_nodes, week_1_dansk_edges = get_nodes_edges(
-#     "covid_week_1",
-#     "danskBERT_nodes_edges.json",
-# )
-
-# week_2_dansk_nodes, week_2_dansk_edges = get_nodes_edges(
-#     "covid_week_2",
-#     "danskBERT_nodes_edges.json",
-# )
-
-### Testing different hyperparameters
-
-week_1_nodes_15, week_1_edges_15 = get_nodes_edges(
-    "covid_week_1",
-    "paraphrase_dim=40_neigh=15_clust=15_samp=5_nodes_edges.json",
-)
-week_1_nodes_10, week_1_edges_10 = get_nodes_edges(
-    "covid_week_1",
-    "paraphrase_dim=40_neigh=15_clust=10_samp=5_nodes_edges.json",
-)
-week_1_nodes_8, week_1_edges_8 = get_nodes_edges(
-    "covid_week_1",
-    "paraphrase_dim=40_neigh=15_clust=8_samp=5_nodes_edges.json",
-)
-week_1_nodes_5, week_1_edges_5 = get_nodes_edges(
-    "covid_week_1",
-    "paraphrase_dim=40_neigh=15_clust=5_samp=5_nodes_edges.json",
-)
-week_1_para_graph_15 = create_network_graph(
-    week_1_nodes_15,
-    week_1_edges_15,
-    k=1,
-    node_size_mult=2.5,
-    fontsize=10,
-)
-week_1_para_graph_10 = create_network_graph(
-    week_1_nodes_10,
-    week_1_edges_10,
-    k=1,
-    node_size_mult=2.5,
-    fontsize=10,
-)
-week_1_para_graph_8 = create_network_graph(
-    week_1_nodes_8,
-    week_1_edges_8,
-    k=1,
-    node_size_mult=2.5,
-    fontsize=10,
-)
-week_1_para_graph_5 = create_network_graph(
-    week_1_nodes_5,
-    week_1_edges_5,
-    k=1,
-    node_size_mult=2.5,
-    fontsize=10,
-)
-
-
-# week_1_dansk_graph = create_network_graph(
-#     week_1_dansk_nodes,
-#     week_1_dansk_edges,
-#     k=0.6,
-#     node_size_mult=2.5,
-#     fontsize=11,
-# )
-# week_2_dansk_graph = create_network_graph(
-#     week_2_dansk_nodes,
-#     week_2_dansk_edges,
-#     k=0.6,
-#     node_size_mult=2.5,
-#     fontsize=11,
-# )
