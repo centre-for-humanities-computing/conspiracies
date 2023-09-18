@@ -7,7 +7,7 @@ repos:
       - id: ssort
 
   - repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.0.1
+    rev: v3.1.0
     hooks:
       - id: add-trailing-comma
 
@@ -18,17 +18,17 @@ repos:
         args: [--in-place]
 
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.1
     hooks:
       - id: black
         args: [--line-length, "88"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.284
+    rev: v0.0.290
     hooks:
       - id: ruff
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.0
+    rev: v1.5.1
     hooks:
       - id: mypy
