@@ -194,9 +194,9 @@ if __name__ == "__main__":
             tweets.append(post)
 
     print(f"Found {len(tweets)} tweets in the date range (out of {i} tweets total)")
-    """
-    #run the tweet thread extraction 
-    contexts = context_window_thread(tweets, args.context_len, args.start_date, args.extra_days)
+    """#run the tweet thread extraction contexts =
+    context_window_thread(tweets, args.context_len, args.start_date,
+    args.extra_days)
 
     #write contests to ndjson
     with open(os.path.join(f"tweetcontexts_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson"), "w") as f:
