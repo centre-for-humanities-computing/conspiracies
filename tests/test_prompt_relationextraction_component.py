@@ -40,7 +40,7 @@ def test_prompt_relation_extraction(
 
     @registry.prompt_apis.register("test_api")  # type: ignore
     def create_test_api(prompt_template, api_key, model_name, api_kwargs):
-        """a test api for testing purposes.
+        """A test api for testing purposes.
 
         assumes prompttemplate is markdown_template_2
         """

@@ -13,42 +13,7 @@ from conspiracies.HeadWordExtractionComponent import contains_ents
 from conspiracies.relationextraction import SpacyRelationExtractor
 from conspiracies import wordpiece_length_normalization
 from conspiracies.coref import CoreferenceComponent
-
-
-def load_ndjson(path: str) -> List[dict]:
-    """Loads ndjson file
-    Args:
-        path (str): path to ndjson file
-    Returns:
-        data (dict): data from ndjson file
-    """
-    with open(path, "r") as f:
-        data = ndjson.load(f)
-    return data
-
-
-def write_txt(
-    path: str,
-    data: Union[List[str], List[Tuple[str, str, str]]],
-    method="a",
-):
-    """Writes data to txt file. Can take either a list of strings or a list of tuples.
-    List of strings is e.g. list of subjects, predicates, or objects.
-    List of tuples is e.g. list of triplets.
-    Args:
-        path (str): path to txt file
-        data (Union[List[str], List[tuple]]): data to write to file
-        method (str, optional): method to use when writing data. Defaults to "a" (i.e., append).
-
-    Returns:
-        None
-    """
-    with open(path, method) as f:
-        if isinstance(data[0], tuple):
-            f.write("\n".join([", ".join(triplet) for triplet in data]))
-        elif isinstance(data[0], str):
-            f.write("\n".join(data))  # type: ignore
-        f.write("\n")
+from extract_utils import load_ndjson, write_txt
 
 
 def build_coref_pipeline():
@@ -57,19 +22,6 @@ def build_coref_pipeline():
     nlp_coref.add_pipe("allennlp_coref")
 
     return nlp_coref
-
-
-def build_relation_extraction_pipeline():
-    nlp = spacy.load("da_core_news_sm")
-    nlp.add_pipe("sentencizer")
-    nlp.add_pipe(
-        "heads_extraction",
-        config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
-    )
-    config = {"confidence_threshold": 2.7, "model_args": {"batch_size": 10}}
-    nlp.add_pipe("relation_extractor", config=config)
-
-    return nlp
 
 
 def yield_one_article(articles: List[dict]) -> Generator:
