@@ -2,9 +2,22 @@
 models."""
 
 from copy import copy
+from difflib import SequenceMatcher
 from functools import partial
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
+import numpy as np
 import spacy
 from pydantic import BaseModel, Extra
 from spacy import displacy
@@ -68,8 +81,13 @@ def subspan_of_span(
             potential_spans.append(_span)
 
     if ignore_spaces:  # reconstruct to spans instead of list[token]
-        doc = span[0].doc
-        potential_spans = [doc[span[0].i : span[-1].i + 1] for span in potential_spans]
+        try:
+            doc = span[0].doc
+            potential_spans = [
+                doc[span[0].i : span[-1].i + 1] for span in potential_spans
+            ]
+        except IndexError:
+            return []
 
     return potential_spans
 
@@ -102,6 +120,26 @@ class StringTriplet(BaseModel):
 
     def has_ranges(self) -> bool:
         return all(r is not None for r in self.char_spans)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, StringTriplet):
+            if self.has_ranges() and other.has_ranges():
+                has_same_char_span = self.char_spans == other.char_spans
+            else:
+                has_same_char_span = True
+
+            return (
+                self.triplet == other.triplet
+                and self.text == other.text
+                and has_same_char_span
+            )
+        return False
+
+
+def _lcs_size(a: Sequence, b: Sequence) -> int:
+    """Return the size of the longest common subsequence."""
+    s = SequenceMatcher(None, a, b)
+    return s.find_longest_match().size
 
 
 class SpanTriplet(BaseModel):
@@ -192,7 +230,7 @@ class SpanTriplet(BaseModel):
             "OBJECT": "#aa9cfc",
         }
         sent = self.sentence
-        copy_doc = copy(self.doc)  # to avoid overwriting the original doc
+        copy_doc = self.doc[:].as_doc()  # to avoid overwriting the original doc
         options = {"ents": ["SUBJECT", "PREDICATE", "OBJECT"], "colors": colors}
         copy_doc.ents = [self.subject, self.predicate, self.object]
         viz_doc = copy_doc[sent.start : sent.end].as_doc()
@@ -611,6 +649,40 @@ class SpanTriplet(BaseModel):
                 return span_triplet
         return span_triplet_from(triplet, doc, lowercase=lowercase)  # type: ignore
 
+    def normalized_span_overlap(self, other: "SpanTriplet") -> float:
+        """Calculates the normalized span overlap between two span triplets.
+        Note this assumes the self SpanTriplet is the reference.
+
+        Args:
+            other: The other span triplet.
+
+        Returns:
+            The normalized span overlap between the two span triplets. The normalized
+                is normalized between 0 and 1.
+        """
+        _normalized_overlap = 0.0
+        for s_t, o_t in zip(self.triplet, other.triplet):
+            overlap = _lcs_size(s_t, o_t)  # type: ignore
+            _normalized_overlap += overlap / len(s_t)
+        return _normalized_overlap / 3
+
+    def normalized_string_overlap(self, other: "SpanTriplet") -> float:
+        """Calculates the normalized span overlap between two span triplets.
+        Note this assumes the self SpanTriplet is the reference.
+
+        Args:
+            other: The other span triplet.
+
+        Returns:
+            The normalized span overlap between the two span triplets. The normalized
+                is normalized between 0 and 1.
+        """
+        _normalized_overlap = 0.0
+        for s_t, o_t in zip(self.triplet, other.triplet):
+            overlap = _lcs_size(s_t.text, o_t.text)
+            _normalized_overlap += overlap / len(s_t.text)
+        return _normalized_overlap / 3
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, SpanTriplet):
             return False
@@ -627,13 +699,10 @@ class DocTriplets(BaseModel):
         extra = Extra.forbid
 
     span_triplets: List[SpanTriplet]
-
-    @property
-    def doc(self) -> Doc:
-        return self.span_triplets[0].doc
+    doc: Doc
 
     @staticmethod
-    def doc_triplet_from_str_triplets(
+    def from_str_triplets(
         doc: Union[Doc, Span],
         triplets: List[StringTriplet],
     ) -> "DocTriplets":
@@ -642,7 +711,104 @@ class DocTriplets(BaseModel):
             span_triplet = SpanTriplet.from_doc(triplet=triplet, doc=doc)
             if span_triplet is not None:
                 span_triplets.append(span_triplet)
-        return DocTriplets(span_triplets=span_triplets)
+        return DocTriplets(span_triplets=span_triplets, doc=doc)
+
+    def score_relations(self, reference: "DocTriplets") -> Dict[str, Any]:
+        """Score the relations of the doctriplet against the relations of the
+        current doctriplet."""
+        self_relations = list(self)
+        reference_relations = list(reference)
+        self_relations.sort(key=lambda x: x.subject.text)
+        reference_relations.sort(key=lambda x: x.subject.text)
+
+        score = {
+            "exact_span_match": 0,
+            "exact_string_match": 0,
+            "normalized_span_overlap": 0.0,
+            "normalized_string_overlap": 0.0,
+            "length_self": len(self_relations),
+            "length_reference": len(reference_relations),
+        }
+
+        if score["length_reference"] == 0:
+            return score
+
+        _self_relations = copy(self_relations)
+        missing_matches = {}
+
+        for ref_i, ref_rel in enumerate(reference_relations):
+            span_norm_overlap = []
+            string_norm_overlap = []
+            span_match_found = False
+            string_match_found = False
+
+            if not _self_relations:
+                break
+
+            for self_i, self_rel in enumerate(_self_relations):
+                if self_rel == ref_rel:
+                    span_match_found = True
+                    break
+
+                if self_rel.is_string_match(ref_rel):
+                    string_match_found = True
+                    s_norm_overlap = ref_rel.normalized_span_overlap(self_rel)
+
+                if not string_match_found:
+                    str_norm_overlap = ref_rel.normalized_string_overlap(self_rel)
+                    s_norm_overlap = ref_rel.normalized_span_overlap(self_rel)
+                    string_norm_overlap.append(str_norm_overlap)
+                    span_norm_overlap.append(s_norm_overlap)
+
+            if span_match_found:
+                score["exact_span_match"] += 1
+                score["exact_string_match"] += 1
+                score["normalized_string_overlap"] += 1
+                score["normalized_span_overlap"] += 1
+                _self_relations.pop(self_i)
+                continue
+            if string_match_found:
+                score["exact_string_match"] += 1
+                score["normalized_string_overlap"] += 1
+                score["normalized_span_overlap"] += s_norm_overlap
+                _self_relations.pop(self_i)
+                continue
+            # if not match then just record the best match
+            which_max = np.argmax(string_norm_overlap)
+            missing_matches[ref_i] = {
+                "span_norm_overlap": span_norm_overlap[which_max],
+                "string_norm_overlap": string_norm_overlap[which_max],
+                "self_i": which_max,
+            }
+
+        if missing_matches and _self_relations:
+            # if there are missing matches and there are still self relations
+            # then we can try to match them
+
+            # sort the missing matches by the string norm overlap
+            _missing_matches = [
+                (k, v)
+                for k, v in sorted(
+                    missing_matches.items(),
+                    key=lambda item: item[1]["string_norm_overlap"],  # type: ignore
+                )
+            ]
+
+            while _missing_matches and _self_relations:
+                ref_i, match = _missing_matches.pop()
+                score["normalized_string_overlap"] += match["string_norm_overlap"]
+                score["normalized_span_overlap"] += match["span_norm_overlap"]
+                _self_relations.pop()  # just pop any self relation
+        return score
+
+    def __getitem__(self, index: int) -> SpanTriplet:
+        return self.span_triplets[index]
+
+    def __iter__(self) -> Iterator[SpanTriplet]:  # type: ignore
+        return iter(self.span_triplets)
+
+    def __len__(self) -> int:
+        return len(self.span_triplets)
 
     def __add__(self, other: Union["DocTriplets", "SpanTriplet"]) -> "DocTriplets":
         if self.doc != other.doc:
@@ -652,3 +818,13 @@ class DocTriplets(BaseModel):
         else:
             self.span_triplets.extend(other.span_triplets)
         return self
+
+    def __eq__(self, other: Any) -> bool:
+        """Check if two DocTriplets are equal based on if all their span
+        triplets are the same."""
+        if not isinstance(other, DocTriplets):
+            return False
+        for s, o in zip(self, other):
+            if s != o:
+                return False
+        return True
