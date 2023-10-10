@@ -2,6 +2,26 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2023-03-31)
+### Feature
+* Added gold data to package data ([`b892aaa`](https://github.com/centre-for-humanities-computing/conspiracies/commit/b892aaaa83a73e2074485ec5cd40df08d95b9c65))
+* Fixed spacy dep. to allow for the visualizer ([`375b3bf`](https://github.com/centre-for-humanities-computing/conspiracies/commit/375b3bf96fa4dd1704fe2fb079541b0cbbce05f3))
+* Added triplet data classes along with seraliazation functions ([`0325c63`](https://github.com/centre-for-humanities-computing/conspiracies/commit/0325c63c1c6c8dfb36c7ba21edda87ab575f6a04))
+
+### Fix
+* Fixed circular import ([`bfc5595`](https://github.com/centre-for-humanities-computing/conspiracies/commit/bfc5595ead67bdb7ac3bbb8c3fa585dc552efcec))
+* Prevented circular import ([`2af3559`](https://github.com/centre-for-humanities-computing/conspiracies/commit/2af3559f337e38eb8b07b6dc04d8e264df634b72))
+
+### Documentation
+* Changed req. for docs ([`dcf2a1c`](https://github.com/centre-for-humanities-computing/conspiracies/commit/dcf2a1c8e46c4687e7e7b47a5bf8b40d393e8644))
+* Updated tutorial based on reivew ([`0f29203`](https://github.com/centre-for-humanities-computing/conspiracies/commit/0f292036efa842f5f729ff31f152671ecdd8522f))
+* Updated docstring based on review comments ([`b669555`](https://github.com/centre-for-humanities-computing/conspiracies/commit/b6695557426dd47a4fb10433de586d210478c47d))
+* Updated tutorial to reflect changes ([`833ceae`](https://github.com/centre-for-humanities-computing/conspiracies/commit/833ceae49c83cbc44ecedd97a7cdd4262609c1a0))
+* Increased execution time for tutorial ([`4fee404`](https://github.com/centre-for-humanities-computing/conspiracies/commit/4fee4042d6a7704b426b6f563aeee51b0b79ae57))
+* Updated notebook ([`330fc22`](https://github.com/centre-for-humanities-computing/conspiracies/commit/330fc22efba02f05958cd51993ff404f14ba5036))
+* Updated to properly read data ([`3e3e62d`](https://github.com/centre-for-humanities-computing/conspiracies/commit/3e3e62d7ed22b44492661447cb00f7c516893e9d))
+* Added reading gold as an example ([`b6d83b6`](https://github.com/centre-for-humanities-computing/conspiracies/commit/b6d83b61119c0f644abdd7659396f552cb7ffded))
+
 ## v0.4.0 (2023-03-10)
 ### Feature
 * Add meaningful default task descriptions for templates ([#20](https://github.com/centre-for-humanities-computing/conspiracies/issues/20)) ([`17436ee`](https://github.com/centre-for-humanities-computing/conspiracies/commit/17436eefd5a0bb83f223cb8f67c6db44105ffdda))
