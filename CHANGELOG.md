@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.2 (2023-10-18)
+
+### Fix
+
+* Avoid downloading model for tests ([`340d6f0`](https://github.com/centre-for-humanities-computing/conspiracies/commit/340d6f05ae6c8e202474557844e566fe1d9afa46))
+
 ## v0.5.1 (2023-10-10)
 
 ### Fix
