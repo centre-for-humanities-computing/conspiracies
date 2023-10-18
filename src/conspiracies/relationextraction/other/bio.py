@@ -76,10 +76,11 @@ def filter_arg_tags(arg_tags, pred_tags, tokens):
     """Same as the description of @filter_pred_tags().
 
     :param arg_tags: argument tags with the shape of (B, L).
-    :param pred_tags: predicate tags with the same shape.
-        It is used to force predicate position to be allocated the 'Outside' tag.
-    :param tokens: list of string tokens with the length of L.
-        It is used to force special tokens like [CLS] to be allocated the 'Outside' tag.
+    :param pred_tags: predicate tags with the same shape. It is used to
+        force predicate position to be allocated the 'Outside' tag.
+    :param tokens: list of string tokens with the length of L. It is
+        used to force special tokens like [CLS] to be allocated the
+        'Outside' tag.
     :return: tensor of filtered argument tags with the same shape.
     """
     # filter by tokens ([CLS], [SEP], [PAD] tokens should be allocated as 'O')
@@ -120,9 +121,9 @@ def get_max_prob_args(arg_tags, arg_probs):
     labels.
 
     :param arg_tags: argument tags with the shape of (B, L).
-    :param arg_probs: argument softmax probabilities with the shape of (B, L, T),
-        where B is the batch size, L is the sequence length, and T is the # of tag
-            labels.
+    :param arg_probs: argument softmax probabilities with the shape of
+        (B, L, T), where B is the batch size, L is the sequence length,
+        and T is the # of tag labels.
     :return: tensor of filtered argument tags with the same shape.
     """
     for cur_arg_tag, cur_probs in zip(arg_tags, arg_probs):
@@ -292,7 +293,7 @@ def _find_begins(idxs):
 
 
 def get_confidence_score(pred_probs, arg_probs, extraction_idxs):
-    """get the confidence score of each extraction for drawing PR-curve.
+    """Get the confidence score of each extraction for drawing PR-curve.
 
     :param pred_probs: (sequence length, # of predicate labels)
     :param arg_probs: (# of predicates, sequence length, # of argument labels)

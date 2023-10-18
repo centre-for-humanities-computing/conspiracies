@@ -3,11 +3,10 @@
 import re
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from confection import registry
 from spacy.tokens import Doc
-
-from conspiracies.data import load_gold_triplets
 
 from .data_classes import SpanTriplet, StringTriplet
 
@@ -17,29 +16,30 @@ class PromptTemplate:
 
     The class is used to create a template for the triplet extraction
     task. The template is used to create a prompt for generative models
-    such as GPT-3.
+    such as GPT-3 and chatGPT.
     """
 
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
         """
         Args:
+            examples: A tuple of a spacy Docs
             task_description: A description of the task
-            examples: A tuple of a spacy Docs and a corresponding list of their
-                triplets.
         """
-        if examples:
-            self.examples = examples
-        else:
-            self.examples = load_gold_triplets()
+
+        self.examples = examples
         if task_description:
             self.task_description = task_description
+        else:
+            self.task_description = "Extract triplets on the form \
+(Subject - predicate - object) from the following tweet. \
+First, you will see a few examples."
 
     @abstractmethod
-    def create_prompt(self, target: str) -> str:
+    def create_prompt(self, target: str) -> Union[str, List[Dict[str, str]]]:
         """Create a prompt based on the task description and examples and
         target."""
         pass
@@ -49,18 +49,19 @@ class PromptTemplate:
         """Parse a prompt into a target tweet and triplets."""
         pass
 
-    def set_examples(self, examples: Tuple[List[Doc], List[List[SpanTriplet]]]):
+    def set_examples(self, examples: List[Doc]):
         """Updates examples."""
         self.examples = examples
 
 
+@registry.prompt_templates("conspiracies/template_1")
 class PromptTemplate1(PromptTemplate):
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         if not task_description:
             self.task_description = """Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
@@ -89,7 +90,8 @@ They should be presented with each element in parentheses as shown below:"""  # 
             target: The tweet to be annotated.
         """
         examples_str = "---\n\n"
-        for tweet, triplets in zip(*self.examples):
+        for tweet in self.examples:
+            triplets = tweet._.relation_triplets
             examples_str += f"Tweet: {tweet.text}\n"
 
             if len(triplets) == 0:
@@ -111,9 +113,7 @@ They should be presented with each element in parentheses as shown below:"""  # 
             tweet_string = f"{self.task_description}\n\n{examples_str}\nTweet: "
             prompt = tweet_string
 
-        if target:
-            return prompt + f"{target}\nTriplets:"
-        return prompt
+        return prompt + f"{target}\nTriplets:"
 
     @staticmethod
     def create_string_triplets(tweet, triplet):
@@ -149,13 +149,14 @@ They should be presented with each element in parentheses as shown below:"""  # 
         return triplets
 
 
+@registry.prompt_templates("conspiracies/template_2")
 class PromptTemplate2(PromptTemplate):
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         if not task_description:
             self.task_description = """Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
@@ -183,8 +184,8 @@ They should be presented with each element in parentheses as shown below:"""  # 
         '''
         """
         tweets_block = "---\n\n"
-        tweets, tweet_triplets = self.examples
-
+        tweets = self.examples
+        tweet_triplets = [tweet._.relation_triplets for tweet in tweets]
         for tweet in tweets:
             tweets_block += f"Tweet: {tweet.text}\n\n"
 
@@ -207,9 +208,7 @@ They should be presented with each element in parentheses as shown below:"""  # 
         triplet_block += "\n---\n\n"
         prompt = f"{self.task_description}\n\n{tweets_block}\n{triplet_block}"
 
-        if target:
-            return prompt + f"Tweet: {target}\n\nTriplets:"
-        return prompt
+        return prompt + f"Tweet: {target}\n\nTriplets:"
 
     @staticmethod
     def create_string_triplets(tweet, triplet):
@@ -245,13 +244,14 @@ They should be presented with each element in parentheses as shown below:"""  # 
         return triplets
 
 
+@registry.prompt_templates("conspiracies/markdown_template_1")
 class MarkdownPromptTemplate1(PromptTemplate):
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         if not task_description:
             self.task_description = """Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
@@ -278,7 +278,8 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
         ```
         """
         tweet_string = f"{self.task_description}\n| Tweet | Subject | Predicate | Object |\n| --- | --- | --- | --- |"  # noqa: E501
-        for example, triplets in zip(*self.examples):
+        for example in self.examples:
+            triplets = example._.relation_triplets
             if len(triplets) == 0:
                 tweet_string += f"\n| {example} | | | |"
                 continue
@@ -293,9 +294,7 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
                     tweet_string += f"\n| | {subj} | {pred} | {obj} |"
         prompt = tweet_string
 
-        if target:
-            return prompt + f"\n| {target} |"
-        return prompt
+        return prompt + f"\n| {target} |"
 
     @staticmethod
     def create_string_triplets(tweet, triplet):
@@ -334,13 +333,14 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
         return triplets
 
 
+@registry.prompt_templates("conspiracies/markdown_template_2")
 class MarkdownPromptTemplate2(PromptTemplate):
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         if not task_description:
             self.task_description = """Extract semantic triplets from the following tweet. 
 The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
@@ -380,7 +380,8 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
         header = "| Subject | Predicate | Object |\n| --- | --- | --- |"
 
         tweet_string = f"{self.task_description}\n\n"
-        for example, triplets in zip(*self.examples):
+        for example in self.examples:
+            triplets = example._.relation_triplets
             tweet_string += example.text + "\n\n" + header
             if len(triplets) == 0:
                 tweet_string += "\n\n"
@@ -394,9 +395,7 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
             tweet_string += "\n\n"
         prompt = tweet_string
 
-        if target:
-            return prompt + target + "\n\n" + header + "\n"
-        return prompt
+        return prompt + target + "\n\n" + header + "\n"
 
     @staticmethod
     def create_string_triplets(tweet, triplet):
@@ -436,14 +435,15 @@ They should be put in a markdown table as shown below:"""  # noqa: E501
         return triplets
 
 
+@registry.prompt_templates("conspiracies/xml_style_template")
 class XMLStylePromptTemplate(PromptTemplate):
     def __init__(
         self,
+        examples: List[Doc],
         task_description: Optional[str] = None,
-        examples: Optional[Tuple[List[Doc], List[List[SpanTriplet]]]] = None,
         tags: List[str] = ["subject", "predicate", "object"],
     ):
-        super().__init__(task_description, examples)
+        super().__init__(task_description=task_description, examples=examples)
         self.tags = tags
         if not task_description:
             self.task_description = """Tag the following tweet with triplets using HTML tags.
@@ -507,15 +507,11 @@ The triplets should be tagged in the tweet as shown below:"""  # noqa: E501
         {target tweet}
         """
         prompt = f"{self.task_description}\n\n"
-        for (
-            doc,
-            triplets,
-        ) in zip(*self.examples):
+        for doc in self.examples:
+            triplets = doc._.relation_triplets
             prompt += doc.text + "\n" + self.create_xml_example(doc, triplets) + "\n\n"
 
-        if target:
-            return prompt + target + "\n"
-        return prompt
+        return prompt + target + "\n"
 
     @staticmethod
     def __parse(text: str, tags=["subject", "predicate", "object"]) -> Dict[str, Any]:
@@ -591,8 +587,14 @@ The triplets should be tagged in the tweet as shown below:"""  # noqa: E501
         triplets = []
 
         for n, triplet in parse["triplets"].items():
-            str_triplet = to_string_triplet(triplet)
-            triplets.append(str_triplet)
+            # NB Shouldnt this be taken care of earlier??
+            if (
+                triplet["subject"] is not None
+                and triplet["predicate"] is not None
+                and triplet["object"] is not None
+            ):
+                str_triplet = to_string_triplet(triplet)
+                triplets.append(str_triplet)
         return triplets
 
     @staticmethod
@@ -650,3 +652,148 @@ The triplets should be tagged in the tweet as shown below:"""  # noqa: E501
         if span[0] == deleted_span[0] and span[1] == deleted_span[1]:
             raise ValueError("Span to delete is equal to span to update")
         raise ValueError("Unknown error")
+
+
+@registry.prompt_templates("conspiracies/chatgpt_style_template")
+class chatGPTPromptTemplate(PromptTemplate):
+    def __init__(
+        self,
+        examples: List[Doc],
+        task_description: Optional[str] = None,
+    ):
+        super().__init__(task_description=task_description, examples=examples)
+        if not task_description:
+            self.task_description = """I need you to extract semantic triplets from tweets. 
+The semantic triplets should be on the form (Subject - Verb Phrase - Object), where the verb phrase includes all particles and modifyers. 
+There should always be exactly three elements in a triplet, no more no less, and they should be presented in a markdown table.
+First, I will provide you with a few examples."""  # noqa: E501
+
+    def create_prompt(self, target: str) -> List[Dict[str, str]]:
+        """Create a prompt for the chatGPT model. Form is:
+        [
+        {"role": "system",
+         "content": "You are a helpful assistant who is also an expert linguist. "
+        },
+        {"role": "user",
+         "content": "Hi, I need your help on a linguistic question."
+        },
+        {"role": "assistant",
+         "content": "Sure, what is the task?"
+        },
+        {"role": "user",
+         "content": task_description
+        },
+        {"role": "assistant",
+         "content": "That sounds like something I can help you with. Let me see the examples."
+        },
+        {"role": "user",
+            "content": "The tweet is:\n{example_1}\nThe triplets in the tweet are:{triplet_1\ntriplets_2}\n"
+        },
+        {"role": "assistant",
+        "content": "Yes I see! What is the next tweet and triplets?\n"
+        },
+
+        ...
+
+        {"role": "user",
+         "content": "The tweet is:\n{example_n}\nThe triplets in the tweet are:{triplet_1\n ... triplet_m}\n"
+        },
+        {"role": "user",
+         "content": 'All right, now you try. The tweet is:\n{target}\nWhat are the triplets?'
+        },
+        ]
+        """  # noqa: E501
+        message_dicts = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant \
+who is also an expert linguist. ",
+            },
+            {
+                "role": "user",
+                "content": "Hi, I need your help on a linguistic question.",
+            },
+            {
+                "role": "assistant",
+                "content": "Sure, what is the task?",
+            },
+            {
+                "role": "user",
+                "content": self.task_description,
+            },
+            {
+                "role": "assistant",
+                "content": "That sounds like something I can help you with. \
+Let me try the first example!",
+            },
+        ]
+        for i, example in enumerate(self.examples):
+            triplets = example._.relation_triplets
+            if i == 0:
+                message_dicts.append(
+                    {
+                        "role": "user",
+                        "content": f"The tweet is:\n{example.text}\n",
+                    },
+                )
+            else:
+                message_dicts.append(
+                    {
+                        "role": "user",
+                        "content": f"Correct! The next tweet is:\n{example.text}\n",
+                    },
+                )
+            message_string = "I extracted the following triplets:\n"
+            for triplet in triplets:
+                message_string += (
+                    f"\t{triplet.subject} - {triplet.predicate} - {triplet.object}\n"
+                )
+            message_dicts.append(
+                {
+                    "role": "assistant",
+                    "content": message_string,
+                },
+            )
+        message_dicts.append(
+            {
+                "role": "user",
+                "content": f"The tweet is:\n{target}\n",
+            },
+        )
+        return message_dicts
+
+    @staticmethod
+    def create_string_triplets(tweet, triplet):
+        subject, predicate, object = triplet
+        return StringTriplet(
+            subject=subject,
+            predicate=predicate,
+            object=object,
+            text=tweet,
+        )
+
+    def parse_prompt(
+        self,
+        prompt_response: str,
+        target_tweet: str,
+    ) -> List[StringTriplet]:
+        """Parse a prompt into a target tweet and triplets.
+
+        Ignores extracted triplets that do not contain exactly three
+        elements
+        """
+
+        triplets: List[StringTriplet] = []
+        lines = [
+            line.strip()
+            for line in prompt_response.split("\n")
+            if line not in ["", " "]
+        ]
+        for line in lines:
+            if "-" in line:
+                extractions = [element.strip() for element in line.split("-")]
+                if len(extractions) == 3:
+                    triplets.append(
+                        self.create_string_triplets(target_tweet, extractions),
+                    )
+        return triplets

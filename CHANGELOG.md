@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.2 (2023-10-18)
+
+### Fix
+
+* Avoid downloading model for tests ([`340d6f0`](https://github.com/centre-for-humanities-computing/conspiracies/commit/340d6f05ae6c8e202474557844e566fe1d9afa46))
+
+## v0.5.1 (2023-10-10)
+
+### Fix
+
+* Bump version ([`ff2a1d9`](https://github.com/centre-for-humanities-computing/conspiracies/commit/ff2a1d924abb03acee12204fb6f3643f4e36de21))
+
 ## v0.5.0 (2023-03-31)
 ### Feature
 * Added gold data to package data ([`b892aaa`](https://github.com/centre-for-humanities-computing/conspiracies/commit/b892aaaa83a73e2074485ec5cd40df08d95b9c65))

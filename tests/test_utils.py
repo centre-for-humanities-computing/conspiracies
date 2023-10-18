@@ -2,9 +2,10 @@ from pathlib import Path
 
 import pytest
 import spacy
+from conspiracies import DocTriplets, SpanTriplet, docs_from_jsonl, docs_to_jsonl
 from spacy.tokens import Doc
 
-from conspiracies import SpanTriplet, docs_from_jsonl, docs_to_jsonl
+from .utils import docs_with_triplets  # noqa: F401
 
 
 @pytest.fixture()
@@ -21,32 +22,35 @@ def nlp():
 
 
 def test_docs_from_jsonl(path, nlp):
-    docs, triplets = docs_from_jsonl(path, nlp=nlp)
+    docs = docs_from_jsonl(path, nlp=nlp)
 
-    assert len(docs) == len(triplets)
-
-    for doc, _triplets in zip(docs, triplets):
+    for doc in docs:
         assert isinstance(doc, Doc)
-        for triplet in _triplets:
+        triplets = doc._.relation_triplets
+        for triplet in triplets:
             assert isinstance(triplet, SpanTriplet)
-        for triplet in _triplets:
+        for triplet in triplets:
             assert isinstance(triplet, SpanTriplet)
 
 
-def test_docs_to_jsonl(path, nlp):
-    docs, triplets = docs_from_jsonl(path, nlp=nlp)
-    docs_to_jsonl(docs, triplets, "test.jsonl")
-    _docs, _triplets = docs_from_jsonl("test.jsonl", nlp=nlp)
+def test_docs_to_jsonl(nlp, docs_with_triplets):  # noqa: F811
+    docs = docs_with_triplets
+    docs_to_jsonl(docs, "test.jsonl")
+    _docs = docs_from_jsonl("test.jsonl", nlp=nlp)
 
     assert len(docs) == len(_docs)
-    assert len(triplets) == len(_triplets)
 
     for doc, _doc in zip(docs, _docs):
         assert doc.text == _doc.text
+        triplets = doc._.relation_triplets
+        _triplets = _doc._.relation_triplets
 
-    for triplets_, _triplets_ in zip(triplets, _triplets):
-        for triplet, _triplet in zip(triplets_, _triplets_):
+        assert isinstance(triplets, DocTriplets)
+        assert isinstance(_triplets, DocTriplets)
+
+        assert len(triplets) == len(_triplets)
+        for triplet, _triplet in zip(triplets, _triplets):
             assert triplet.is_string_match(_triplet)
 
-    # remove the file
+    # clean up by removing the file
     Path("test.jsonl").unlink()

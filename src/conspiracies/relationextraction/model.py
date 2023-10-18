@@ -17,8 +17,10 @@ class ArgModule(nn.Module):
         predicates. It uses ArgExtractorLayer as a base block and repeat the
         block N('n_layers') times.
 
-        :param arg_layer: an instance of the ArgExtractorLayer() class (required)
-        :param n_layers: the number of sub-layers in the ArgModule (required).
+        :param arg_layer: an instance of the ArgExtractorLayer() class
+            (required)
+        :param n_layers: the number of sub-layers in the ArgModule
+            (required).
         """
         super(ArgModule, self).__init__()
         self.layers = _get_clones(arg_layer, n_layers)
@@ -66,11 +68,14 @@ class ArgExtractorLayer(nn.Module):
         attention. (only encoder-decoder multi-head attention followed by feed-
         forward layers)
 
-        :param d_model: model dimensionality (default=768 from BERT-base)
+        :param d_model: model dimensionality (default=768 from BERT-
+            base)
         :param n_heads: number of heads in multi-head attention layer
-        :param d_feedforward: dimensionality of point-wise feed-forward layer
+        :param d_feedforward: dimensionality of point-wise feed-forward
+            layer
         :param dropout: drop rate of all layers
-        :param activation: activation function after first feed-forward layer
+        :param activation: activation function after first feed-forward
+            layer
         """
         super(ArgExtractorLayer, self).__init__()
         self.multihead_attn = nn.MultiheadAttention(d_model, n_heads, dropout=dropout)
@@ -89,7 +94,8 @@ class ArgExtractorLayer(nn.Module):
 
         :param target: a tensor which takes a role as a query
         :param source: a tensor which takes a role as a key & value
-        :param key_mask: key mask tensor with the shape of (batch_size, sequence_length)
+        :param key_mask: key mask tensor with the shape of (batch_size,
+            sequence_length)
         """
         # Multi-head attention layer (+ add & norm)
         attended = self.multihead_attn(
