@@ -5,7 +5,9 @@ from typing import Any, Dict, List
 from conspiracies.registry import registry
 from spacy.tokens import Doc
 
-from conspiracies.relationextraction.gptprompting.prompt_templates import PromptTemplate
+from conspiracies.docproc.relationextraction.gptprompting.prompt_templates import (
+    PromptTemplate,
+)
 
 
 @registry.prompt_apis.register("conspiracies/openai_gpt3_api")

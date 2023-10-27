@@ -1,5 +1,5 @@
 import pytest
-from conspiracies.relationextraction.gptprompting.prompt_templates import (
+from conspiracies.docproc.relationextraction.gptprompting.prompt_templates import (
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,
     PromptTemplate1,

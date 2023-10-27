@@ -5,7 +5,7 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from conspiracies.relationextraction.gptprompting import (
+from conspiracies.docproc.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
 )

@@ -3,7 +3,10 @@ from pathlib import Path
 import pytest
 import spacy
 from conspiracies import docs_from_jsonl, docs_to_jsonl
-from conspiracies.relationextraction.gptprompting import DocTriplets, SpanTriplet
+from conspiracies.docproc.relationextraction.gptprompting import (
+    DocTriplets,
+    SpanTriplet,
+)
 from spacy.tokens import Doc
 
 from .utils import docs_with_triplets  # noqa: F401

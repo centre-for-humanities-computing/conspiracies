@@ -4,15 +4,13 @@ import random
 from pathlib import Path
 from typing import List, Optional, Generator, Union
 
-import ndjson
-import torch
 from spacy.tokens import Doc, Span
 import argparse
 
 from data import load_gold_triplets
 import spacy
 from extract_examples import extract_examples
-from conspiracies.relationextraction.gptprompting import (
+from conspiracies.docproc.relationextraction import (
     MarkdownPromptTemplate2,
     PromptTemplate,
 )

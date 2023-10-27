@@ -2,7 +2,10 @@ from typing import List
 
 import pytest
 from confection import registry
-from conspiracies.relationextraction.gptprompting import SpanTriplet, StringTriplet
+from conspiracies.docproc.relationextraction.gptprompting import (
+    SpanTriplet,
+    StringTriplet,
+)
 from spacy.language import Language
 
 from .test_prompt_template_parse_prompt import (

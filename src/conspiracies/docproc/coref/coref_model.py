@@ -14,7 +14,7 @@ from allennlp.common.util import prepare_environment
 # required for reading an archive using the "coref"
 from allennlp_models.coref.dataset_readers.conll import ConllCorefReader  # noqa
 
-from conspiracies.download import download_model
+from conspiracies.docproc.modeldownload import download_model
 
 
 @Predictor.register("coreference_resolution_v1")

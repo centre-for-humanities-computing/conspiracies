@@ -9,7 +9,7 @@ from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc, Span
 from spacy.util import minibatch
 
-from conspiracies.coref import CoreferenceModel
+from conspiracies.docproc.coref import CoreferenceModel
 
 
 class CoreferenceComponent(TrainablePipe):

@@ -8,7 +8,9 @@ import random
 import re
 from typing import List, Tuple
 from spacy.tokens import Doc
-from conspiracies.relationextraction.gptprompting.data_classes import DocTriplets
+from conspiracies.docproc.relationextraction.gptprompting.data_classes import (
+    DocTriplets,
+)
 
 
 def has_multiple_triplets(spacy_triplets: DocTriplets):

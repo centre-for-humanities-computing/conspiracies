@@ -1,7 +1,7 @@
 from typing import List
 
 import spacy
-from conspiracies.relationextraction.gptprompting import (
+from conspiracies.docproc.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
     StringTriplet,
