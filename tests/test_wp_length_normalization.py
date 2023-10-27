@@ -2,7 +2,9 @@ import pytest
 
 from .utils import nlp_da  # noqa
 
-from conspiracies import wordpiece_length_normalization
+from conspiracies.preproc.wordpiece_length_normalization import (
+    wordpiece_length_normalization,
+)
 from transformers import AutoTokenizer
 
 

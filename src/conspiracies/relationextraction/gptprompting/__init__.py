@@ -9,7 +9,7 @@ from .prompt_templates import (  # noqa F401
     chatGPTPromptTemplate,
 )
 
-from .prompt_relation_component import (  # noqa F401
+from .prompt_relation_comp import (  # noqa F401
     create_prompt_relation_extraction_component,
     score_open_relations,
 )

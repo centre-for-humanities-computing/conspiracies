@@ -1,7 +1,11 @@
 from typing import List
 
 import spacy
-from conspiracies import DocTriplets, SpanTriplet, StringTriplet
+from conspiracies.relationextraction.gptprompting import (
+    DocTriplets,
+    SpanTriplet,
+    StringTriplet,
+)
 from spacy.tokens import Doc
 
 test_thread = """@user2: I was hurt. END

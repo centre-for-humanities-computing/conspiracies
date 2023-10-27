@@ -6,12 +6,9 @@ data/triplet-extraction-gpt/tagged/ and on Grundtvig in.
 
 import random
 import re
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from spacy.tokens import Doc
-from conspiracies.prompt_relation_extraction.data_classes import (
-    SpanTriplet,
-    DocTriplets,
-)
+from conspiracies.relationextraction.gptprompting.data_classes import DocTriplets
 
 
 def has_multiple_triplets(spacy_triplets: DocTriplets):

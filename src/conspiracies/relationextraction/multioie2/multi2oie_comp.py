@@ -9,7 +9,7 @@ from spacy_transformers.align import get_alignment
 from transformers import AutoTokenizer
 
 from .knowledge_triplets import KnowledgeTriplets
-from .util import (
+from .multioie2_utils import (
     install_extension,
     match_extraction_spans_to_wp,
     wp2tokid,

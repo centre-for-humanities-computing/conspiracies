@@ -2,24 +2,23 @@ import time
 import os
 import random
 from pathlib import Path
-from typing import List, Optional, Generator, Union, Dict
-import spacy
+from typing import List, Optional, Generator, Union
+
+import ndjson
+import torch
 from spacy.tokens import Doc, Span
 import argparse
-import sys
 
 from data import load_gold_triplets
 import spacy
 from extract_examples import extract_examples
-from conspiracies.prompt_relation_extraction import (
+from conspiracies.relationextraction.gptprompting import (
     MarkdownPromptTemplate2,
     PromptTemplate,
 )
 import openai
 
 # Conspiracies
-from conspiracies.coref import CoreferenceComponent
-from conspiracies.relationextraction import SpacyRelationExtractor
 
 from extract_utils import write_txt, ndjson_gen
 from src.concat_split_contexts import (
@@ -324,6 +323,7 @@ def multi2oie_extraction(
             continue
         except StopIteration:
             print("Stopping iteration because of StopIteration exception")
+            # TODO: the last iteration happens twice with this logic
             run = False
         subjects, predicates, objects, triplets = [], [], [], []
         for triplet in doc._.relation_triplets:

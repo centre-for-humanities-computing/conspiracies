@@ -2,7 +2,7 @@
 import spacy
 
 from relationextraction import SpacyRelationExtractor  # noqa
-from conspiracies.HeadWordExtractionComponent import contains_ents
+from conspiracies.headwordextraction.headwordextraction_comp import contains_ents
 
 
 def main():
