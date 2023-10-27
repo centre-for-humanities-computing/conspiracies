@@ -45,11 +45,14 @@ def filter_triplets_with_stopwords(
     """Filters triplets that contain a stopword.
 
     Args:
-        triplets (List[Tuple[str, str, str]]): List of triplets. A triplet is a tuple of three strings.
+        triplets (List[Tuple[str, str, str]]): List of triplets. A triplet is a tuple of
+            three strings.
         stopwords (List[str]): List of stopwords
-        soft (bool): If True, only the subject and object are checked for stopwords. If False, the whole triplet is checked.
+        soft (bool): If True, only the subject and object are checked for stopwords. If
+            False, the whole triplet is checked.
     Returns:
-        filtered_triplets (List[Tuple[str, str, str]]): List of triplets without stopwords
+        filtered_triplets (List[Tuple[str, str, str]]): List of triplets without
+        stopwords
     """
     filtered_triplets = []
     if soft:
@@ -84,7 +87,9 @@ def load_triplets(
     triplets_list: List[Tuple[str, str, str]] = []
     data = read_txt(file_path)
     triplets_list = [
-        triplet_from_line(line) for line in data if triplet_from_line(line)  # type: ignore
+        triplet_from_line(line)
+        for line in data
+        if triplet_from_line(line)  # type: ignore
     ]
     filtered_triplets = filter_triplets_with_stopwords(
         triplets_list,
@@ -117,11 +122,14 @@ def freq_of_most_frequent(list_of_strings: List[str]) -> Tuple[str, float]:
     """Calculates the frequency of the most frequent element in a list of
     strings.
 
-    Frequency is measured as how much of the list the most frequent element takes up, percentage-wise.
+    Frequency is measured as how much of the list the most frequent element takes up,
+        percentage-wise.
     Args:
-        list_of_strings (List[str]): List of strings to find the most frequent element in
+        list_of_strings (List[str]): List of strings to find the most frequent element
+        in
     Returns:
-        most_common_string (str), percentage (float): Frequency of the most frequent element, its percentage
+        most_common_string (str), percentage (float): Frequency of the most frequent
+        element, its percentage
     """
     most_common = Counter(list_of_strings).most_common(1)[0]
     most_common_string = most_common[0]
@@ -160,7 +168,8 @@ def get_cluster_label(
         cluster (List[Tuple[str, int]]): Cluster of elements
         nlp (spacy.lang): Spacy language model
         certain_cutoff (float): Minimum percentage of the most frequent token.
-            All clusters that have a most frequent token at least as frequent as this value gets that token as label.
+            All clusters that have a most frequent token at least as frequent as this
+            value gets that token as label.
     Returns:
         label (str): The cluster label according to the rules
     """
@@ -199,7 +208,8 @@ def cluster_dict(topic_labels: ndarray, input_list: List[str]) -> Dict[int, List
     Only clusters with at least `cutoff` elements.
     Args:
         topic_model (BERTopic): BERTopic model
-        input_list (List[str]): The list of string that were used to create the BERTopic model
+        input_list (List[str]): The list of string that were used to create the BERTopic
+        model
         cutoff (int): Minimum number of elements in a cluster
     Returns:
         cluster_dict (Dict[int, List[str]]): Dictionary of clusters
@@ -228,15 +238,19 @@ def label_clusters(
     """Labels clusters according to the rules in `get_cluster_label`.
     Args:
         cluster_dict (Dict[int, List[str]]): Dictionary of clusters to label
-        nlp (spacy.lang): Spacy language model to use for tokenization of less defined clusters
+        nlp (spacy.lang): Spacy language model to use for tokenization of less defined
+            clusters
         first_cutoff (float): Minimum percentage of the most frequent element.
-            All clusters that have a most frequent element at least as frequent as this value gets that element as label.
+            All clusters that have a most frequent element at least as frequent as this
+            value gets that element as label.
         min_cluster_length (int): Minimum number of elements in a cluster
         second_cutoff (float): Minimum percentage of the most frequent element.
-            This cutoff is only used if the cluster has a less clearly defined label, but is still large enough.
+            This cutoff is only used if the cluster has a less clearly defined label,
+            but is still large enough.
 
     Returns:
-        dict_with_labels (Dict[str, Dict[str, List[str]]]): Dictionary of clusters with labels
+        dict_with_labels (Dict[str, Dict[str, List[str]]]): Dictionary of clusters with
+        labels
             The keys are the labels, the values are dictionaries with the keys
                 "cluster" (final elements in the cluster), and
                 "n_elements" (number of elements in the final cluster)
@@ -341,17 +355,20 @@ def create_nodes_and_edges(
 ):
     """Creates nodes and edges from clusters of subjects, objects and predicates.
     Args:
-        subj_obj_clusters (Dict[str, Dict[str, List[str]]]): Dictionary of clusters with labels
+        subj_obj_clusters (Dict[str, Dict[str, List[str]]]): Dictionary of clusters
+            with labels
             The keys are the labels, the values are dictionaries with the keys
                 "cluster" (final elements in the cluster), and
                 "n_elements" (number of elements in the final cluster)
-        predicate_clusters (Dict[str, Dict[str, List[str]]]): Dictionary of clusters with labels
+        predicate_clusters (Dict[str, Dict[str, List[str]]]): Dictionary of clusters
+            with labels
             The keys are the labels, the values are dictionaries with the keys
                 "cluster" (final elements in the cluster), and
                 "n_elements" (number of elements in the final cluster)
-        no_predicate_filler (str): String to use as filler for predicates that do not have a cluster
-        save (Optional[Union[bool,str]]): If a string, nodes and edges are saved to a json file.
-            If False, does not save.
+        no_predicate_filler (str): String to use as filler for predicates that do not
+            have a cluster
+        save (Optional[Union[bool,str]]): If a string, nodes and edges are saved to a
+            json file. If False, does not save.
 
     Returns:
         nodes, edges (List[Tuple[str, str]], List[str]]): nodes and edges for the graph
@@ -368,7 +385,9 @@ def create_nodes_and_edges(
             else:
                 labelled_objects[index - n_elements] = label  # type: ignore
     labelled_subjects = {  # type: ignore
-        i: label for i, label in labelled_subjects.items() if label != ""  # type: ignore
+        i: label
+        for i, label in labelled_subjects.items()
+        if label != ""  # type: ignore
     }
     labelled_objects = {
         i: label for i, label in labelled_objects.items() if label != ""
@@ -420,7 +439,8 @@ def main(
     if save:
         save = path.replace(
             "triplets.txt",
-            f"{embedding_model}_dim={dim}_neigh={n_neighbors}_clust={min_cluster_size}_samp={min_samples}_nodes_edges.json",
+            f"{embedding_model}_dim={dim}_neigh={n_neighbors}"
+            f"_clust={min_cluster_size}_samp={min_samples}_nodes_edges.json",
         )  # type: ignore
 
     model = (
@@ -430,7 +450,8 @@ def main(
     )
 
     print(
-        f"Dimensions: {dim}, neighbors: {n_neighbors}, min cluster size: {min_cluster_size}, samples: {min_samples}, min topic size: {min_topic_size}",
+        f"Dimensions: {dim}, neighbors: {n_neighbors}, min cluster size: "
+        f"{min_cluster_size}, samples: {min_samples}, min topic size: {min_topic_size}",
     )
     print("\n_________________\n")
     print("Embedding and clustering predicates")
@@ -479,7 +500,8 @@ if __name__ == "__main__":
         "-e",
         "--event",
         type=str,
-        help="Event to cluster. Must include name of source folder (newspapers or twitter) and event",
+        help="Event to cluster. Must include name of source folder (newspapers or "
+        "twitter) and event",
     )
     parser.add_argument(
         "-emb",
