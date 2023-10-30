@@ -4,9 +4,8 @@ from typing import Any, Dict, List
 
 from spacy.tokens import Doc
 
-from conspiracies.prompt_relation_extraction import PromptTemplate
-
-from ..registry import registry
+from conspiracies.docprocessing.relationextraction.gptprompting import PromptTemplate
+from conspiracies.registry import registry
 
 
 @registry.prompt_apis.register("conspiracies/openai_gpt3_api")
@@ -81,7 +80,7 @@ def create_openai_chatgpt_prompt_api(
         assert isinstance(message_example, list) and isinstance(
             message_example[0],
             dict,
-        ), "ChatGPT requires a list of message dicts. Consider using chatGPTPromptTemplate as template."
+        ), "ChatGPT requires a list of message dicts. Consider using chatGPTPromptTemplate as template."  # noqa: E501
 
         responses: List[str] = []
         for target in targets:

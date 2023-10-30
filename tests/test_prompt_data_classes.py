@@ -1,6 +1,6 @@
 import pytest
 import spacy
-from conspiracies.prompt_relation_extraction import (
+from conspiracies.docprocessing.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
     StringTriplet,
