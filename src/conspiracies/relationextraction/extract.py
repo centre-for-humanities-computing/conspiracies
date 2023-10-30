@@ -4,16 +4,16 @@ from typing import List
 import numpy as np
 import torch
 from tqdm import tqdm
-from transformers import BertTokenizer
 
 from .other import bio
+from .util import get_cached_tokenizer
 
 
 def extract(args, model, loader, output_path):
     model.eval()
     os.makedirs(output_path, exist_ok=True)
     extraction_path = os.path.join(output_path, "extraction.txt")
-    tokenizer = BertTokenizer.from_pretrained(args.bert_config)
+    tokenizer = get_cached_tokenizer(args["bert_config"])
     f = open(extraction_path, "w")
 
     for step, batch in tqdm(enumerate(loader), desc="eval_steps", total=len(loader)):
@@ -110,7 +110,7 @@ def extract(args, model, loader, output_path):
 
 def extract_to_list(args, model, loader):
     model.eval()
-    tokenizer = BertTokenizer.from_pretrained(args["bert_config"])
+    tokenizer = get_cached_tokenizer(args["bert_config"])
 
     out = {}
     out["sentence"] = []
@@ -207,7 +207,7 @@ def extract_to_list(args, model, loader):
 
 
 def simple_extract(model, loader, device):
-    tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+    tokenizer = get_cached_tokenizer("bert-base-multilingual-cased")
     triplet = []
     conf = []
     for step, batch in tqdm(enumerate(loader), desc="eval_steps", total=len(loader)):
@@ -303,7 +303,7 @@ def simple_extract(model, loader, device):
 
 def extract_to_dict(args, model, loader):
     model.eval()
-    tokenizer = BertTokenizer.from_pretrained(args["bert_config"])
+    tokenizer = get_cached_tokenizer(args["bert_config"])
 
     out = {}
     out["sentence"] = []
