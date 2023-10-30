@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from .other import bio
-from .util import get_cached_tokenizer
+from .multi2oie_utils import get_cached_tokenizer
 
 
 def extract(args, model, loader, output_path):

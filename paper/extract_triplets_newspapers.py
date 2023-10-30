@@ -1,18 +1,14 @@
 from spacy.tokens import Span
 import time
 import os
-import ndjson
 from pathlib import Path
-from typing import List, Union, Generator, Tuple
+from typing import List, Generator
 import spacy
 from transformers import AutoTokenizer
 import argparse
 
 # Conspiracies
-from conspiracies.HeadWordExtractionComponent import contains_ents
-from conspiracies.relationextraction import SpacyRelationExtractor
-from conspiracies import wordpiece_length_normalization
-from conspiracies.coref import CoreferenceComponent
+from conspiracies.preproc import wordpiece_length_normalization
 from extract_utils import load_ndjson, write_txt
 
 

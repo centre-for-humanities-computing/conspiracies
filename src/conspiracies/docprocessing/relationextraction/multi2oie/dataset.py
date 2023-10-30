@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .other import utils
-from .util import get_cached_tokenizer
+from .multi2oie_utils import get_cached_tokenizer
 
 
 class EvalDataset(Dataset):

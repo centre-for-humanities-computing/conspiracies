@@ -1,5 +1,8 @@
 import numpy as np
-from conspiracies.prompt_relation_extraction import DocTriplets, score_open_relations
+from conspiracies.docprocessing.relationextraction.gptprompting import (
+    DocTriplets,
+    score_open_relations,
+)
 from spacy.training import Example
 
 from .utils import docs_with_triplets  # noqa F401
