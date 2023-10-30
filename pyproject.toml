@@ -28,7 +28,7 @@ dependencies = [
     "confection>0.0.1,<0.1.0",
     # allenNLP packages
     "allennlp>=2.10.0,<2.11.0",
-    "allennlp_models>=2.10.0,<2.11.0",
+    "allennlp-models>=2.10.0,<2.11.0",
     # transformers
     "transformers>=4.11.3,<4.19.0",
     # base+ 
@@ -36,6 +36,14 @@ dependencies = [
     "numpy>=1.19.5,<1.24.0",
     "pandas>=1.1.5,<1.5.0",
     "jsonlines>=3.1.0,<3.2.0",
+    "openai",
+    "ndjson",
+    "networkx",
+    "matplotlib",
+    "umap-learn",
+    "hdbscan",
+    "sentence-transformers",
+    "stop-words"
 ]
 
 [project.license]
@@ -80,7 +88,7 @@ content-type = "text/markdown"
 
 
 [project.entry-points.spacy_factories]
-"conspiracies/prompt_relation_extraction" = "conspiracies.prompt_relation_extraction.prompt_relation_component:create_prompt_relation_extraction_component"
+"conspiracies/docprocessing/relationextraction/gptprompting" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
 
 
 [build-system]

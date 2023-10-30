@@ -5,7 +5,10 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from .prompt_relation_extraction import DocTriplets, SpanTriplet
+from conspiracies.docprocessing.relationextraction.gptprompting import (
+    DocTriplets,
+    SpanTriplet,
+)
 
 
 def _doc_to_json(doc: Doc):

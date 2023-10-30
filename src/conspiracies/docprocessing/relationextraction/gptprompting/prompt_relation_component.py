@@ -9,7 +9,7 @@ from spacy.language import Language
 from spacy.tokens import Doc
 from spacy.training.example import Example
 
-from ..registry import registry
+from conspiracies.registry import registry
 from .data_classes import DocTriplets, SpanTriplet
 from .prompt_apis import create_openai_chatgpt_prompt_api  # noqa: F401
 
