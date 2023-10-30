@@ -88,7 +88,7 @@ content-type = "text/markdown"
 
 
 [project.entry-points.spacy_factories]
-"conspiracies/docproc/relationextraction/gptprompting" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
+"conspiracies/docprocessing/relationextraction/gptprompting" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
 
 
 [build-system]
