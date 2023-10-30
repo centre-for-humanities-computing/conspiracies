@@ -2,12 +2,10 @@ import random
 import time
 from typing import Any, Dict, List
 
-from conspiracies.registry import registry
 from spacy.tokens import Doc
 
-from conspiracies.docprocessing.relationextraction.gptprompting import (
-    PromptTemplate,
-)
+from conspiracies.docprocessing.relationextraction.gptprompting import PromptTemplate
+from conspiracies.registry import registry
 
 
 @registry.prompt_apis.register("conspiracies/openai_gpt3_api")
