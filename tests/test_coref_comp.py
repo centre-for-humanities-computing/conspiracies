@@ -1,6 +1,6 @@
 from spacy.tokens import Span
 
-from conspiracies.docproc.coref import CoreferenceComponent  # noqa F401
+from conspiracies.docprocessing.coref import CoreferenceComponent  # noqa F401
 
 from .utils import nlp_da, nlp_da_w_coref  # noqa F401
 

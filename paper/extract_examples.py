@@ -8,7 +8,7 @@ import random
 import re
 from typing import List, Tuple
 from spacy.tokens import Doc
-from conspiracies.docproc.relationextraction.gptprompting.data_classes import (
+from conspiracies.docprocessing.relationextraction.gptprompting.data_classes import (
     DocTriplets,
 )
 

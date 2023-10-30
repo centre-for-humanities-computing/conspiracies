@@ -10,7 +10,7 @@ import argparse
 from data import load_gold_triplets
 import spacy
 from extract_examples import extract_examples
-from conspiracies.docproc.relationextraction import (
+from conspiracies.docprocessing.relationextraction import (
     MarkdownPromptTemplate2,
     PromptTemplate,
 )

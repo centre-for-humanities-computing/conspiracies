@@ -1,6 +1,6 @@
 from .utils import nlp_da  # noqa
 
-from conspiracies.docproc.coref import CoreferenceModel
+from conspiracies.docprocessing.coref import CoreferenceModel
 
 
 def test_CoreferenceModel(nlp_da):  # noqa

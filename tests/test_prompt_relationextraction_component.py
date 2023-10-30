@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 from confection import registry
-from conspiracies.docproc.relationextraction.gptprompting import (
+from conspiracies.docprocessing.relationextraction.gptprompting import (
     SpanTriplet,
     StringTriplet,
 )

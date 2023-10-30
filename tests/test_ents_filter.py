@@ -1,7 +1,7 @@
 import spacy
 from spacy.tokens import Doc, Span
 
-from conspiracies.docproc.headwordextraction.headwordextraction_comp import (
+from conspiracies.docprocessing.headwordextraction.headwordextraction_component import (
     contains_ents,
 )
 
