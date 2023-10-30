@@ -2,10 +2,11 @@ import random
 import time
 from typing import Any, Dict, List
 
-from ..registry import registry
 from spacy.tokens import Doc
 
 from conspiracies.prompt_relation_extraction import PromptTemplate
+
+from ..registry import registry
 
 
 @registry.prompt_apis.register("conspiracies/openai_gpt3_api")
@@ -77,9 +78,10 @@ def create_openai_chatgpt_prompt_api(
 
         openai.api_key = api_key
         message_example = prompt_template.create_prompt("test")
-        assert (
-            type(message_example) == list and type(message_example[0]) == dict
-        ), "ChatGPT requires a list of message dicts. Consider using chatGPTPromptTemplate as template."  # noqa: E501
+        assert isinstance(message_example, list) and isinstance(
+            message_example[0],
+            dict,
+        ), "ChatGPT requires a list of message dicts. Consider using chatGPTPromptTemplate as template."
 
         responses: List[str] = []
         for target in targets:
