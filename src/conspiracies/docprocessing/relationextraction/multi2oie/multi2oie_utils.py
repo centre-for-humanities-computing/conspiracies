@@ -46,10 +46,6 @@ def token_span_to_spacy_span(span: Tuple[int, int], doc: Doc):
         return doc[span[0] : span[1] + 1]
 
 
-def spacy_span_to_token_span(span: Span) -> Tuple[int, int]:
-    return span.start, span.end - 1
-
-
 def wp_span_to_token(
     relation_span: List[List[int]],
     wp_tokenid_mapping: Dict,
@@ -113,6 +109,15 @@ def match_extraction_spans_to_wp(
     return matched_extractions
 
 
+def span_to_idx(span: Span) -> Tuple[int, int]:
+    return span.start, span.end
+
+
+def idx_to_span(idx: Tuple[int, int], doc: Doc) -> Span:
+    start, end = idx
+    return doc[start:end]
+
+
 def install_extension(ext):
     Doc.set_extension(ext + "_idxs", default=None)
     Doc.set_extension(
@@ -120,10 +125,10 @@ def install_extension(ext):
         setter=lambda doc, spans: setattr(
             doc._,
             ext + "_idxs",
-            [spacy_span_to_token_span(span) for span in spans],
+            [span_to_idx(span) for span in spans],
         ),
         getter=lambda doc: [
-            token_span_to_spacy_span(idx, doc) for idx in getattr(doc._, ext + "_idxs")
+            idx_to_span(idx, doc) for idx in getattr(doc._, ext + "_idxs")
         ],
     )
 
