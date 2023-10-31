@@ -6,11 +6,6 @@ from transformers import BertTokenizer
 from functools import cache
 
 
-def install_extension(doc_attr) -> None:
-    if not Doc.has_extension(doc_attr):
-        Doc.set_extension(doc_attr, default=None)
-
-
 #### Wordpiece <-> spacy alignment functions
 def wp2tokid(align: Ragged) -> Dict[int, int]:
     """Gets the wordpiece to token id mapping."""
@@ -51,6 +46,10 @@ def token_span_to_spacy_span(span: Tuple[int, int], doc: Doc):
         return doc[span[0] : span[1] + 1]
 
 
+def spacy_span_to_token_span(span: Span) -> Tuple[int, int]:
+    return span.start, span.end - 1
+
+
 def wp_span_to_token(
     relation_span: List[List[int]],
     wp_tokenid_mapping: Dict,
@@ -81,7 +80,6 @@ def wp_span_to_token(
         relations["head"].append(head)
         relations["relation"].append(relation)
         relations["tail"].append(tail)
-        relations["triplet"].append((head, relation, tail))  # type: ignore
     return relations
 
 
@@ -113,6 +111,46 @@ def match_extraction_spans_to_wp(
 
         matched_extractions += new_spans
     return matched_extractions
+
+
+def install_extension(ext):
+    Doc.set_extension(ext + "_idxs", default=None)
+    Doc.set_extension(
+        ext,
+        setter=lambda doc, spans: setattr(
+            doc._,
+            ext + "_idxs",
+            [spacy_span_to_token_span(span) for span in spans],
+        ),
+        getter=lambda doc: [
+            token_span_to_spacy_span(idx, doc) for idx in getattr(doc._, ext + "_idxs")
+        ],
+    )
+
+
+def install_extensions() -> None:
+    """Sets extensions on the SpaCy Doc class.
+
+    Relation heads, relations and tails are stored internally as (start,
+    end) index tuples, but they are created with getters and setters
+    that map the index tuples to and from SpaCy Span objects. Full
+    triplets are retrieved by looping over the (assumed) aligned heads,
+    relations and tails. Confidence numbers are stored as is.
+    """
+    for ext in ["relation_head", "relation_relation", "relation_tail"]:
+        install_extension(ext)
+    Doc.set_extension(
+        "relation_triplets",
+        getter=lambda doc: [
+            (head, rel, tail)
+            for head, rel, tail in zip(
+                doc._.relation_head,
+                doc._.relation_relation,
+                doc._.relation_tail,
+            )
+        ],
+    )
+    Doc.set_extension("relation_confidence", default=None)
 
 
 @cache

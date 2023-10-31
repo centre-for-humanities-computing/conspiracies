@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 
 from .knowledge_triplets import KnowledgeTriplets
 from .multi2oie_utils import (
-    install_extension,
+    install_extensions,
     match_extraction_spans_to_wp,
     wp2tokid,
     wp_span_to_token,
@@ -49,16 +49,8 @@ class SpacyRelationExtractor(TrainablePipe):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
         self.confidence_threshold = confidence_threshold
 
-        [
-            install_extension(ext)  # type: ignore
-            for ext in [
-                "relation_triplets",
-                "relation_head",
-                "relation_relation",
-                "relation_tail",
-                "relation_confidence",
-            ]
-        ]
+        install_extensions()
+
         self.ignore_tokenizers_warning()
         self.ignore_transformers_warnings()
 
@@ -103,7 +95,6 @@ class SpacyRelationExtractor(TrainablePipe):
 
         # Output empty lists if empty doc or no extractions above threshold
         if not predictions["extraction"]:
-            setattr(doc._, "relation_triplets", [])  # type: ignore
             setattr(doc._, "relation_confidence", [])  # type: ignore
             setattr(doc._, "relation_head", [])  # type: ignore
             setattr(doc._, "relation_relation", [])  # type: ignore
@@ -131,11 +122,6 @@ class SpacyRelationExtractor(TrainablePipe):
 
         # Set doc level attributes
         merged_confidence = [j for i in predictions["confidence"] for j in i]
-        setattr(
-            doc._,  # type: ignore
-            "relation_triplets",
-            aligned_extractions["triplet"],
-        )
         setattr(doc._, "relation_confidence", merged_confidence)  # type: ignore
         setattr(doc._, "relation_head", aligned_extractions["head"])  # type: ignore
         setattr(
