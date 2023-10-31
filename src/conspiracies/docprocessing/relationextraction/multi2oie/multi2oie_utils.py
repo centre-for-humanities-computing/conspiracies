@@ -2,6 +2,8 @@ from typing import Dict, List, Tuple, Union
 
 from spacy.tokens import Doc, Span
 from thinc.types import Ragged
+from transformers import BertTokenizer
+from functools import cache
 
 
 def install_extension(doc_attr) -> None:
@@ -111,3 +113,8 @@ def match_extraction_spans_to_wp(
 
         matched_extractions += new_spans
     return matched_extractions
+
+
+@cache
+def get_cached_tokenizer(model_name):
+    return BertTokenizer.from_pretrained(model_name)
