@@ -96,9 +96,7 @@ class SpacyRelationExtractor(TrainablePipe):
         # Output empty lists if empty doc or no extractions above threshold
         if not predictions["extraction"]:
             setattr(doc._, "relation_confidence", [])  # type: ignore
-            setattr(doc._, "relation_head", [])  # type: ignore
-            setattr(doc._, "relation_relation", [])  # type: ignore
-            setattr(doc._, "relation_tail", [])  # type: ignore
+            setattr(doc._, "relation_triplets", [])  # type: ignore
             return
 
         # concatenate wordpieces and concatenate extraction span. Handle new extraction
@@ -123,13 +121,7 @@ class SpacyRelationExtractor(TrainablePipe):
         # Set doc level attributes
         merged_confidence = [j for i in predictions["confidence"] for j in i]
         setattr(doc._, "relation_confidence", merged_confidence)  # type: ignore
-        setattr(doc._, "relation_head", aligned_extractions["head"])  # type: ignore
-        setattr(
-            doc._,  # type: ignore
-            "relation_relation",
-            aligned_extractions["relation"],
-        )
-        setattr(doc._, "relation_tail", aligned_extractions["tail"])  # type: ignore
+        setattr(doc._, "relation_triplets", aligned_extractions)  # type: ignore
 
     def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
         """Apply the pipe to a stream of documents.

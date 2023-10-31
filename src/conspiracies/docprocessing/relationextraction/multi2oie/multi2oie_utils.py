@@ -50,12 +50,12 @@ def wp_span_to_token(
     relation_span: List[List[int]],
     wp_tokenid_mapping: Dict,
     doc: Doc,
-) -> Dict[str, List[Span]]:
+) -> List[Tuple[Span, Span, Span]]:
     """Converts the wp span for each relation to spans.
 
     Assumes that relations are contiguous
     """
-    relations = {"triplet": [], "head": [], "relation": [], "tail": []}  # type: ignore
+    relations = []  # type: ignore
     for triplet in relation_span:
         # convert list of wordpieces in the extraction to a tuple of the span (start,
         # end)
@@ -73,9 +73,7 @@ def wp_span_to_token(
         relation = token_span_to_spacy_span(relation, doc)
         tail = token_span_to_spacy_span(tail, doc)
 
-        relations["head"].append(head)
-        relations["relation"].append(relation)
-        relations["tail"].append(tail)
+        relations.append((head, relation, tail))
     return relations
 
 
@@ -118,42 +116,38 @@ def idx_to_span(idx: Tuple[int, int], doc: Doc) -> Span:
     return doc[start:end]
 
 
-def install_extension(ext):
-    Doc.set_extension(ext + "_idxs", default=None)
-    Doc.set_extension(
-        ext,
-        setter=lambda doc, spans: setattr(
-            doc._,
-            ext + "_idxs",
-            [span_to_idx(span) for span in spans],
-        ),
-        getter=lambda doc: [
-            idx_to_span(idx, doc) for idx in getattr(doc._, ext + "_idxs")
-        ],
-    )
-
-
 def install_extensions() -> None:
     """Sets extensions on the SpaCy Doc class.
 
-    Relation heads, relations and tails are stored internally as (start,
-    end) index tuples, but they are created with getters and setters
-    that map the index tuples to and from SpaCy Span objects. Full
-    triplets are retrieved by looping over the (assumed) aligned heads,
-    relations and tails. Confidence numbers are stored as is.
+    Relation triplets are stored internally as index tuples, but they
+    are created with getters and setters that map the index tuples to
+    and from SpaCy Span objects. Heads, relations and tails are
+    retrieved from the triplets. Confidence numbers are stored as is.
     """
-    for ext in ["relation_head", "relation_relation", "relation_tail"]:
-        install_extension(ext)
+    Doc.set_extension("relation_triplet_idxs", default=None)
     Doc.set_extension(
         "relation_triplets",
+        setter=lambda doc, triplets: setattr(
+            doc._,
+            "relation_triplet_idxs",
+            [tuple(span_to_idx(span) for span in triplet) for triplet in triplets],
+        ),
         getter=lambda doc: [
-            (head, rel, tail)
-            for head, rel, tail in zip(
-                doc._.relation_head,
-                doc._.relation_relation,
-                doc._.relation_tail,
-            )
+            tuple(idx_to_span(idx, doc) for idx in triplet_idx)
+            for triplet_idx in doc._.relation_triplet_idxs
         ],
+    )
+    Doc.set_extension(
+        "relation_head",
+        getter=lambda doc: [t[0] for t in doc._.relation_triplets],
+    )
+    Doc.set_extension(
+        "relation_relation",
+        getter=lambda doc: [t[1] for t in doc._.relation_triplets],
+    )
+    Doc.set_extension(
+        "relation_tail",
+        getter=lambda doc: [t[2] for t in doc._.relation_triplets],
     )
     Doc.set_extension("relation_confidence", default=None)
 

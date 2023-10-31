@@ -5,26 +5,36 @@ from conspiracies.docprocessing.relationextraction.multi2oie import multi2oie_ut
 
 
 def test_relationextraction_doc_extension():
-    """Verifies the behavior of the relation triplet extensions and the lambdas
-    that back them."""
+    """Verifies the behavior of the relation triplet extension and the lambdas
+    that back it."""
     multi2oie_utils.install_extensions()
 
-    words = "this is a test".split()
+    words = "this is a test . the test seems cool".split()
     vocab = Vocab(strings=words)
     test_doc = Doc(vocab, words=words)
 
-    head = test_doc[0:1]
-    relation = test_doc[1:2]
-    tail = test_doc[2:4]
+    this = test_doc[0:1]
+    is_ = test_doc[1:2]
+    a_test = test_doc[2:4]
+    the_test = test_doc[5:7]
+    seems = test_doc[7:8]
+    cool = test_doc[8:9]
 
-    test_doc._.relation_head = [head]
-    test_doc._.relation_relation = [relation]
-    test_doc._.relation_tail = [tail]
+    test_doc._.relation_triplets = [(this, is_, a_test), (the_test, seems, cool)]
 
-    # verify the extension that contains the actual indices
-    assert test_doc._.relation_head_idxs == [(0, 1)]
-    assert test_doc._.relation_relation_idxs == [(1, 2)]
-    assert test_doc._.relation_tail_idxs == [(2, 4)]
+    # check setter/getter mirroring
+    assert test_doc._.relation_triplets == [
+        (this, is_, a_test),
+        (the_test, seems, cool),
+    ]
 
-    # verify that relation_triplets are correctly built from the other extensions
-    assert test_doc._.relation_triplets == [(head, relation, tail)]
+    # check index extension
+    assert test_doc._.relation_triplet_idxs == [
+        ((0, 1), (1, 2), (2, 4)),
+        ((5, 7), (7, 8), (8, 9)),
+    ]
+
+    # check heads, relations and tails
+    assert test_doc._.relation_head == [this, the_test]
+    assert test_doc._.relation_relation == [is_, seems]
+    assert test_doc._.relation_tail == [a_test, cool]
