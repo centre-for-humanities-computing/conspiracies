@@ -1,9 +1,9 @@
 """Dataset class used for preparing input to relation extraction model."""
 import torch
 from torch.utils.data import Dataset
-from transformers import BertTokenizer
 
 from .other import utils
+from .multi2oie_utils import get_cached_tokenizer
 
 
 class EvalDataset(Dataset):
@@ -19,7 +19,7 @@ class EvalDataset(Dataset):
         else:
             # Data should be a list of sentences (or pickled list of sentences)
             self.sentences = data_path
-        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_config)
+        self.tokenizer = get_cached_tokenizer(tokenizer_config)
         self.vocab = self.tokenizer.vocab
         self.max_len = max_len
 
