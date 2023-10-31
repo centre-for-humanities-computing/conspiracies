@@ -32,10 +32,10 @@ def get_pred_mask(tensor):
         where B is the batch size, L is the sequence length.
     :return: masked binary tensor with the same shape.
     """
-    res = tensor.clone()
-    res[tensor == pred_tag2idx["O"]] = 1
-    res[tensor != pred_tag2idx["O"]] = 0
-    return torch.tensor(res, dtype=torch.bool, device=tensor.device)
+    res = tensor.bool()
+    res[tensor == pred_tag2idx["O"]] = True
+    res[tensor != pred_tag2idx["O"]] = False
+    return res
 
 
 def filter_pred_tags(pred_tags, tokens):
@@ -205,8 +205,8 @@ def get_single_predicate_idxs(pred_tags):
                 elif tag.item() == pred_tag2idx["P-I"]:
                     cur_pred[b_idx + j] = pred_tag2idx["P-I"]
             cur_sent_preds.append(cur_pred)
-        total_pred_tags.append(cur_sent_preds)
-    return [torch.Tensor(pred_tags) for pred_tags in total_pred_tags]
+        total_pred_tags.append(np.vstack(cur_sent_preds))
+    return [torch.from_numpy(pred_tags) for pred_tags in total_pred_tags]
 
 
 def get_tuple(sentence, pred_tags, arg_tags, tokenizer):
@@ -321,5 +321,4 @@ def get_confidence_score(pred_probs, arg_probs, extraction_idxs):
             )
             cur_score += arg_score
         confidence_scores.append(cur_score)
-    return confidence_scores
     return confidence_scores
