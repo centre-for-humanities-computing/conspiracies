@@ -1,6 +1,5 @@
 import pytest
 
-from conspiracies.relationextraction import SpacyRelationExtractor  # noqa F401
 
 from .utils import nlp_da  # noqa F401
 

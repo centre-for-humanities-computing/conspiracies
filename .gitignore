@@ -114,6 +114,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# PyCharm
+.idea
+
 # Rope project settings
 .ropeproject
 
@@ -128,15 +131,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# ruff
+.ruff_cache
+
 # .vscode
 .vscode/*
 # MacOS
 .DS_Store
 
 # data 
-data/gpt_predictions_compare.json
-data/prompt_outputs_compare_templates.md
-paper/extracted_triplets_papers/*
-paper/extracted_triplets_tweets/*
+data/
+*extracted_triplets*
 paper/*ndjson
 paper/fig/*
