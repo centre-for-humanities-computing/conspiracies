@@ -32,10 +32,10 @@ def get_pred_mask(tensor):
         where B is the batch size, L is the sequence length.
     :return: masked binary tensor with the same shape.
     """
-    res = tensor.clone()
-    res[tensor == pred_tag2idx["O"]] = 1
-    res[tensor != pred_tag2idx["O"]] = 0
-    return res.bool()
+    res = tensor.bool()
+    res[tensor == pred_tag2idx["O"]] = True
+    res[tensor != pred_tag2idx["O"]] = False
+    return res
 
 
 def filter_pred_tags(pred_tags, tokens):

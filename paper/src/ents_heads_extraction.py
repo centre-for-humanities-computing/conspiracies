@@ -1,7 +1,6 @@
 """Pipeline for headwords/entities extractions and frequency count."""
 import spacy
 
-from relationextraction import SpacyRelationExtractor  # noqa
 from conspiracies.docprocessing.headwordextraction import contains_ents
 
 
