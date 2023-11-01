@@ -205,7 +205,10 @@ def get_single_predicate_idxs(pred_tags):
                 elif tag.item() == pred_tag2idx["P-I"]:
                     cur_pred[b_idx + j] = pred_tag2idx["P-I"]
             cur_sent_preds.append(cur_pred)
-        total_pred_tags.append(np.vstack(cur_sent_preds))
+        if cur_sent_preds:
+            total_pred_tags.append(np.vstack(cur_sent_preds))
+        else:
+            total_pred_tags.append(np.empty(0))
     return [torch.from_numpy(pred_tags) for pred_tags in total_pred_tags]
 
 

@@ -1,5 +1,5 @@
 import pytest
-
+import torch
 
 from .utils import nlp_da  # noqa F401
 
@@ -25,17 +25,36 @@ def test_relationextraction_component_pipe(nlp_da):  # noqa F811
 
 
 @pytest.mark.skip(reason="Avoid downloading the model on GitHub actions")
+def test_relationextraction_component_pipe_multiprocessing(nlp_da):  # noqa F811
+    test_sents = [
+        "Pernille Blume vinder delt EM-sølv i Ungarn.",
+        "Pernille Blume blev nummer to ved EM på langbane i disciplinen 50 meter fri.",
+    ] * 5
+
+    nlp_da.add_pipe("relation_extractor")
+
+    # multiprocessing and torch with multiple threads result in a deadlock, therefore:
+    torch.set_num_threads(1)
+
+    pipe = nlp_da.pipe(test_sents, n_process=2, batch_size=5)
+
+    for d in pipe:
+        print(d.text, "\n", d._.relation_triplets)
+
+
+@pytest.mark.skip(reason="Avoid downloading the model on GitHub actions")
 def test_relation_extraction_component_single(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor", config={"confidence_threshold": 1.8})
     doc = nlp_da("Obama is the former president of the United States.")
     triplet_str = [
-        tuple([str(t) for t in triplet]) for triplet in doc._.relation_triplets
+        tuple([str(t[1]) for t in triplet]) for triplet in doc._.relation_triplets
     ]
     assert triplet_str == [
         ("Obama", "is", "the former president of the United States"),
     ]
 
 
+@pytest.mark.skip(reason="Avoid downloading the model on GitHub actions")
 def test_relation_extraction_multi_sentence(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor")
     doc = nlp_da(
@@ -43,7 +62,7 @@ def test_relation_extraction_multi_sentence(nlp_da):  # noqa F811
         + " der hedder Jens og Frode",
     )
     triplet_str = [
-        tuple([str(t) for t in triplet]) for triplet in doc._.relation_triplets
+        tuple([str(t[1]) for t in triplet]) for triplet in doc._.relation_triplets
     ]
     assert triplet_str == [
         ("Barack Obama", "is", "the former president of the United States"),
@@ -55,11 +74,11 @@ def test_relation_extraction_multi_sentence(nlp_da):  # noqa F811
 def test_relation_extraction_empty_string(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor")
     doc = nlp_da("")
-    assert doc._.relation_triplets == []
+    assert len(doc._.relation_triplets) == 0
 
 
 @pytest.mark.skip(reason="Avoid downloading the model on GitHub actions")
 def test_relation_extraction_no_extracted_relation(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor")
     doc = nlp_da("Ingen relation")
-    assert doc._.relation_triplets == []
+    assert len(doc._.relation_triplets) == 0

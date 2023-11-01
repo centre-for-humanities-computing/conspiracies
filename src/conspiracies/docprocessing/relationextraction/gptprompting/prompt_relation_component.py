@@ -10,7 +10,11 @@ from spacy.tokens import Doc
 from spacy.training.example import Example
 
 from conspiracies.registry import registry
-from .data_classes import DocTriplets, SpanTriplet
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    DocTriplets,
+    SpanTriplet,
+    install_extensions,
+)
 from .prompt_apis import create_openai_chatgpt_prompt_api  # noqa: F401
 
 
@@ -115,7 +119,7 @@ class PromptRelationExtractionComponent:
             self.split_doc_fn = None
 
         if not Doc.has_extension("relation_triplets") or force:
-            Doc.set_extension("relation_triplets", default=None, force=force)
+            install_extensions(force=force)
 
     def combine_docs(self, docs: List[Doc]) -> Doc:
         """Combine a list of docs into a single doc."""

@@ -1,4 +1,8 @@
-from .data_classes import SpanTriplet, StringTriplet, DocTriplets  # noqa F401
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    SpanTriplet,  # noqa F401
+    StringTriplet,  # noqa F401
+    DocTriplets,  # noqa F401
+)
 from .prompt_templates import (  # noqa F401
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,

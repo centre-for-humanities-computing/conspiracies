@@ -10,10 +10,13 @@ from transformers import AutoTokenizer
 
 from .knowledge_triplets import KnowledgeTriplets
 from .multi2oie_utils import (
-    install_extension,
     match_extraction_spans_to_wp,
     wp2tokid,
     wp_span_to_token,
+)
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    install_extensions,
+    DocTriplets,
 )
 
 
@@ -49,16 +52,8 @@ class SpacyRelationExtractor(TrainablePipe):
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
         self.confidence_threshold = confidence_threshold
 
-        [
-            install_extension(ext)  # type: ignore
-            for ext in [
-                "relation_triplets",
-                "relation_head",
-                "relation_relation",
-                "relation_tail",
-                "relation_confidence",
-            ]
-        ]
+        install_extensions()
+
         self.ignore_tokenizers_warning()
         self.ignore_transformers_warnings()
 
@@ -101,13 +96,8 @@ class SpacyRelationExtractor(TrainablePipe):
                 for indices, values in zip(filtered_indices, predictions[key])
             ]
 
-        # Output empty lists if empty doc or no extractions above threshold
+        # return if no extractions are above threshold
         if not predictions["extraction"]:
-            setattr(doc._, "relation_triplets", [])  # type: ignore
-            setattr(doc._, "relation_confidence", [])  # type: ignore
-            setattr(doc._, "relation_head", [])  # type: ignore
-            setattr(doc._, "relation_relation", [])  # type: ignore
-            setattr(doc._, "relation_tail", [])  # type: ignore
             return
 
         # concatenate wordpieces and concatenate extraction span. Handle new extraction
@@ -131,19 +121,9 @@ class SpacyRelationExtractor(TrainablePipe):
 
         # Set doc level attributes
         merged_confidence = [j for i in predictions["confidence"] for j in i]
-        setattr(
-            doc._,  # type: ignore
-            "relation_triplets",
-            aligned_extractions["triplet"],
-        )
         setattr(doc._, "relation_confidence", merged_confidence)  # type: ignore
-        setattr(doc._, "relation_head", aligned_extractions["head"])  # type: ignore
-        setattr(
-            doc._,  # type: ignore
-            "relation_relation",
-            aligned_extractions["relation"],
-        )
-        setattr(doc._, "relation_tail", aligned_extractions["tail"])  # type: ignore
+        triplets = DocTriplets(span_triplets=aligned_extractions, doc=doc)
+        setattr(doc._, "relation_triplets", triplets)  # type: ignore
 
     def pipe(self, stream: Iterable[Doc], *, batch_size: int = 128) -> Iterator[Doc]:
         """Apply the pipe to a stream of documents.

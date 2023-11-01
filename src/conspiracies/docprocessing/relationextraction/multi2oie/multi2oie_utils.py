@@ -1,14 +1,11 @@
 from typing import Dict, List, Tuple, Union
 
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc
 from thinc.types import Ragged
 from transformers import BertTokenizer
 from functools import cache
 
-
-def install_extension(doc_attr) -> None:
-    if not Doc.has_extension(doc_attr):
-        Doc.set_extension(doc_attr, default=None)
+from conspiracies.docprocessing.relationextraction.data_classes import SpanTriplet
 
 
 #### Wordpiece <-> spacy alignment functions
@@ -55,12 +52,12 @@ def wp_span_to_token(
     relation_span: List[List[int]],
     wp_tokenid_mapping: Dict,
     doc: Doc,
-) -> Dict[str, List[Span]]:
+) -> List[SpanTriplet]:
     """Converts the wp span for each relation to spans.
 
     Assumes that relations are contiguous
     """
-    relations = {"triplet": [], "head": [], "relation": [], "tail": []}  # type: ignore
+    relations = []  # type: ignore
     for triplet in relation_span:
         # convert list of wordpieces in the extraction to a tuple of the span (start,
         # end)
@@ -78,10 +75,7 @@ def wp_span_to_token(
         relation = token_span_to_spacy_span(relation, doc)
         tail = token_span_to_spacy_span(tail, doc)
 
-        relations["head"].append(head)
-        relations["relation"].append(relation)
-        relations["tail"].append(tail)
-        relations["triplet"].append((head, relation, tail))  # type: ignore
+        relations.append(SpanTriplet(subject=head, predicate=relation, object=tail))
     return relations
 
 

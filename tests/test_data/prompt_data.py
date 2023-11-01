@@ -1,6 +1,10 @@
 from typing import List
 
 import spacy
+
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    install_extensions,
+)
 from conspiracies.docprocessing.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
@@ -161,7 +165,7 @@ def load_gold_triplets() -> List[Doc]:
     span_triplets = [triplet for triplet in span_triplets_ if triplet is not None]
 
     if not Doc.has_extension("relation_triplets"):
-        Doc.set_extension("relation_triplets", default=[], force=True)
+        install_extensions()
     doc._.relation_triplets = DocTriplets(span_triplets=span_triplets, doc=doc)
 
     # copy them to test with multiple examples.
@@ -212,7 +216,7 @@ def load_examples() -> List[Doc]:
     nlp.add_pipe("sentencizer")
 
     if not Doc.has_extension("relation_triplets"):
-        Doc.set_extension("relation_triplets", default=[], force=True)
+        install_extensions(force=True)
     examples: List[Doc] = []
     for example, triplet_list in [
         (example_tweet_1, example_triplets_1),

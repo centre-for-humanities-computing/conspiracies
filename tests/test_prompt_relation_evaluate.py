@@ -9,6 +9,9 @@ from .utils import docs_with_triplets  # noqa F401
 
 
 def test_prompt_relation_evaluate(docs_with_triplets):  # noqa: F811
+    # TODO: the document references in Span and Triple objects go all over the place
+    #  through this test
+
     docs = docs_with_triplets
 
     keys = [
@@ -30,7 +33,10 @@ def test_prompt_relation_evaluate(docs_with_triplets):  # noqa: F811
 
     # no match
     doc_no_triplets = doc[:].as_doc()
-    doc_no_triplets._.relation_triplets = DocTriplets(span_triplets=[], doc=doc)
+    doc_no_triplets._.relation_triplets = DocTriplets(
+        span_triplets=[],
+        doc=doc_no_triplets,
+    )
     example = Example(reference=doc, predicted=doc_no_triplets)
     score = score_open_relations([example])
 
@@ -46,7 +52,7 @@ def test_prompt_relation_evaluate(docs_with_triplets):  # noqa: F811
     triplet = doc._.relation_triplets[0]
     doc_partial_match._.relation_triplets = DocTriplets(
         span_triplets=[triplet],
-        doc=doc,
+        doc=doc_partial_match,
     )
 
     example = Example(reference=doc, predicted=doc_partial_match)
