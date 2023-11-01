@@ -1,7 +1,7 @@
 from typing import List
 
 from spacy.language import Language
-from spacy_transformers.util import huggingface_tokenize
+from spacy_transformers.layers.transformer_model import huggingface_tokenize
 
 from transformers import PreTrainedTokenizer
 
