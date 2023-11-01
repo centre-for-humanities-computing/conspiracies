@@ -5,6 +5,9 @@ import jsonlines
 from spacy.language import Language
 from spacy.tokens import Doc
 
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    install_extensions,
+)
 from conspiracies.docprocessing.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
@@ -30,7 +33,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
         for triplet_json in json["semantic_triplets"]
     ]
     if not Doc.has_extension("relation_triplets"):
-        Doc.set_extension("relation_triplets", default=[], force=True)
+        install_extensions()
     doc._.relation_triplets = DocTriplets(span_triplets=triplets, doc=doc)
     return doc
 
@@ -65,7 +68,7 @@ def docs_from_jsonl(
         A list of docs with the extension `doc._.relation_triplets` set.
     """
     if not Doc.has_extension("relation_triplets"):
-        Doc.set_extension("relation_triplets", default=[], force=True)
+        install_extensions(force=True)
     docs = []
     with jsonlines.open(path, "r") as reader:
         for json in reader:

@@ -687,7 +687,17 @@ class SpanTriplet(BaseModel):
         if not isinstance(other, SpanTriplet):
             return False
 
-        triplet_is_equal = all(s1 == s2 for s1, s2 in zip(self.triplet, other.triplet))
+        # It does not make sense to compare Spans in different texts, but they can
+        # be different Doc objects!
+        if self.doc.text != other.doc.text:
+            return False
+
+        # Equality is checked for start, end and text such that two triplets in
+        # different Doc objects can be considered equal
+        triplet_is_equal = all(
+            s1.start == s2.start and s1.end == s2.end and s1.text == s2.text
+            for s1, s2 in zip(self.triplet, other.triplet)
+        )
         return triplet_is_equal
 
 
@@ -828,3 +838,75 @@ class DocTriplets(BaseModel):
             if s != o:
                 return False
         return True
+
+
+def span_to_idx(span: Span) -> Tuple[int, int]:
+    return span.start, span.end
+
+
+def idx_to_span(idx: Tuple[int, int], doc: Doc) -> Span:
+    start, end = idx
+    return doc[start:end]
+
+
+def install_extensions(force=False) -> None:
+    """Sets extensions on the SpaCy Doc class.
+
+    Relation triplets are stored internally as index tuples, but they
+    are created with getters and setters that map the index tuples to
+    and from SpaCy Span objects. Heads, relations and tails are
+    retrieved from the triplets. Confidence numbers are stored as is.
+    """
+    extensions = [
+        "relation_triplet_idxs",
+        "relation_triplets",
+        "relation_head",
+        "relation_relation",
+        "relation_tail",
+        "relation_confidence",
+    ]
+    if not force and all(Doc.has_extension(ext) for ext in extensions):
+        return  # job's done!
+
+    Doc.set_extension("relation_triplet_idxs", default=[], force=force)
+    Doc.set_extension(
+        "relation_triplets",
+        setter=lambda doc, triplets: setattr(
+            doc._,
+            "relation_triplet_idxs",
+            [
+                tuple(span_to_idx(span) for span in span_triplet.triplet)
+                for span_triplet in triplets
+            ],
+        ),
+        getter=lambda doc: DocTriplets(
+            span_triplets=[
+                SpanTriplet.from_tuple(
+                    (
+                        idx_to_span(idx[0], doc),
+                        idx_to_span(idx[1], doc),
+                        idx_to_span(idx[2], doc),
+                    ),
+                )
+                for idx in doc._.relation_triplet_idxs
+            ],
+            doc=doc,
+        ),
+        force=force,
+    )
+    Doc.set_extension(
+        "relation_head",
+        getter=lambda doc: [t.subject for t in doc._.relation_triplets],
+        force=force,
+    )
+    Doc.set_extension(
+        "relation_relation",
+        getter=lambda doc: [t.predicate for t in doc._.relation_triplets],
+        force=force,
+    )
+    Doc.set_extension(
+        "relation_tail",
+        getter=lambda doc: [t.object for t in doc._.relation_triplets],
+        force=force,
+    )
+    Doc.set_extension("relation_confidence", default=None, force=force)

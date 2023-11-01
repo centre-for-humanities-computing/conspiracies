@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from confection import registry
 from spacy.tokens import Doc
 
-from .data_classes import SpanTriplet, StringTriplet
+from conspiracies.docprocessing.relationextraction.data_classes import (
+    SpanTriplet,
+    StringTriplet,
+)
 
 
 class PromptTemplate:

@@ -1,9 +1,11 @@
 from typing import Dict, List, Tuple, Union
 
-from spacy.tokens import Doc, Span
+from spacy.tokens import Doc
 from thinc.types import Ragged
 from transformers import BertTokenizer
 from functools import cache
+
+from conspiracies.docprocessing.relationextraction.data_classes import SpanTriplet
 
 
 #### Wordpiece <-> spacy alignment functions
@@ -50,7 +52,7 @@ def wp_span_to_token(
     relation_span: List[List[int]],
     wp_tokenid_mapping: Dict,
     doc: Doc,
-) -> List[Tuple[Span, Span, Span]]:
+) -> List[SpanTriplet]:
     """Converts the wp span for each relation to spans.
 
     Assumes that relations are contiguous
@@ -73,7 +75,7 @@ def wp_span_to_token(
         relation = token_span_to_spacy_span(relation, doc)
         tail = token_span_to_spacy_span(tail, doc)
 
-        relations.append((head, relation, tail))
+        relations.append(SpanTriplet(subject=head, predicate=relation, object=tail))
     return relations
 
 
@@ -105,51 +107,6 @@ def match_extraction_spans_to_wp(
 
         matched_extractions += new_spans
     return matched_extractions
-
-
-def span_to_idx(span: Span) -> Tuple[int, int]:
-    return span.start, span.end
-
-
-def idx_to_span(idx: Tuple[int, int], doc: Doc) -> Span:
-    start, end = idx
-    return doc[start:end]
-
-
-def install_extensions() -> None:
-    """Sets extensions on the SpaCy Doc class.
-
-    Relation triplets are stored internally as index tuples, but they
-    are created with getters and setters that map the index tuples to
-    and from SpaCy Span objects. Heads, relations and tails are
-    retrieved from the triplets. Confidence numbers are stored as is.
-    """
-    Doc.set_extension("relation_triplet_idxs", default=None)
-    Doc.set_extension(
-        "relation_triplets",
-        setter=lambda doc, triplets: setattr(
-            doc._,
-            "relation_triplet_idxs",
-            [tuple(span_to_idx(span) for span in triplet) for triplet in triplets],
-        ),
-        getter=lambda doc: [
-            tuple(idx_to_span(idx, doc) for idx in triplet_idx)
-            for triplet_idx in doc._.relation_triplet_idxs
-        ],
-    )
-    Doc.set_extension(
-        "relation_head",
-        getter=lambda doc: [t[0] for t in doc._.relation_triplets],
-    )
-    Doc.set_extension(
-        "relation_relation",
-        getter=lambda doc: [t[1] for t in doc._.relation_triplets],
-    )
-    Doc.set_extension(
-        "relation_tail",
-        getter=lambda doc: [t[2] for t in doc._.relation_triplets],
-    )
-    Doc.set_extension("relation_confidence", default=None)
 
 
 @cache

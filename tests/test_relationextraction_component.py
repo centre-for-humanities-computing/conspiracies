@@ -47,7 +47,7 @@ def test_relation_extraction_component_single(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor", config={"confidence_threshold": 1.8})
     doc = nlp_da("Obama is the former president of the United States.")
     triplet_str = [
-        tuple([str(t) for t in triplet]) for triplet in doc._.relation_triplets
+        tuple([str(t[1]) for t in triplet]) for triplet in doc._.relation_triplets
     ]
     assert triplet_str == [
         ("Obama", "is", "the former president of the United States"),
@@ -62,7 +62,7 @@ def test_relation_extraction_multi_sentence(nlp_da):  # noqa F811
         + " der hedder Jens og Frode",
     )
     triplet_str = [
-        tuple([str(t) for t in triplet]) for triplet in doc._.relation_triplets
+        tuple([str(t[1]) for t in triplet]) for triplet in doc._.relation_triplets
     ]
     assert triplet_str == [
         ("Barack Obama", "is", "the former president of the United States"),
@@ -74,11 +74,11 @@ def test_relation_extraction_multi_sentence(nlp_da):  # noqa F811
 def test_relation_extraction_empty_string(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor")
     doc = nlp_da("")
-    assert doc._.relation_triplets == []
+    assert len(doc._.relation_triplets) == 0
 
 
 @pytest.mark.skip(reason="Avoid downloading the model on GitHub actions")
 def test_relation_extraction_no_extracted_relation(nlp_da):  # noqa F811
     nlp_da.add_pipe("relation_extractor")
     doc = nlp_da("Ingen relation")
-    assert doc._.relation_triplets == []
+    assert len(doc._.relation_triplets) == 0
