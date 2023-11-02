@@ -1,9 +1,6 @@
 """Pipeline for headwords/entities extractions and frequency count."""
-import multiprocessing
-import os
 
 import spacy
-import torch
 from tqdm import tqdm
 
 from conspiracies.docprocessing.headwordextraction import contains_ents
@@ -12,16 +9,13 @@ from conspiracies.docprocessing.headwordextraction import contains_ents
 def main():
     nlp = spacy.load("en_core_web_lg")
 
-    test_sents = ["Mette Frederiksen is the Danish politician."] * 1000
+    test_sents = ["Mette Frederiksen is the Danish politician."]
 
     config = {"confidence_threshold": 2.7, "model_args": {"batch_size": 10}}
     nlp.add_pipe("relation_extractor", config=config)
     nlp.add_pipe("heads_extraction")
 
-    # multiprocessing and torch with multiple threads result in a deadlock
-    torch.set_num_threads(1)
-
-    pipe = nlp.pipe(test_sents, n_process=os.cpu_count(), batch_size=25)
+    pipe = nlp.pipe(test_sents)
 
     heads_spans = []
     ents_spans = []
