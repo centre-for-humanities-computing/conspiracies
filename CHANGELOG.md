@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2023-11-02)
+
+### Feature
+
+* Bump version after reorganization of package structure, optimizations and re-design of relation triplet data model ([`353d285`](https://github.com/centre-for-humanities-computing/conspiracies/commit/353d2852039087ee60f835bf8b582c88336ccd82))
+
 ## v0.5.2 (2023-10-18)
 
 ### Fix
