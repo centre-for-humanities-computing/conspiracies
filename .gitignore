@@ -144,3 +144,4 @@ data/
 *extracted_triplets*
 paper/*ndjson
 paper/fig/*
+output/

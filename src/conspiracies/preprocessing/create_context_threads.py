@@ -66,9 +66,7 @@ def context_window_thread(tweets, context_len):
 
     # find the context for each tweet in the conversation and return the contexts that are longer than 1 tweet
     contexts = [
-        find_context(tweet, conversations[tweet["conversation_id"]])
-        for tweet in tweets
-        if len(find_context(tweet, conversations[tweet["conversation_id"]])) > 1
+        find_context(tweet, conversations[tweet["conversation_id"]]) for tweet in tweets
     ]
     return contexts
 
