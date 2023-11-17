@@ -49,7 +49,7 @@ def test_prompt_relation_extraction(
         """
 
         def test_api(target):
-            return api_response
+            return [api_response]
 
         return test_api
 
@@ -74,8 +74,9 @@ def test_prompt_relation_extraction(
 
     doc = nlp(sample_thread)
 
-    assert doc._.relation_triplets is not None
-    for triplet in doc._.relation_triplets:
+    doc_relation_triplets = doc._.relation_triplets
+    assert doc_relation_triplets is not None and len(doc_relation_triplets) > 0
+    for triplet in doc_relation_triplets:
         assert isinstance(triplet, SpanTriplet)
         triplet in expected_span_triplets
 
