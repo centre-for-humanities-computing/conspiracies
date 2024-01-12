@@ -43,7 +43,8 @@ dependencies = [
     "umap-learn",
     "hdbscan",
     "sentence-transformers",
-    "stop-words"
+    "stop-words",
+    "bs4",
 ]
 
 [project.license]
