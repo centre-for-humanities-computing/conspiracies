@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Iterable
 
 import jsonlines
 from spacy.language import Language
@@ -39,7 +39,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 
 
 def docs_to_jsonl(
-    docs: List[Doc],
+    docs: Iterable[Doc],
     path: Union[Path, str],
 ) -> None:
     """Write docs and triplets to a jsonl file.
@@ -49,9 +49,8 @@ def docs_to_jsonl(
             "relation_triplets", the triplets will written to the jsonl file.
         path: path to the jsonl file.
     """
-    jsonl = [_doc_to_json(doc) for doc in docs]
     with jsonlines.open(path, "w") as writer:
-        writer.write_all(jsonl)
+        writer.write_all(_doc_to_json(doc) for doc in docs)
 
 
 def docs_from_jsonl(
