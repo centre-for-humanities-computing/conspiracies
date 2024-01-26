@@ -436,7 +436,7 @@ def main(
         shuffle=True,
     )
 
-    if save:
+    if save and not isinstance(save, str):
         save = path.replace(
             "triplets.txt",
             f"{embedding_model}_dim={dim}_neigh={n_neighbors}"

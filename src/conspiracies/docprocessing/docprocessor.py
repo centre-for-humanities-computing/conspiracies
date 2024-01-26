@@ -70,13 +70,32 @@ class DocProcessor:
         self.triplet_extraction_component = triplet_extraction
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
 
-    def process_docs(self, docs: Iterable[Document], output_path: str):
+    def process_docs(
+        self,
+        docs: Iterable[Document],
+        output_path: str,
+        continue_from_last=False,
+    ):
+        # if continue_from_last:
+        #     with jsonlines.open(output_path) as annotated_docs:
+        #         already_processed = {annotated_doc["id"]
+        #                              for annotated_doc in annotated_docs}
+        #     print(f"Skipping {len(already_processed)} processed docs.")
+        #     docs = (doc for doc in docs if doc["id"] not in already_processed)
+        # The coreference pipeline tends to choke on too large batches because of an
+        # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
-            text_with_context(doc) for doc in docs
+            (text_with_context(doc) for doc in docs),
+            batch_size=20,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
-            remove_context(doc._.resolve_coref) for doc in coref_resolved_docs
+            (remove_context(doc._.resolve_coref) for doc in coref_resolved_docs),
+            batch_size=100,
         )
 
-        docs_to_jsonl(tqdm(d for d in with_triplets), output_path)
+        docs_to_jsonl(
+            tqdm(d for d in with_triplets),
+            output_path,
+            append=continue_from_last,
+        )

@@ -33,13 +33,13 @@ class Preprocessor:
     def output_preprocessed_docs(self, preprocessed_docs: Iterator[Document]) -> None:
         p = path.join(self.output_folder, self.project_name)
         os.makedirs(p, exist_ok=True)
-        batch = []
-        for d in preprocessed_docs:
-            batch.append(d)
-            if len(batch) == self.batch_size:
-                self.output_batch(batch)
-                batch.clear()
-        self.output_batch(batch)
+        filepath = path.join(
+            self.output_folder,
+            self.project_name,
+            "preprocessed.ndjson",
+        )
+        with open(filepath, "w+") as out_file:
+            ndjson.dump(preprocessed_docs, out_file)
 
     def output_batch(self, batch: List[Document]):
         filepath = path.join(

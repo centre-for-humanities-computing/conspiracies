@@ -41,6 +41,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 def docs_to_jsonl(
     docs: Iterable[Doc],
     path: Union[Path, str],
+    append=False,
 ) -> None:
     """Write docs and triplets to a jsonl file.
 
@@ -48,8 +49,9 @@ def docs_to_jsonl(
         docs: a list of docs. If the docs have the extension
             "relation_triplets", the triplets will written to the jsonl file.
         path: path to the jsonl file.
+        append: whether to append to file instead of overwriting
     """
-    with jsonlines.open(path, "w") as writer:
+    with jsonlines.open(path, "a" if append else "w") as writer:
         writer.write_all(_doc_to_json(doc) for doc in docs)
 
 

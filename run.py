@@ -1,20 +1,13 @@
 import argparse
-import glob
-import json
 import os
 
 
-from conspiracies.docprocessing.docprocessor import DocProcessor
-from conspiracies.document import Document
-from conspiracies.preprocessing.tweets import TweetsPreprocessor
-
-
-def iter_lines_of_files(glob_pattern: str):
-    files = glob.glob(glob_pattern, recursive=True)
-    for file in files:
-        with open(file) as f:
-            for line in f:
-                yield line
+from conspiracies.pipeline.config import (
+    ProjectConfig,
+    PreprocessingConfig,
+    DocprocessingConfig,
+)
+from conspiracies.pipeline.runner import Runner
 
 
 if __name__ == "__main__":
@@ -27,16 +20,20 @@ if __name__ == "__main__":
     )
     args = arg_parser.parse_args()
 
-    preprocessor = TweetsPreprocessor(args.project_name, n_cores=args.n_cores)
-
-    preprocessor.preprocess_docs(args.input_path)
-
-    doc_processor = DocProcessor()
-
-    doc_processor.process_docs(
-        (
-            json.loads(line, object_hook=Document)
-            for line in iter_lines_of_files(f"output/{args.project_name}/part*.ndjson")
-        ),
-        f"output/{args.project_name}/annotations.ndjson",
+    runner = Runner()
+    runner.project_config = ProjectConfig(
+        project_name=args.project_name,
+        output_root="output",
+        language="da",
     )
+    runner.preprocessing_config = PreprocessingConfig(
+        input_path=args.input_path,
+        doc_type="tweets",
+    )
+    runner.docprocessing_config = DocprocessingConfig(
+        triplet_extraction_method="multi2oie",
+    )
+
+    runner.preprocessing()
+    runner.docprocessing()
+    runner.corpusprocessing()
