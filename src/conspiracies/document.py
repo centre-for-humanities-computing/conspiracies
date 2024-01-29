@@ -16,4 +16,4 @@ def text_with_context(doc: Document) -> str:
 
 
 def remove_context(text: str) -> str:
-    return text.split(CONTEXT_END_MARKER)[-1]
+    return text.split(CONTEXT_END_MARKER)[-1].strip()

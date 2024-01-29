@@ -12,6 +12,7 @@ from conspiracies.pipeline.config import (
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
 from conspiracies.preprocessing.tweets import TweetsPreprocessor
+from conspiracies.visualization.graph import create_network_graph, get_nodes_edges
 
 
 def iter_lines_of_files(glob_pattern: str):
@@ -22,7 +23,7 @@ def iter_lines_of_files(glob_pattern: str):
                 yield line
 
 
-class Runner:
+class Pipeline:
     project_config: ProjectConfig
     preprocessing_config: PreprocessingConfig
     docprocessing_config: DocprocessingConfig
@@ -62,7 +63,11 @@ class Runner:
         )
 
     def corpusprocessing(self):
-        # TODO: this is kind of dumb, but for now just make it work
+        # TODO: this process is kind of dumb with all the writing and reading of
+        #  files etc., but for now just make it work. It comes from individual scripts
+        #  and a lot of the logic of data structures happen in those read/writes. Also,
+        #  a lot of data that we might want to save is thrown away, e.g. clsutered
+        #  entities, or calculated/fetched on the go, e.g. node weights for graphs.
         docs = (
             json.loads(line)
             for line in iter_lines_of_files(
@@ -75,15 +80,34 @@ class Runner:
         ) as out:
             for doc in docs:
                 for triplet in doc["semantic_triplets"]:
-                    print(
-                        ", ".join(
-                            triplet["semantic_triplets"][field]["text"]
-                            for field in ("subject", "predicate", "object")
-                        ),
-                        file=out,
-                    )
+                    triplet_fields = [
+                        triplet["semantic_triplets"][field]["text"]
+                        for field in ("subject", "predicate", "object")
+                    ]
+                    print(", ".join(triplet_fields), file=out)
         umap_hdb.main(
             f"output/{self.project_config.project_name}/triplets.csv",
             "danskBERT",
-            save=f"output/{self.project_config.project_name}/clusters.json",
+            dim=40,
+            save=f"output/{self.project_config.project_name}/nodes_edges.json",
         )
+        nodes, edges = get_nodes_edges(
+            f"output/{self.project_config.project_name}/",
+            "nodes_edges.json",
+        )
+        graph = create_network_graph(
+            nodes,
+            edges,
+            save=f"output/{self.project_config.project_name}/graph",
+        )
+        graph_data = {
+            "nodes": [
+                {"label": node[0], "data": node[1]} for node in graph.nodes.data()
+            ],
+            "edges": [
+                {"from ": edge[0], "to": edge[1], "data": edge[2]}
+                for edge in graph.edges.data()
+            ],
+        }
+        with open(f"output/{self.project_config.project_name}/graph.json", "w+") as out:
+            json.dump(graph_data, out)

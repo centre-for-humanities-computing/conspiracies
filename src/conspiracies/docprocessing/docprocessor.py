@@ -1,6 +1,7 @@
 from typing import Iterable
 
 import spacy
+from jsonlines import jsonlines
 from tqdm import tqdm
 
 from conspiracies import docs_to_jsonl
@@ -76,12 +77,16 @@ class DocProcessor:
         output_path: str,
         continue_from_last=False,
     ):
-        # if continue_from_last:
-        #     with jsonlines.open(output_path) as annotated_docs:
-        #         already_processed = {annotated_doc["id"]
-        #                              for annotated_doc in annotated_docs}
-        #     print(f"Skipping {len(already_processed)} processed docs.")
-        #     docs = (doc for doc in docs if doc["id"] not in already_processed)
+        if continue_from_last:
+            # TODO: this check should definitely not be with text, but ID is not passed
+            #  on at the moment, so just make it work
+            with jsonlines.open(output_path) as annotated_docs:
+                already_processed = {
+                    annotated_doc["text"].strip() for annotated_doc in annotated_docs
+                }
+            print(f"Skipping {len(already_processed)} processed docs.")
+            docs = (doc for doc in docs if doc["text"] not in already_processed)
+
         # The coreference pipeline tends to choke on too large batches because of an
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(

@@ -7,7 +7,7 @@ from conspiracies.pipeline.config import (
     PreprocessingConfig,
     DocprocessingConfig,
 )
-from conspiracies.pipeline.runner import Runner
+from conspiracies.pipeline.pipeline import Pipeline
 
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     )
     args = arg_parser.parse_args()
 
-    runner = Runner()
+    runner = Pipeline()
     runner.project_config = ProjectConfig(
         project_name=args.project_name,
         output_root="output",
@@ -35,5 +35,5 @@ if __name__ == "__main__":
     )
 
     runner.preprocessing()
-    runner.docprocessing()
+    runner.docprocessing(continue_from_last=True)
     runner.corpusprocessing()
