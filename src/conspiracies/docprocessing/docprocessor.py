@@ -82,7 +82,7 @@ class DocProcessor:
             #  on at the moment, so just make it work
             with jsonlines.open(output_path) as annotated_docs:
                 already_processed = {
-                    annotated_doc["text"].strip() for annotated_doc in annotated_docs
+                    annotated_doc["text"] for annotated_doc in annotated_docs
                 }
             print(f"Skipping {len(already_processed)} processed docs.")
             docs = (doc for doc in docs if doc["text"] not in already_processed)

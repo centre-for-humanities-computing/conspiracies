@@ -1,0 +1,13 @@
+[project]
+project_name = "PROJECT_NAME"
+output_root = "output"
+language = "da/en"
+
+[preprocessing]
+enabled = true
+input_path = "SOME/INPUT/PATH"
+doc_type = "text/tweets/infomedia"
+
+[docprocessing]
+enabled = true
+triplet_extraction_method = "multi2oie"

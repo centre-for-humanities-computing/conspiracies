@@ -4,11 +4,7 @@ import json
 from conspiracies.corpusprocessing import umap_hdb
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import (
-    ProjectConfig,
-    PreprocessingConfig,
-    DocprocessingConfig,
-)
+from conspiracies.pipeline.config import PipelineConfig
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
 from conspiracies.preprocessing.tweets import TweetsPreprocessor
@@ -24,16 +20,16 @@ def iter_lines_of_files(glob_pattern: str):
 
 
 class Pipeline:
-    project_config: ProjectConfig
-    preprocessing_config: PreprocessingConfig
-    docprocessing_config: DocprocessingConfig
+    def __init__(self, config: PipelineConfig = None):
+        self.config = config
+        print("Initialized Pipeline with config:", config)
 
     def _get_preprocessor(self) -> Preprocessor:
-        doc_type = self.preprocessing_config.doc_type.lower()
+        doc_type = self.config.preprocessing.doc_type.lower()
         if doc_type == "tweets":
-            return TweetsPreprocessor(self.project_config.project_name)
+            return TweetsPreprocessor(self.config.project.project_name)
         elif doc_type == "infomedia":
-            return InfoMediaPreprocessor(self.project_config.project_name)
+            return InfoMediaPreprocessor(self.config.project.project_name)
         else:
             raise ValueError(
                 f"Unknown document type: {doc_type}. "
@@ -42,11 +38,11 @@ class Pipeline:
 
     def preprocessing(self) -> None:
         preprocessor = self._get_preprocessor()
-        preprocessor.preprocess_docs(self.preprocessing_config.input_path)
+        preprocessor.preprocess_docs(self.config.preprocessing.input_path)
 
     def _get_docprocessor(self) -> DocProcessor:
         return DocProcessor(
-            triplet_extraction=self.docprocessing_config.triplet_extraction_method,
+            triplet_extraction=self.config.docprocessing.triplet_extraction_method,
         )
 
     def docprocessing(self, continue_from_last=False):
@@ -55,10 +51,10 @@ class Pipeline:
             (
                 json.loads(line, object_hook=Document)
                 for line in iter_lines_of_files(
-                    f"output/{self.project_config.project_name}/preprocessed.ndjson",
+                    f"output/{self.config.project.project_name}/preprocessed.ndjson",
                 )
             ),
-            f"output/{self.project_config.project_name}/annotations.ndjson",
+            f"output/{self.config.project.project_name}/annotations.ndjson",
             continue_from_last=continue_from_last,
         )
 
@@ -71,11 +67,11 @@ class Pipeline:
         docs = (
             json.loads(line)
             for line in iter_lines_of_files(
-                f"output/{self.project_config.project_name}/annotations.ndjson",
+                f"output/{self.config.project.project_name}/annotations.ndjson",
             )
         )
         with open(
-            f"output/{self.project_config.project_name}/triplets.csv",
+            f"output/{self.config.project.project_name}/triplets.csv",
             "w+",
         ) as out:
             for doc in docs:
@@ -86,19 +82,19 @@ class Pipeline:
                     ]
                     print(", ".join(triplet_fields), file=out)
         umap_hdb.main(
-            f"output/{self.project_config.project_name}/triplets.csv",
+            f"output/{self.config.project.project_name}/triplets.csv",
             "danskBERT",
             dim=40,
-            save=f"output/{self.project_config.project_name}/nodes_edges.json",
+            save=f"output/{self.config.project.project_name}/nodes_edges.json",
         )
         nodes, edges = get_nodes_edges(
-            f"output/{self.project_config.project_name}/",
+            f"output/{self.config.project.project_name}/",
             "nodes_edges.json",
         )
         graph = create_network_graph(
             nodes,
             edges,
-            save=f"output/{self.project_config.project_name}/graph",
+            save=f"output/{self.config.project.project_name}/graph",
         )
         graph_data = {
             "nodes": [
@@ -109,5 +105,5 @@ class Pipeline:
                 for edge in graph.edges.data()
             ],
         }
-        with open(f"output/{self.project_config.project_name}/graph.json", "w+") as out:
+        with open(f"output/{self.config.project.project_name}/graph.json", "w+") as out:
             json.dump(graph_data, out)

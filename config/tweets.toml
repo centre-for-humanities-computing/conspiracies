@@ -1,0 +1,11 @@
+[project]
+project_name = "twitter-test-mini"
+output_root = "output"
+language = "da"
+
+[preprocessing]
+input_path = "data/twitter-test-mini.ndjson"
+doc_type = "tweets"
+
+[docprocessing]
+triplet_extraction_method = "multi2oie"
