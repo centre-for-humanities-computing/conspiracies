@@ -1,5 +1,6 @@
 """Functions for concatenating and splitting tweets and their context tweets
 for coreference resolution."""
+
 from typing import List
 import ndjson
 from glob import glob

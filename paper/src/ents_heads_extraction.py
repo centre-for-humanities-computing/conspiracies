@@ -1,4 +1,5 @@
 """Pipeline for headwords/entities extractions and frequency count."""
+
 import multiprocessing
 import os
 
