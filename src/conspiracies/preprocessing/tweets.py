@@ -1,4 +1,5 @@
 import json
+import logging
 import multiprocessing.pool
 
 from conspiracies.common.fileutils import iter_lines_of_files
@@ -43,10 +44,21 @@ class TweetsPreprocessor(Preprocessor):
             for line in lines:
                 tweets.append(json.loads(line))
 
+        doc_ids = set()
         tweets_with_context = context_window_thread(tweets, self.context_len)
         for tweet_with_context in tweets_with_context:
             context_tweets, tweet = tweet_with_context[:-1], tweet_with_context[-1]
             doc_id = tweet["id"]
+            if doc_id in doc_ids:
+                logging.debug("Skipping duplicate %s", doc_id)
+                continue
+            doc_ids.add(doc_id)
+            if (
+                "referenced_tweets" in tweet
+                and tweet["referenced_tweets"][0]["type"] == "retweeted"
+            ):
+                logging.debug("Skipping retweet %s", doc_id)
+                continue
             metadata = {k: v for k, v in tweet.items() if k != "text"}
             text = tweet["text"]
             context = "\n".join(t["text"] for t in context_tweets)
