@@ -1,3 +1,4 @@
+import os.path
 from typing import Iterable
 
 import spacy
@@ -76,27 +77,31 @@ class DocProcessor:
         docs: Iterable[Document],
         output_path: str,
         continue_from_last=False,
+        batch_size=25,
     ):
-        if continue_from_last:
-            # TODO: this check should definitely not be with text, but ID is not passed
-            #  on at the moment, so just make it work
+        if continue_from_last and os.path.exists(output_path):
             with jsonlines.open(output_path) as annotated_docs:
                 already_processed = {
-                    annotated_doc["text"].strip() for annotated_doc in annotated_docs
+                    annotated_doc["id"] for annotated_doc in annotated_docs
                 }
             print(f"Skipping {len(already_processed)} processed docs.")
-            docs = (doc for doc in docs if doc["text"].strip() not in already_processed)
+            docs = (doc for doc in docs if doc["id"] not in already_processed)
 
         # The coreference pipeline tends to choke on too large batches because of an
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
-            (text_with_context(doc) for doc in docs),
-            batch_size=20,
+            ((text_with_context(doc), doc["id"]) for doc in docs),
+            batch_size=batch_size,
+            as_tuples=True,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
-            (remove_context(doc._.resolve_coref) for doc in coref_resolved_docs),
-            batch_size=100,
+            (
+                (remove_context(doc._.resolve_coref), id_)
+                for doc, id_ in coref_resolved_docs
+            ),
+            batch_size=batch_size * 4,
+            as_tuples=True,
         )
 
         docs_to_jsonl(

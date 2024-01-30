@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union, Iterable
+from typing import List, Union, Iterable, Tuple
 
 import jsonlines
 from spacy.language import Language
@@ -14,12 +14,18 @@ from conspiracies.docprocessing.relationextraction.gptprompting import (
 )
 
 
-def _doc_to_json(doc: Doc):
+def _doc_to_json(doc: Doc | Tuple[Doc, str]):
+    if isinstance(doc, Tuple):
+        doc, id_ = doc
+    else:
+        id_ = None
     if Doc.has_extension("relation_triplets"):
         triplets = doc._.relation_triplets
     else:
         triplets = []
     json = doc.to_json()
+    if id_ is not None:
+        json["id"] = id_
     json["semantic_triplets"] = [
         triplet.to_dict(include_doc=False) for triplet in triplets
     ]
@@ -39,7 +45,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 
 
 def docs_to_jsonl(
-    docs: Iterable[Doc],
+    docs: Iterable[Doc | Tuple[Doc, str]],
     path: Union[Path, str],
     append=False,
 ) -> None:
