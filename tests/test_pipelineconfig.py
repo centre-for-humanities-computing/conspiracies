@@ -1,20 +1,21 @@
 from conspiracies.pipeline.config import (
     PipelineConfig,
-    ProjectConfig,
-    PreprocessingConfig,
-    DocprocessingConfig,
+    BaseConfig,
+    PreProcessingConfig,
+    DocProcessingConfig,
+    CorpusProcessingConfig,
 )
 
 
 def test_config_loading():
     config = PipelineConfig.from_toml_file("test_data/test_config.toml")
     assert config == PipelineConfig(
-        project=ProjectConfig(
+        base=BaseConfig(
             project_name="test",
             output_root="output",
             language="en",
         ),
-        preprocessing=PreprocessingConfig(
+        preprocessing=PreProcessingConfig(
             enabled=False,
             input_path="some_input",
             doc_type="test",
@@ -22,7 +23,8 @@ def test_config_loading():
                 "some_extra_value": 1234,
             },
         ),
-        docprocessing=DocprocessingConfig(
+        docprocessing=DocProcessingConfig(
             triplet_extraction_method="test",
         ),
+        corpusprocessing=CorpusProcessingConfig(),
     )

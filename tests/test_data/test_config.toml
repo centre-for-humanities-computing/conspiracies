@@ -1,4 +1,4 @@
-[project]
+[base]
 project_name = "test"
 output_root = "output"
 language = "en"
@@ -13,3 +13,5 @@ some_extra_value = 1234
 
 [docprocessing]
 triplet_extraction_method = "test"
+
+[corpusprocessing]

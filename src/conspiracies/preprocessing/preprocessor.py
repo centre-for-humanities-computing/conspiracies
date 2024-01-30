@@ -1,8 +1,4 @@
-import logging
-import os.path
-from os import path
-import glob
-from typing import List, Iterator
+from typing import Iterator
 
 import ndjson
 
@@ -10,56 +6,13 @@ from conspiracies.document import Document
 
 
 class Preprocessor:
-    def __init__(
-        self,
-        project_name: str,
-        output_folder: str = "output",
-        n_cores: int = 1,
-        batch_size=10000,
-    ):
-        self.project_name = project_name
-        self.output_folder = output_folder
+    def __init__(self, n_cores: int = 1):
         self.n_cores = n_cores
-        self.batch_size = batch_size
-        self.at_batch = 0
 
-    def preprocess_docs(self, *args):
-        preprocessed_docs = self.do_preprocess_docs(*args)
-        self.output_preprocessed_docs(preprocessed_docs)
+    def preprocess_docs(self, input_path: str, output_path: str, *args):
+        preprocessed_docs = self.do_preprocess_docs(input_path)
+        with open(output_path, "w+") as out_file:
+            ndjson.dump(preprocessed_docs, out_file)
 
     def do_preprocess_docs(self, *args) -> Iterator[Document]:
         pass
-
-    def output_preprocessed_docs(self, preprocessed_docs: Iterator[Document]) -> None:
-        p = path.join(self.output_folder, self.project_name)
-        os.makedirs(p, exist_ok=True)
-        filepath = path.join(
-            self.output_folder,
-            self.project_name,
-            "preprocessed.ndjson",
-        )
-        with open(filepath, "w+") as out_file:
-            ndjson.dump(preprocessed_docs, out_file)
-
-    def output_batch(self, batch: List[Document]):
-        filepath = path.join(
-            self.output_folder,
-            self.project_name,
-            f"part{self.at_batch}.ndjson",
-        )
-        with open(filepath, "w+") as out_file:
-            ndjson.dump(batch, out_file)
-        self.at_batch += 1
-
-    @staticmethod
-    def iter_lines_of_files(glob_pattern: str):
-        files = glob.glob(glob_pattern, recursive=True)
-        logging.info(
-            "The glob pattern '%s' resulted in the following files: %s",
-            glob_pattern,
-            files,
-        )
-        for file in files:
-            with open(file) as f:
-                for line in f:
-                    yield line

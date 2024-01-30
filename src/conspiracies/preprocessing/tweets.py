@@ -1,6 +1,7 @@
 import json
 import multiprocessing.pool
 
+from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.document import Document
 from conspiracies.preprocessing.create_context_threads import context_window_thread
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -25,16 +26,14 @@ class TweetsPreprocessor(Preprocessor):
 
     def __init__(
         self,
-        project_name: str,
-        context_len: int = 2,
-        output_folder: str = "output",
         n_cores: int = 1,
+        context_len: int = 2,
     ):
-        super().__init__(project_name, output_folder=output_folder, n_cores=n_cores)
+        super().__init__(n_cores=n_cores)
         self.context_len = context_len
 
     def do_preprocess_docs(self, glob_pattern: str):
-        lines = Preprocessor.iter_lines_of_files(glob_pattern)
+        lines = iter_lines_of_files(glob_pattern)
         tweets = []
         if self.n_cores > 1:
             with multiprocessing.pool.Pool(processes=self.n_cores) as p:
