@@ -27,7 +27,8 @@ def _doc_to_json(doc: Doc | Tuple[Doc, str]):
     if id_ is not None:
         json["id"] = id_
     json["semantic_triplets"] = [
-        triplet.to_dict(include_doc=False) for triplet in triplets
+        triplet.to_dict(include_doc=False, include_span_heads=True)
+        for triplet in triplets
     ]
     return json
 

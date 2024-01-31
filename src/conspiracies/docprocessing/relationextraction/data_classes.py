@@ -273,15 +273,19 @@ class SpanTriplet(BaseModel):
         span = doc[json["start"] : json["end"]]
         return span
 
-    def to_dict(self, include_doc=True) -> Dict[str, Any]:
+    def to_dict(self, include_doc=True, include_span_heads=False) -> Dict[str, Any]:
         if include_doc:
             data = self.span.doc.to_json()
         else:
             data = {}
         data["semantic_triplets"] = self.dict()
-        data["semantic_triplets"]["subject"] = self.span_to_json(self.subject)
-        data["semantic_triplets"]["predicate"] = self.span_to_json(self.predicate)
-        data["semantic_triplets"]["object"] = self.span_to_json(self.object)
+        for attr_name in ("subject", "predicate", "object"):
+            attr = getattr(self, attr_name)
+            data["semantic_triplets"][attr_name] = self.span_to_json(attr)
+            if include_span_heads and Span.has_extension("most_common_ancestor"):
+                data["semantic_triplets"][attr_name][
+                    "extracted_head"
+                ] = attr._.most_common_ancestor.text
 
         return data
 
