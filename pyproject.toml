@@ -45,6 +45,7 @@ dependencies = [
     "sentence-transformers",
     "stop-words",
     "bs4",
+    "toml"
 ]
 
 [project.license]
