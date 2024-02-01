@@ -8,6 +8,7 @@ from conspiracies.document import Document
 from conspiracies.pipeline.config import PipelineConfig
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
+from conspiracies.preprocessing.text import TextFilePreprocessor
 from conspiracies.preprocessing.tweets import TweetsPreprocessor
 from conspiracies.visualization.graph import create_network_graph, get_nodes_edges
 
@@ -34,11 +35,17 @@ class Pipeline:
             self.corpusprocessing()
 
     def _get_preprocessor(self) -> Preprocessor:
-        doc_type = self.config.preprocessing.doc_type.lower()
-        if doc_type == "tweets":
-            return TweetsPreprocessor(**self.config.preprocessing.extra)
+        config = self.config.preprocessing
+        doc_type = config.doc_type.lower()
+        if doc_type == "text":
+            return TextFilePreprocessor(**config.extra)
+        elif doc_type == "tweets":
+            return TweetsPreprocessor(
+                metadata_fields=config.metadata_fields,
+                **config.extra,
+            )
         elif doc_type == "infomedia":
-            return InfoMediaPreprocessor(**self.config.preprocessing.extra)
+            return InfoMediaPreprocessor(metadata_fields=config.metadata_fields)
         else:
             raise ValueError(
                 f"Unknown document type: {doc_type}. "
@@ -63,10 +70,10 @@ class Pipeline:
             (
                 json.loads(line, object_hook=Document)
                 for line in iter_lines_of_files(
-                    f"output/{self.project_name}/preprocessed.ndjson",
+                    f"{self.output_path}/preprocessed.ndjson",
                 )
             ),
-            f"output/{self.project_name}/annotations.ndjson",
+            f"{self.output_path}/annotations.ndjson",
             continue_from_last=continue_from_last,
         )
 

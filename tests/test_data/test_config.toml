@@ -6,6 +6,7 @@ language = "en"
 [preprocessing]
 enabled = false
 input_path = "some_input"
+metadata_fields = ["metadata_field"]
 doc_type = "test"
 
 [preprocessing.extra]

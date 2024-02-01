@@ -1,8 +1,8 @@
 import json
-import multiprocessing.pool
 
 import bs4
 
+from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.document import Document
 from conspiracies.preprocessing.preprocessor import Preprocessor
 
@@ -20,15 +20,10 @@ class InfoMediaPreprocessor(Preprocessor):
         "WordCount",
     }
 
-    def do_preprocess_docs(self, glob_pattern: str):
-        lines = Preprocessor.iter_lines_of_files(glob_pattern)
-        if self.n_cores > 1:
-            with multiprocessing.pool.Pool(processes=self.n_cores) as p:
-                for result in p.imap_unordered(self.process_line, lines, chunksize=100):
-                    yield result
-        else:
-            for line in lines:
-                yield self.process_line(line)
+    def _do_preprocess_docs(self, glob_pattern: str):
+        lines = iter_lines_of_files(glob_pattern)
+        for line in lines:
+            yield self.process_line(line)
 
     def process_line(self, line: str):
         obj = json.loads(line)

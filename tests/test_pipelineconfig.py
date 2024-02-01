@@ -29,6 +29,7 @@ def test_config_loading(path: str):
             enabled=False,
             input_path="some_input",
             doc_type="test",
+            metadata_fields={"metadata_field"},
             extra={
                 "some_extra_value": 1234,
             },

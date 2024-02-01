@@ -17,6 +17,7 @@ class StepConfig(BaseModel):
 class PreProcessingConfig(StepConfig):
     input_path: str
     doc_type: str
+    metadata_fields: set[str]
     extra: dict = {}
 
 
