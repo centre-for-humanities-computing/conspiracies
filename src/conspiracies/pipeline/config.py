@@ -1,3 +1,5 @@
+from typing import Any
+
 import toml
 from pydantic import BaseModel
 
@@ -33,7 +35,18 @@ class PipelineConfig(BaseModel):
     corpusprocessing: CorpusProcessingConfig
 
     @staticmethod
-    def update_nested_dict(d, path, value):
+    def update_nested_dict(d: dict[str, Any], path: str, value: Any) -> None:
+        """Sets or updates a nested dict in place with a TOML-like string key.
+
+        >>> some_dict = {"a": {"b": 1}}
+        >>> PipelineConfig.update_nested_dict(some_dict, "a.b", 2)
+        >>> some_dict["a"]["b"] == 2  # True
+
+        Args:
+            d: (nested) dict with str keys to be updated
+            path: a TOML-like string key with '.' as level separators, e.g. "a.b.c"
+            value: value to set under the nested key
+        """
         keys = path.split(".")
         for key in keys[:-1]:
             d = d.setdefault(key, {})

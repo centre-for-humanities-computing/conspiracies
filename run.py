@@ -11,16 +11,21 @@ if __name__ == "__main__":
         "project_name",
         nargs="?",
         default=None,
+        help="Name of your project under which various output files will be output"
+        "under output root set in config (the default for which is output/).",
     )
     arg_parser.add_argument(
         "input_path",
         nargs="?",
         default=None,
+        help="Input path for preprocessing of documents. Can be a glob path, e.g."
+        "path/to/files/*.txt. Be mindful of quotes for glob paths.",
     )
     arg_parser.add_argument(
         "-c",
         "--config",
         default="config/default.toml",
+        help="Path to configuration file. Refer to config/template.toml for contents.",
     )
     args = arg_parser.parse_args()
 
