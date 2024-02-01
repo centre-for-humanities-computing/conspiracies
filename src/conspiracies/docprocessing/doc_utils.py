@@ -14,7 +14,7 @@ from conspiracies.docprocessing.relationextraction.gptprompting import (
 )
 
 
-def _doc_to_json(doc: Doc | Tuple[Doc, str]):
+def _doc_to_json(doc: Union[Doc | Tuple[Doc, str]], include_span_heads=True):
     if isinstance(doc, Tuple):
         doc, id_ = doc
     else:
@@ -27,7 +27,7 @@ def _doc_to_json(doc: Doc | Tuple[Doc, str]):
     if id_ is not None:
         json["id"] = id_
     json["semantic_triplets"] = [
-        triplet.to_dict(include_doc=False, include_span_heads=True)
+        triplet.to_dict(include_doc=False, include_span_heads=include_span_heads)
         for triplet in triplets
     ]
     return json
@@ -49,6 +49,7 @@ def docs_to_jsonl(
     docs: Iterable[Doc | Tuple[Doc, str]],
     path: Union[Path, str],
     append=False,
+    include_span_heads=True,
 ) -> None:
     """Write docs and triplets to a jsonl file.
 
@@ -59,7 +60,9 @@ def docs_to_jsonl(
         append: whether to append to file instead of overwriting
     """
     with jsonlines.open(path, "a" if append else "w") as writer:
-        writer.write_all(_doc_to_json(doc) for doc in docs)
+        writer.write_all(
+            _doc_to_json(doc, include_span_heads=include_span_heads) for doc in docs
+        )
 
 
 def docs_from_jsonl(

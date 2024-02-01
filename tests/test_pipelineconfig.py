@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import pytest
+
 from conspiracies.pipeline.config import (
     PipelineConfig,
     BaseConfig,
@@ -7,8 +11,14 @@ from conspiracies.pipeline.config import (
 )
 
 
-def test_config_loading():
-    config = PipelineConfig.from_toml_file("test_data/test_config.toml")
+@pytest.fixture()
+def path():
+    data_path = Path(__file__).parent / "test_data" / "test_config.toml"
+    return data_path
+
+
+def test_config_loading(path: str):
+    config = PipelineConfig.from_toml_file(path)
     assert config == PipelineConfig(
         base=BaseConfig(
             project_name="test",

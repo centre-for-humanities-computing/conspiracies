@@ -39,7 +39,7 @@ def test_docs_from_jsonl(path, nlp):
 
 def test_docs_to_jsonl(nlp, docs_with_triplets):  # noqa: F811
     docs = docs_with_triplets
-    docs_to_jsonl(docs, "test.jsonl")
+    docs_to_jsonl(docs, "test.jsonl", include_span_heads=False)
     _docs = docs_from_jsonl("test.jsonl", nlp=nlp)
 
     assert len(docs) == len(_docs)
