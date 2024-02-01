@@ -46,7 +46,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 
 
 def docs_to_jsonl(
-    docs: Iterable[Doc, Tuple[Doc, str]],
+    docs: Iterable[Union[Doc, Tuple[Doc, str]]],
     path: Union[Path, str],
     append=False,
     include_span_heads=True,
@@ -58,6 +58,8 @@ def docs_to_jsonl(
             "relation_triplets", the triplets will written to the jsonl file.
         path: path to the jsonl file.
         append: whether to append to file instead of overwriting
+        include_span_heads: whether to output an "extracted_head" field in the JSON
+            output from :class:`HeadWordExtractionComponent`
     """
     with jsonlines.open(path, "a" if append else "w") as writer:
         writer.write_all(
