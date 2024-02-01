@@ -14,7 +14,7 @@ from conspiracies.docprocessing.relationextraction.gptprompting import (
 )
 
 
-def _doc_to_json(doc: Union[Doc | Tuple[Doc, str]], include_span_heads=True):
+def _doc_to_json(doc: Union[Doc, Tuple[Doc, str]], include_span_heads=True):
     if isinstance(doc, Tuple):
         doc, id_ = doc
     else:
@@ -46,7 +46,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 
 
 def docs_to_jsonl(
-    docs: Iterable[Doc | Tuple[Doc, str]],
+    docs: Iterable[Doc, Tuple[Doc, str]],
     path: Union[Path, str],
     append=False,
     include_span_heads=True,
