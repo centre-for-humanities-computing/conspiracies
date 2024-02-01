@@ -1,7 +1,6 @@
 """A relation extraction component for spaCy using prompt-based relation
 extraction."""
 
-
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
