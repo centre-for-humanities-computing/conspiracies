@@ -4,7 +4,7 @@ language = "da/en"
 
 [preprocessing]
 enabled = true
-doc_type = "text/tweets/infomedia"
+doc_type = "text/csv/tweets/infomedia"
 metadata_fields = ["*"]
 
 [preprocessing.extra]

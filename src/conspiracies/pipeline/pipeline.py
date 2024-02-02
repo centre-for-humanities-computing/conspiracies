@@ -6,6 +6,7 @@ from conspiracies.corpusprocessing import umap_hdb
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
 from conspiracies.pipeline.config import PipelineConfig
+from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
 from conspiracies.preprocessing.text import TextFilePreprocessor
@@ -39,6 +40,11 @@ class Pipeline:
         doc_type = config.doc_type.lower()
         if doc_type == "text":
             return TextFilePreprocessor(**config.extra)
+        if doc_type == "csv":
+            return CsvPreprocessor(
+                metadata_fields=config.metadata_fields,
+                **config.extra,
+            )
         elif doc_type == "tweets":
             return TweetsPreprocessor(
                 metadata_fields=config.metadata_fields,
