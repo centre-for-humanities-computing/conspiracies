@@ -25,7 +25,12 @@ class DocProcessor:
         return nlp_coref
 
     def _build_triplet_extraction_pipeline(self):
-        nlp = spacy.load("da_core_news_sm")
+        if self.language == "da":
+            nlp = spacy.load("da_core_news_sm")
+        elif self.language == "en":
+            nlp = spacy.load("en_core_web_sm")
+        else:
+            raise ValueError(f"Unsupported language: {self.language}")
         nlp.add_pipe(
             "heads_extraction",
             config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
@@ -67,8 +72,14 @@ class DocProcessor:
             )
         return nlp
 
-    def __init__(self, language="da", triplet_extraction_method="multi2oie"):
+    def __init__(
+        self,
+        language="da",
+        batch_size=25,
+        triplet_extraction_method="multi2oie",
+    ):
         self.language = language
+        self.batch_size = batch_size
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
@@ -78,7 +89,6 @@ class DocProcessor:
         docs: Iterable[Document],
         output_path: str,
         continue_from_last=False,
-        batch_size=25,
     ):
         if continue_from_last and os.path.exists(output_path):
             with jsonlines.open(output_path) as annotated_docs:
@@ -92,7 +102,7 @@ class DocProcessor:
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
             ((text_with_context(doc), doc["id"]) for doc in docs),
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             as_tuples=True,
         )
 
@@ -101,7 +111,7 @@ class DocProcessor:
                 (remove_context(doc._.resolve_coref), id_)
                 for doc, id_ in coref_resolved_docs
             ),
-            batch_size=batch_size * 4,
+            batch_size=self.batch_size * 4,
             as_tuples=True,
         )
 

@@ -29,7 +29,7 @@ if __name__ == "__main__":
     )
     arg_parser.add_argument(
         "--root-log-level",
-        default="INFO",
+        default="WARN",
         help="Level of root logger.",
     )
     args = arg_parser.parse_args()

@@ -22,6 +22,8 @@ class PreProcessingConfig(StepConfig):
 
 
 class DocProcessingConfig(StepConfig):
+    batch_size: int = 25
+    continue_from_last: bool = True
     triplet_extraction_method: str
 
 

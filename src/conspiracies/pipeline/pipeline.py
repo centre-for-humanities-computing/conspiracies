@@ -30,7 +30,9 @@ class Pipeline:
             self.preprocessing()
 
         if self.config.docprocessing.enabled:
-            self.docprocessing(continue_from_last=True)
+            self.docprocessing(
+                continue_from_last=self.config.docprocessing.continue_from_last,
+            )
 
         if self.config.corpusprocessing.enabled:
             self.corpusprocessing()
@@ -68,6 +70,7 @@ class Pipeline:
     def _get_docprocessor(self) -> DocProcessor:
         return DocProcessor(
             language=self.config.base.language,
+            batch_size=self.config.docprocessing.batch_size,
             triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
         )
 
