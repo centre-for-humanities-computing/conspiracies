@@ -1,6 +1,7 @@
 """A custom Coreference model for wrapping an AllenNLP's Predictor for
 coreference resolution on SpaCy Docs."""
 
+import logging
 from typing import List, Union
 from pathlib import Path
 
@@ -24,7 +25,10 @@ class CoreferenceModel(Predictor):
 
     Args:
         model_path(Union[Path, str, None], optional): Path to the model, if None, the
-            model will be downloaded to the default cache directory.
+            model will be downloaded according to default specifications of the language
+            parameter.
+        language(str): language of the (default) model to load. Has no effect if
+            model_path is given. Options: da, en
         device(int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
         open_unverified_connection (bool, optional): Should you download from an
@@ -37,16 +41,26 @@ class CoreferenceModel(Predictor):
     def __init__(
         self,
         model_path: Union[Path, str, None] = None,
+        language: str = "da",
         device: int = -1,
         open_unverified_connection: bool = False,
         **kwargs,
     ) -> None:
         if model_path is None:
-            model_path = download_model(
-                "da_coref_twitter_v1",
-                open_unverified_connection=open_unverified_connection,
-            )
+            if language == "da":
+                model_path = download_model(
+                    "da_coref_twitter_v1",
+                    open_unverified_connection=open_unverified_connection,
+                )
+            elif language == "en":
+                model_path = (
+                    "https://storage.googleapis.com/allennlp-public-models/"
+                    "coref-spanbert-large-2021.03.10.tar.gz"
+                )
+            else:
+                raise ValueError(f"Language code {language} not supported!")
 
+        logging.debug(model_path)
         archive = load_archive(model_path, cuda_device=device, **kwargs)
         config = archive.config
         prepare_environment(config)

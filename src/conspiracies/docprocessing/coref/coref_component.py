@@ -18,6 +18,7 @@ class CoreferenceComponent(TrainablePipe):
         vocab: Vocab,
         name: str,
         model_path: Union[Path, str, None],
+        language: str,
         device: int,
         open_unverified_connection: bool,
     ):
@@ -25,6 +26,7 @@ class CoreferenceComponent(TrainablePipe):
         self.vocab = vocab
         self.model = CoreferenceModel(  # type: ignore
             model_path=model_path,
+            language=language,
             device=device,
             open_unverified_connection=open_unverified_connection,
         )
@@ -174,6 +176,7 @@ class CoreferenceComponent(TrainablePipe):
     "allennlp_coref",
     default_config={
         "model_path": None,
+        "language": "da",
         "device": -1,
         "open_unverified_connection": True,
     },
@@ -182,6 +185,7 @@ def create_coref_component(
     nlp: Language,
     name: str,
     model_path: Union[Path, str, None],
+    language: str,
     device: int,
     open_unverified_connection: bool,
 ):
@@ -190,8 +194,11 @@ def create_coref_component(
     Args:
         nlp (Language): A spacy language pipeline
         name (str): The name of the component
-        model_path (Union[Path, str, None]): Path to the model, if None, the
-            model will be downloaded to the default cache directory.
+        model_path(Union[Path, str, None], optional): Path to the model, if None, the
+            model will be downloaded according to default specifications of the language
+            parameter.
+        language(str): language of the (default) model to load. Has no effect if
+            model_path is given. Options: da, en
         device (int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
         open_unverified_connection (bool, optional): Should you download the model from
@@ -200,11 +207,11 @@ def create_coref_component(
     Returns:
         CorefenceComponent: The coreference model component
     """
-
     return CoreferenceComponent(
         nlp.vocab,
         name=name,
         model_path=model_path,
+        language=language,
         device=device,
         open_unverified_connection=open_unverified_connection,
     )

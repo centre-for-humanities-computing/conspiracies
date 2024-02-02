@@ -11,9 +11,9 @@ from conspiracies.document import Document, text_with_context, remove_context
 
 class DocProcessor:
     def _build_coref_pipeline(self):
-        nlp_coref = spacy.blank("da")
+        nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
-        nlp_coref.add_pipe("allennlp_coref")
+        nlp_coref.add_pipe("allennlp_coref", config={"language": self.language})
 
         def warn_error(proc_name, proc, docs, e):
             print(
@@ -67,9 +67,10 @@ class DocProcessor:
             )
         return nlp
 
-    def __init__(self, triplet_extraction="multi2oie"):
+    def __init__(self, language="da", triplet_extraction_method="multi2oie"):
+        self.language = language
         self.coref_pipeline = self._build_coref_pipeline()
-        self.triplet_extraction_component = triplet_extraction
+        self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
 
     def process_docs(

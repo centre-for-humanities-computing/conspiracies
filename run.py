@@ -1,5 +1,5 @@
 import argparse
-
+import logging
 
 from conspiracies.pipeline.config import PipelineConfig
 from conspiracies.pipeline.pipeline import Pipeline
@@ -27,7 +27,14 @@ if __name__ == "__main__":
         default="config/default.toml",
         help="Path to configuration file. Refer to config/template.toml for contents.",
     )
+    arg_parser.add_argument(
+        "--root-log-level",
+        default="INFO",
+        help="Level of root logger.",
+    )
     args = arg_parser.parse_args()
+
+    logging.getLogger().setLevel(args.root_log_level)
 
     cli_args = {
         "base.project_name": args.project_name,

@@ -61,7 +61,8 @@ class Pipeline:
 
     def _get_docprocessor(self) -> DocProcessor:
         return DocProcessor(
-            triplet_extraction=self.config.docprocessing.triplet_extraction_method,
+            language=self.config.base.language,
+            triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
         )
 
     def docprocessing(self, continue_from_last=False):
