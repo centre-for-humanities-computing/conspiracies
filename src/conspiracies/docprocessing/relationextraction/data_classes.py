@@ -279,13 +279,14 @@ class SpanTriplet(BaseModel):
         else:
             data = {}
         data["semantic_triplets"] = self.dict()
-        for attr_name in ("subject", "predicate", "object"):
-            attr = getattr(self, attr_name)
-            data["semantic_triplets"][attr_name] = self.span_to_json(attr)
-            if include_span_heads and Span.has_extension("most_common_ancestor"):
-                data["semantic_triplets"][attr_name][
-                    "extracted_head"
-                ] = attr._.most_common_ancestor.text
+        data["semantic_triplets"]["subject"] = self.span_to_json(self.subject)
+        data["semantic_triplets"]["predicate"] = self.span_to_json(self.predicate)
+        data["semantic_triplets"]["object"] = self.span_to_json(self.object)
+        if include_span_heads and Span.has_extension("most_common_ancestor"):
+            subject_head = self.subject._.most_common_ancestor.text
+            data["semantic_triplets"]["subject"]["head"] = subject_head
+            object_head = self.object._.most_common_ancestor.text
+            data["semantic_triplets"]["object"]["head"] = object_head
 
         return data
 
