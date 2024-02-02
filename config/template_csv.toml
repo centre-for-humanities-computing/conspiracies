@@ -1,0 +1,21 @@
+[base]
+output_root = "output"
+language = "en"
+
+[preprocessing]
+enabled = true
+doc_type = "csv"
+metadata_fields = ["*"]
+
+[preprocessing.extra]
+id_column = "id"
+text_column = "body"
+
+[docprocessing]
+enabled = true
+batch_size = 5
+continue_from_last = true
+triplet_extraction_method = "multi2oie"
+
+[corpusprocessing]
+enabled = true
