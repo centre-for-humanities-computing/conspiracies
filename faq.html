@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="faq.html" />
 <meta property="og:site_name" content="conspiracies" />
-<meta property="og:description" content="How do I test the code and run the test suite?: This package comes with an extensive test suite. In order to run the tests, you’ll usually want to clone the repository and build the package from th..." />
-<meta name="description" content="How do I test the code and run the test suite?: This package comes with an extensive test suite. In order to run the tests, you’ll usually want to clone the repository and build the package from th..." />
+<meta property="og:description" content="How do I run the pipeline?: If you have cloned this project from git, you can run the pipeline via run.py and, optionally, configurations from config. For a specific pipeline configuration, create ..." />
+<meta name="description" content="How do I run the pipeline?: If you have cloned this project from git, you can run the pipeline via run.py and, optionally, configurations from config. For a specific pipeline configuration, create ..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="Getting Started" href="tutorials/overview.html" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
@@ -230,6 +230,27 @@
         <article role="main">
           <section id="frequently-asked-questions">
 <h1>Frequently asked questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this heading">#</a></h1>
+<section id="how-do-i-run-the-pipeline">
+<h2>How do I run the pipeline?<a class="headerlink" href="#how-do-i-run-the-pipeline" title="Permalink to this heading">#</a></h2>
+<p>If you have cloned this project from git, you can run the pipeline via <code class="code docutils literal notranslate"><span class="pre">run.py</span></code>
+and, optionally, configurations from <code class="code docutils literal notranslate"><span class="pre">config</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path
+</pre></div>
+</div>
+<p>For a specific pipeline configuration, create one using <code class="code docutils literal notranslate"><span class="pre">config/template.toml</span></code> and
+pass it with the <code class="code docutils literal notranslate"><span class="pre">-c</span></code> flag.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path<span class="w"> </span>-c<span class="w"> </span>config/my-config.toml
+</pre></div>
+</div>
+<p>Project name and input path can also be specified in the configuration instead in which
+case you can do</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>-c<span class="w"> </span>config/my-config.toml
+</pre></div>
+</div>
+<p>If you have installed the package via <code class="code docutils literal notranslate"><span class="pre">pip</span></code> and want to integrate (parts of) the
+pipeline into your own workflow, you can use individual components or integrate a
+<code class="code docutils literal notranslate"><span class="pre">Pipeline</span></code> object in your script.</p>
+</section>
 <section id="how-do-i-test-the-code-and-run-the-test-suite">
 <h2>How do I test the code and run the test suite?<a class="headerlink" href="#how-do-i-test-the-code-and-run-the-test-suite" title="Permalink to this heading">#</a></h2>
 <p>This package comes with an extensive test suite. In order to run the tests,
@@ -330,6 +351,7 @@ make<span class="w"> </span>-C<span class="w"> </span>docs<span class="w"> </spa
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Frequently asked questions</a><ul>
+<li><a class="reference internal" href="#how-do-i-run-the-pipeline">How do I run the pipeline?</a></li>
 <li><a class="reference internal" href="#how-do-i-test-the-code-and-run-the-test-suite">How do I test the code and run the test suite?</a><ul>
 <li><a class="reference internal" href="#does-this-package-run-on-x">Does this package run on X?</a></li>
 </ul>
