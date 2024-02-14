@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2024-02-14)
+
+### Feature
+
+* Introducing generic pipeline, Kf/generic pipeline ([#59](https://github.com/centre-for-humanities-computing/conspiracies/issues/59)) ([`13c514e`](https://github.com/centre-for-humanities-computing/conspiracies/commit/13c514e4c2f1e26123599200de8e8d83855a1b24))
+
 ## v0.6.0 (2023-11-02)
 
 ### Feature
