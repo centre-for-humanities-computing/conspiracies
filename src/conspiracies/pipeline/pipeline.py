@@ -65,6 +65,7 @@ class Pipeline:
         preprocessor.preprocess_docs(
             self.input_path,
             f"{self.output_path}/preprocessed.ndjson",
+            n_docs=self.config.preprocessing.n_docs,
         )
 
     def _get_docprocessor(self) -> DocProcessor:
@@ -112,8 +113,8 @@ class Pipeline:
                     print(", ".join(triplet_fields), file=out)
         umap_hdb.main(
             f"{self.output_path}/triplets.csv",
-            "danskBERT",
-            dim=40,
+            "danish" if self.config.base.language == "da" else "english",
+            dim=-1,
             save=f"{self.output_path}/nodes_edges.json",
         )
         nodes, edges = get_nodes_edges(

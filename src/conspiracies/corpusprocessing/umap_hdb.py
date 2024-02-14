@@ -290,7 +290,7 @@ def label_clusters(
 
 def embed_and_cluster(
     list_to_embed: List[str],
-    embedding_model: str = "vesteinn/DanskBERT",
+    embedding_model: str,
     n_dimensions: int = 40,
     n_neighbors: int = 15,
     min_cluster_size: int = 5,
@@ -302,6 +302,8 @@ def embed_and_cluster(
 
     Args:
         list_to_embed: List of strings to embed and cluster
+        embedding_model: model name or path, refer to
+            https://www.sbert.net/docs/pretrained_models.html
         n_dimensions: Number of dimensions to reduce the embedding space to
         n_neighbors: Number of neighbors to use for UMAP
         min_cluster_size: Minimum cluster size for HDBscan
@@ -316,12 +318,16 @@ def embed_and_cluster(
 
     embedding_model = SentenceTransformer(embedding_model)
 
-    # Embed and reduce embdding space
-    print("Embedding and reducing embedding space")
+    print("Embedding")
     embeddings = embedding_model.encode(list_to_embed)  # type: ignore
     scaled_embeddings = StandardScaler().fit_transform(embeddings)
-    reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
-    reduced_embeddings = reducer.fit_transform(scaled_embeddings)
+
+    if n_dimensions > 0:
+        print("Reducing embedding space")
+        reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
+        reduced_embeddings = reducer.fit_transform(scaled_embeddings)
+    else:
+        reduced_embeddings = scaled_embeddings
 
     # Cluster with HDBscan
     print("Clustering")
@@ -443,11 +449,12 @@ def main(
             f"_clust={min_cluster_size}_samp={min_samples}_nodes_edges.json",
         )  # type: ignore
 
-    model = (
-        "vesteinn/DanskBERT"
-        if embedding_model == "danskBERT"
-        else "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-    )
+    if embedding_model in ("danskBERT", "danish"):
+        model = "vesteinn/DanskBERT"
+    elif embedding_model in ("all-MiniLM-L6-v2", "english"):
+        model = "all-MiniLM-L6-v2"
+    else:
+        model = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 
     print(
         f"Dimensions: {dim}, neighbors: {n_neighbors}, min cluster size: "

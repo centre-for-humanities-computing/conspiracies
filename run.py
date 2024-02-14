@@ -22,6 +22,12 @@ if __name__ == "__main__":
         "path/to/files/*.txt. Be mindful of quotes for glob paths.",
     )
     arg_parser.add_argument(
+        "--n_docs",
+        "-n",
+        default=-1,
+        help="Max number of documents to output from preprocessing.",
+    )
+    arg_parser.add_argument(
         "-c",
         "--config",
         default="config/default.toml",
@@ -39,6 +45,7 @@ if __name__ == "__main__":
     cli_args = {
         "base.project_name": args.project_name,
         "preprocessing.input_path": args.input_path,
+        "preprocessing.n_docs": args.n_docs,
     }
     config = PipelineConfig.from_toml_file(args.config, cli_args)
 

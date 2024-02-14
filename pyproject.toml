@@ -23,6 +23,7 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
+    "dacy",
     "spacy>=3.3.2,<3.6.0",
     "spacy-transformers>=1.1.2,<1.2.0",
     "confection>0.0.1,<0.1.0",
