@@ -43,7 +43,9 @@ dependencies = [
     "umap-learn",
     "hdbscan",
     "sentence-transformers",
-    "stop-words"
+    "stop-words",
+    "bs4",
+    "toml"
 ]
 
 [project.license]
@@ -88,7 +90,10 @@ content-type = "text/markdown"
 
 
 [project.entry-points.spacy_factories]
-"conspiracies/docprocessing/relationextraction/gptprompting" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
+"prompt_relation_extraction" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
+"relation_extractor" = "conspiracies.docprocessing.relationextraction.multi2oie:make_relation_extractor"
+"allennlp_coref" = "conspiracies.docprocessing.coref:create_coref_component"
+"heads_extraction" = "conspiracies.docprocessing.headwordextraction:create_headwords_component"
 
 
 [build-system]

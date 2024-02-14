@@ -1,0 +1,20 @@
+[base]
+output_root = "output"
+language = "da/en"
+
+[preprocessing]
+enabled = true
+doc_type = "text/csv/tweets/infomedia"
+metadata_fields = ["*"]
+
+[preprocessing.extra]
+# specific extra arguments for your preprocessor, e.g. context length for tweets.
+# leave empty unless you have very specific needs
+
+[docprocessing]
+enabled = true
+continue_from_last = true
+triplet_extraction_method = "multi2oie/prompting"
+
+[corpusprocessing]
+enabled = true

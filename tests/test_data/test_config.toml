@@ -1,0 +1,18 @@
+[base]
+project_name = "test"
+output_root = "output"
+language = "en"
+
+[preprocessing]
+enabled = false
+input_path = "some_input"
+metadata_fields = ["metadata_field"]
+doc_type = "test"
+
+[preprocessing.extra]
+some_extra_value = 1234
+
+[docprocessing]
+triplet_extraction_method = "test"
+
+[corpusprocessing]

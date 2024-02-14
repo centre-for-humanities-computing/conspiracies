@@ -1,0 +1,11 @@
+[base]
+output_root = "output"
+language = "da"
+
+[preprocessing]
+doc_type = "tweets"
+
+[docprocessing]
+triplet_extraction_method = "multi2oie"
+
+[corpusprocessing]

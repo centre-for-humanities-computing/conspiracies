@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Iterable, Iterator, List
 
 import spacy
@@ -57,6 +58,8 @@ class SpacyRelationExtractor(TrainablePipe):
         self.ignore_tokenizers_warning()
         self.ignore_transformers_warnings()
 
+        self.logger = logging.getLogger(self.__class__.__name__)
+
     @staticmethod
     def ignore_tokenizers_warning() -> None:
         """Ignore the warning from the transformers library caused by forking
@@ -80,6 +83,15 @@ class SpacyRelationExtractor(TrainablePipe):
             predictions: (Dict): A batch of outputs from
                 KnowledgeTriplets.extract_relations().
         """
+        # Many things can go wrong in here every now and then, and a pipeline of many
+        # documents can break down. Until those things get fixed, the whole method is
+        # wrapped in a broad try/except statement
+        try:
+            self.do_set_annotations(doc, predictions)
+        except Exception as e:
+            self.logger.exception(e)
+
+    def do_set_annotations(self, doc: Iterable[Doc], predictions: Dict) -> None:
         # get nested list of indices above confidence threshold
         filtered_indices = [
             [

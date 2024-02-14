@@ -1,0 +1,19 @@
+[base]
+output_root = "output"
+language = "da"
+
+[preprocessing]
+enabled = true
+doc_type = "text"
+metadata_fields = ["*"]
+
+[preprocessing.extra]
+basename_as_id = true
+
+[docprocessing]
+enabled = true
+continue_from_last = true
+triplet_extraction_method = "multi2oie"
+
+[corpusprocessing]
+enabled = true
