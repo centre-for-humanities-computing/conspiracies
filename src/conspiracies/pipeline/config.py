@@ -28,7 +28,7 @@ class DocProcessingConfig(StepConfig):
     triplet_extraction_method: str
 
 
-class ClusteringThresholds:
+class ClusteringThresholds(BaseModel):
     n_neighbors: int = 15
     min_cluster_size: int = 3
     min_samples: int = 3
@@ -47,6 +47,7 @@ class ClusteringThresholds:
 
 class CorpusProcessingConfig(StepConfig, ClusteringThresholds):
     dimensions: int = -1
+    embedding_model: str = None
     auto_thresholds: bool = True
 
 

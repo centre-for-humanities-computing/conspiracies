@@ -23,6 +23,7 @@ triplet_extraction_method = "multi2oie/prompting"
 [corpusprocessing]
 enabled = true
 dimensions = -1
+embedding_model = "PATH_OR_NAME" # leave out for default model choice by language
 auto_thresholds = true
 n_neighbors = 15  # unused if auto_thresholds is true
 min_cluster_size = 3  # unused if auto_thresholds is true
