@@ -114,17 +114,17 @@ class Pipeline:
                     print(", ".join(triplet_fields), file=out)
                     n_triplets += 1
 
-        if self.config.corpusprocessing.auto_thresholds:
-            thresholds = ClusteringThresholds.auto(n_triplets)
+        if self.config.corpusprocessing.thresholds is None:
+            thresholds = ClusteringThresholds.estimate_from_n_triplets(n_triplets)
         else:
-            thresholds = self.config.corpusprocessing
+            thresholds = self.config.corpusprocessing.thresholds
 
         umap_hdb.main(
             f"{self.output_path}/triplets.csv",
             "danish" if self.config.base.language == "da" else "english",
             dim=self.config.corpusprocessing.dimensions,
+            n_neighbors=self.config.corpusprocessing.n_neighbors,
             save=f"{self.output_path}/nodes_edges.json",
-            n_neighbors=thresholds.n_neighbors,
             min_cluster_size=thresholds.min_cluster_size,
             min_topic_size=thresholds.min_topic_size,
             min_samples=thresholds.min_samples,

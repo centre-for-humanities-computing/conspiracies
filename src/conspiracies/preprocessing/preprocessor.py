@@ -47,10 +47,10 @@ class Preprocessor:
             else:
                 yield doc
 
-    def preprocess_docs(self, input_path: str, output_path: str, n_docs: int = -1):
+    def preprocess_docs(self, input_path: str, output_path: str, n_docs: int = None):
         preprocessed_docs = self._do_preprocess_docs(input_path)
         validated = self._validate_content(preprocessed_docs)
-        if n_docs > 0:
+        if n_docs and n_docs > 0:
             validated = (d for i, d in enumerate(validated) if i < n_docs)
         metadata_filtered = self._filter_metadata(validated)
         with open(output_path, "w+") as out_file:

@@ -22,6 +22,12 @@ if __name__ == "__main__":
         "path/to/files/*.txt. Be mindful of quotes for glob paths.",
     )
     arg_parser.add_argument(
+        "--language",
+        "-l",
+        default="en",
+        help="Language of models and word lists.",
+    )
+    arg_parser.add_argument(
         "--n_docs",
         "-n",
         default=-1,
@@ -30,7 +36,7 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "-c",
         "--config",
-        default="config/default.toml",
+        default=None,
         help="Path to configuration file. Refer to config/template.toml for contents.",
     )
     arg_parser.add_argument(
@@ -44,10 +50,15 @@ if __name__ == "__main__":
 
     cli_args = {
         "base.project_name": args.project_name,
+        "base.language": args.language,
         "preprocessing.input_path": args.input_path,
         "preprocessing.n_docs": args.n_docs,
     }
-    config = PipelineConfig.from_toml_file(args.config, cli_args)
+
+    if args.config:
+        config = PipelineConfig.from_toml_file(args.config, cli_args)
+    else:
+        config = PipelineConfig.default_with_extra_config(cli_args)
 
     pipeline = Pipeline(config)
     pipeline.run()

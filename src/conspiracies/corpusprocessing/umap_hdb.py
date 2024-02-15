@@ -292,7 +292,7 @@ def embed_and_cluster(
     list_to_embed: List[str],
     language: str,
     embedding_model: str,
-    n_dimensions: int = 40,
+    n_dimensions: int = None,
     n_neighbors: int = 15,
     min_cluster_size: int = 5,
     min_samples: int = 3,
@@ -306,7 +306,7 @@ def embed_and_cluster(
         language: language for SpaCy pipeline for cluster labeling
         embedding_model: model name or path, refer to
             https://www.sbert.net/docs/pretrained_models.html
-        n_dimensions: Number of dimensions to reduce the embedding space to
+        n_dimensions: Number of dimensions to reduce the embedding space to, None to skip
         n_neighbors: Number of neighbors to use for UMAP
         min_cluster_size: Minimum cluster size for HDBscan
         min_samples: Minimum number of samples for HDBscan
@@ -324,7 +324,7 @@ def embed_and_cluster(
     embeddings = embedding_model.encode(list_to_embed)  # type: ignore
     scaled_embeddings = StandardScaler().fit_transform(embeddings)
 
-    if n_dimensions > 0:
+    if n_dimensions is not None:
         print("Reducing embedding space")
         reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
         reduced_embeddings = reducer.fit_transform(scaled_embeddings)

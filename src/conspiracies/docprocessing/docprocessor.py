@@ -111,7 +111,7 @@ class DocProcessor:
                 (remove_context(doc._.resolve_coref), id_)
                 for doc, id_ in coref_resolved_docs
             ),
-            batch_size=self.batch_size * 4,
+            batch_size=self.batch_size,
             as_tuples=True,
         )
 
