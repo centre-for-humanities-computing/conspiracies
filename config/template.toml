@@ -1,20 +1,30 @@
 [base]
+project_name = "PROJECT_NAME"  # also CLI arg
 output_root = "output"
 language = "da/en"
 
 [preprocessing]
 enabled = true
+input_path = "PATH/TO/INPUT/*"  # also CLI arg
+n_docs = -1   # also CLI arg
 doc_type = "text/csv/tweets/infomedia"
 metadata_fields = ["*"]
 
 [preprocessing.extra]
-# specific extra arguments for your preprocessor, e.g. context length for tweets.
-# leave empty unless you have very specific needs
+# specific extra arguments for your preprocessor, e.g. context length for tweets or
+# or field specification for CSVs
 
 [docprocessing]
 enabled = true
+batch_size = 25
 continue_from_last = true
 triplet_extraction_method = "multi2oie/prompting"
 
 [corpusprocessing]
 enabled = true
+dimensions = -1
+auto_thresholds = true
+n_neighbors = 15  # unused if auto_thresholds is true
+min_cluster_size = 3  # unused if auto_thresholds is true
+min_samples = 3  # unused if auto_thresholds is true
+min_topic_size = 5  # unused if auto_thresholds is true

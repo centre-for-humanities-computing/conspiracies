@@ -28,8 +28,26 @@ class DocProcessingConfig(StepConfig):
     triplet_extraction_method: str
 
 
-class CorpusProcessingConfig(StepConfig):
-    pass
+class ClusteringThresholds:
+    n_neighbors: int = 15
+    min_cluster_size: int = 3
+    min_samples: int = 3
+    min_topic_size: int = 5
+
+    @classmethod
+    def auto(cls, n_triplets: int):
+        factor = n_triplets / 1000
+        thresholds = cls()
+        thresholds.n_neighbors = int(factor * 5)
+        thresholds.min_cluster_size = int(factor) + 1
+        thresholds.min_samples = int(factor) + 1
+        thresholds.min_topic_size = int(factor * 2) + 1
+        return thresholds
+
+
+class CorpusProcessingConfig(StepConfig, ClusteringThresholds):
+    dimensions: int = -1
+    auto_thresholds: bool = True
 
 
 class PipelineConfig(BaseModel):

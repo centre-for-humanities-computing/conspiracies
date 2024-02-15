@@ -19,3 +19,4 @@ triplet_extraction_method = "multi2oie"
 
 [corpusprocessing]
 enabled = true
+auto_thresholds = true

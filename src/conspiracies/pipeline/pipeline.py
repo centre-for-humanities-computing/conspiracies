@@ -5,7 +5,7 @@ from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.corpusprocessing import umap_hdb
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig
+from conspiracies.pipeline.config import PipelineConfig, ClusteringThresholds
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -92,7 +92,7 @@ class Pipeline:
         # TODO: this process is kind of dumb with all the writing and reading of
         #  files etc., but for now just make it work. It comes from individual scripts
         #  and a lot of the logic of data structures happen in those read/writes. Also,
-        #  a lot of data that we might want to save is thrown away, e.g. clsutered
+        #  a lot of data that we might want to save is thrown away, e.g. clustered
         #  entities, or calculated/fetched on the go, e.g. node weights for graphs.
         docs = (
             json.loads(line)
@@ -100,6 +100,7 @@ class Pipeline:
                 f"{self.output_path}/annotations.ndjson",
             )
         )
+        n_triplets = 0
         with open(
             f"{self.output_path}/triplets.csv",
             "w+",
@@ -111,11 +112,22 @@ class Pipeline:
                         for field in ("subject", "predicate", "object")
                     ]
                     print(", ".join(triplet_fields), file=out)
+                    n_triplets += 1
+
+        if self.config.corpusprocessing.auto_thresholds:
+            thresholds = ClusteringThresholds.auto(n_triplets)
+        else:
+            thresholds = self.config.corpusprocessing
+
         umap_hdb.main(
             f"{self.output_path}/triplets.csv",
             "danish" if self.config.base.language == "da" else "english",
-            dim=-1,
+            dim=self.config.corpusprocessing.dimensions,
             save=f"{self.output_path}/nodes_edges.json",
+            n_neighbors=thresholds.n_neighbors,
+            min_cluster_size=thresholds.min_cluster_size,
+            min_topic_size=thresholds.min_topic_size,
+            min_samples=thresholds.min_samples,
         )
         nodes, edges = get_nodes_edges(
             f"{self.output_path}/",
