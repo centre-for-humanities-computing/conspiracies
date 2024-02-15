@@ -27,7 +27,7 @@ class CoreferenceModel(Predictor):
         model_path(Union[Path, str, None], optional): Path to the model, if None, the
             model will be downloaded according to default specifications of the language
             parameter.
-        language(str): language of the (default) model to load. Has no effect if
+        language: language of the (default) model to load. Has no effect if
             model_path is given. Options: da, en
         device(int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
