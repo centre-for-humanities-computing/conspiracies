@@ -39,3 +39,9 @@ def test_config_loading(path: str):
         ),
         corpusprocessing=CorpusProcessingConfig(),
     )
+
+
+def test_update_nested_dict():
+    some_dict = {"a": {"b": 1}}
+    PipelineConfig.update_nested_dict(some_dict, "a.b", 2)
+    assert some_dict["a"]["b"] == 2
