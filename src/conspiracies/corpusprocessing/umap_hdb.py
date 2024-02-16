@@ -12,6 +12,8 @@ from collections import Counter
 import random
 import argparse
 
+from conspiracies.common.modelchoice import ModelChoice
+
 
 def read_txt(path: str):
     with open(path, mode="r", encoding="utf8") as f:
@@ -343,7 +345,8 @@ def embed_and_cluster(
 
     # Label and prune clusters
     print("Labeling clusters")
-    nlp = spacy.load("da_core_news_sm" if language == "danish" else "en_core_web_sm")
+    model = ModelChoice(da="da_core_news_sm", en="en_core_web_sm").get_model(language)
+    nlp = spacy.load(model)
     labeled_clusters = label_clusters(
         clusters,
         nlp,
@@ -439,16 +442,11 @@ def main(
 ):
     # figure out embedding model if not given explicitly
     if embedding_model is None:
-        if language == "danish":
-            embedding_model = "vesteinn/DanskBERT"
-        elif language == "english":
-            embedding_model = "all-MiniLM-L6-v2"
-        else:
-            embedding_model = (
-                "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-            )
-    elif embedding_model == "danskBERT":
-        embedding_model = "vesteinn/DanskBERT"
+        embedding_model = ModelChoice(
+            da="vesteinn/DanskBERT",
+            en="all-MiniLM-L6-v2",
+            fallback="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        ).get_model(language)
 
     # Load triplets
     print("Loading triplets")
@@ -527,16 +525,16 @@ if __name__ == "__main__":
         "--language",
         type=str,
         default="paraphrase",
-        help="""Choice of language for embedding model (if not specified) and stop 
-        words filtering""",
+        help="Choice of language for embedding model (if not specified) and stop "
+        "words filtering",
     )
     parser.add_argument(
         "-emb",
         "--embedding_model",
         type=str,
-        default="paraphrase",
-        help="""Which embedding model to use, default is paraphrase. 
-        The other option is danskBERT""",
+        default=None,
+        help="Which embedding model to use. Automatically determined via language if "
+        "not given.",
     )
     parser.add_argument(
         "-dim",
@@ -579,6 +577,7 @@ if __name__ == "__main__":
     main(
         path,
         embedding_model=args.embedding_model,
+        language=args.language,
         dim=args.n_dimensions,
         n_neighbors=args.n_neighbors,
         min_cluster_size=args.min_cluster_size,

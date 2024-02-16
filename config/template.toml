@@ -1,7 +1,7 @@
 [base]
 project_name = "PROJECT_NAME"  # also CLI arg
 output_root = "output"
-language = "da/en"
+language = "da/en"  # also CLI arg
 
 [preprocessing]
 enabled = true

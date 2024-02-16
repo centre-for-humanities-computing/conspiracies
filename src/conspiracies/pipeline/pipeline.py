@@ -121,7 +121,7 @@ class Pipeline:
 
         umap_hdb.main(
             f"{self.output_path}/triplets.csv",
-            "danish" if self.config.base.language == "da" else "english",
+            self.config.base.language,
             dim=self.config.corpusprocessing.dimensions,
             n_neighbors=self.config.corpusprocessing.n_neighbors,
             save=f"{self.output_path}/nodes_edges.json",

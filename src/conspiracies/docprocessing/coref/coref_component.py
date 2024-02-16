@@ -9,6 +9,7 @@ from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc, Span
 from spacy.util import minibatch
 
+from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.docprocessing.coref import CoreferenceModel
 
 
@@ -25,15 +26,13 @@ class CoreferenceComponent(TrainablePipe):
         self.name = name
         self.vocab = vocab
         if model_path is None:
-            if language == "da":
-                self.model = CoreferenceModel.danish(
+            self.model = ModelChoice(
+                da=lambda: CoreferenceModel.danish(
                     device=device,
                     open_unverified_connection=open_unverified_connection,
-                )
-            elif language == "en":
-                self.model = CoreferenceModel.english(device=device)
-            else:
-                raise ValueError(f"Language code {language} not supported!")
+                ),
+                en=lambda: CoreferenceModel.english(device=device),
+            ).get_model(language)
         else:
             self.model = CoreferenceModel(  # type: ignore
                 model_path=model_path,

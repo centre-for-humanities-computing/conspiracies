@@ -6,6 +6,7 @@ from jsonlines import jsonlines
 from tqdm import tqdm
 
 from conspiracies import docs_to_jsonl
+from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.document import Document, text_with_context, remove_context
 
 
@@ -25,12 +26,10 @@ class DocProcessor:
         return nlp_coref
 
     def _build_triplet_extraction_pipeline(self):
-        if self.language == "da":
-            nlp = spacy.load("da_core_news_sm")
-        elif self.language == "en":
-            nlp = spacy.load("en_core_web_sm")
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
+        model = ModelChoice(da="da_core_news_sm", en="en_core_web_sm").get_model(
+            self.language,
+        )
+        nlp = spacy.load(model)
         nlp.add_pipe(
             "heads_extraction",
             config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
