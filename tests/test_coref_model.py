@@ -3,8 +3,8 @@ from .utils import nlp_da, nlp_en  # noqa
 from conspiracies.docprocessing.coref import CoreferenceModel
 
 
-def test_CoreferenceModel(nlp_da):  # noqa
-    model = CoreferenceModel()  # check that the model loads as intended
+def test_da_coref_model(nlp_da):  # noqa
+    model = CoreferenceModel.danish()  # check that the model loads as intended
 
     text = [
         "Hej Kenneth, har du en fed teksts vi kan skrive om dig?",
@@ -21,7 +21,7 @@ def test_CoreferenceModel(nlp_da):  # noqa
 
 
 def test_en_coref_model(nlp_en):  # noqa
-    model = CoreferenceModel(language="en")
+    model = CoreferenceModel.english()
 
     text = [
         "Luke Skywalker is from a moisture farm on Tatooine. "
@@ -34,5 +34,4 @@ def test_en_coref_model(nlp_en):  # noqa
 
     # test output format
     for output in outputs:
-        print(output)
         assert isinstance(output, dict)

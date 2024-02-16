@@ -1,7 +1,6 @@
 """A custom Coreference model for wrapping an AllenNLP's Predictor for
 coreference resolution on SpaCy Docs."""
 
-import logging
 from typing import List, Union
 from pathlib import Path
 
@@ -41,27 +40,10 @@ class CoreferenceModel(Predictor):
     def __init__(
         self,
         model_path: Union[Path, str, None] = None,
-        language: str = "da",
         device: int = -1,
-        open_unverified_connection: bool = False,
-        **kwargs,
     ) -> None:
-        if model_path is None:
-            if language == "da":
-                model_path = download_model(
-                    "da_coref_twitter_v1",
-                    open_unverified_connection=open_unverified_connection,
-                )
-            elif language == "en":
-                model_path = (
-                    "https://storage.googleapis.com/allennlp-public-models/"
-                    "coref-spanbert-large-2021.03.10.tar.gz"
-                )
-            else:
-                raise ValueError(f"Language code {language} not supported!")
 
-        logging.debug(model_path)
-        archive = load_archive(model_path, cuda_device=device, **kwargs)
+        archive = load_archive(model_path, cuda_device=device)
         config = archive.config
         prepare_environment(config)
         dataset_reader = archive.validation_dataset_reader
@@ -76,3 +58,19 @@ class CoreferenceModel(Predictor):
         """Convert a list of docs to Instance and predict the batch."""
         instances = [self._doc_to_instance(doc) for doc in docs]
         return self.predict_batch_instance(instances)
+
+    @classmethod
+    def danish(cls, device: int = -1, open_unverified_connection: bool = False):
+        model_path = download_model(
+            "da_coref_twitter_v1",
+            open_unverified_connection=open_unverified_connection,
+        )
+        return cls(model_path=model_path, device=device)
+
+    @classmethod
+    def english(cls, device: int = -1):
+        model_path = (
+            "https://storage.googleapis.com/allennlp-public-models/"
+            "coref-spanbert-large-2021.03.10.tar.gz"
+        )
+        return cls(model_path=model_path, device=device)

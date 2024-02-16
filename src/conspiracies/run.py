@@ -24,13 +24,13 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "--language",
         "-l",
-        default="en",
+        default=None,
         help="Language of models and word lists.",
     )
     arg_parser.add_argument(
         "--n_docs",
         "-n",
-        default=-1,
+        default=None,
         help="Max number of documents to output from preprocessing.",
     )
     arg_parser.add_argument(

@@ -24,12 +24,21 @@ class CoreferenceComponent(TrainablePipe):
     ):
         self.name = name
         self.vocab = vocab
-        self.model = CoreferenceModel(  # type: ignore
-            model_path=model_path,
-            language=language,
-            device=device,
-            open_unverified_connection=open_unverified_connection,
-        )
+        if model_path is None:
+            if language == "da":
+                self.model = CoreferenceModel.danish(
+                    device=device,
+                    open_unverified_connection=open_unverified_connection,
+                )
+            elif language == "en":
+                self.model = CoreferenceModel.english(device=device)
+            else:
+                raise ValueError(f"Language code {language} not supported!")
+        else:
+            self.model = CoreferenceModel(  # type: ignore
+                model_path=model_path,
+                device=device,
+            )
 
         # Register custom extension on the Doc and Span
         if not Doc.has_extension("resolve_coref"):
@@ -176,7 +185,6 @@ class CoreferenceComponent(TrainablePipe):
     "allennlp_coref",
     default_config={
         "model_path": None,
-        "language": "da",
         "device": -1,
         "open_unverified_connection": True,
     },
@@ -185,7 +193,6 @@ def create_coref_component(
     nlp: Language,
     name: str,
     model_path: Union[Path, str, None],
-    language: str,
     device: int,
     open_unverified_connection: bool,
 ):
@@ -194,11 +201,8 @@ def create_coref_component(
     Args:
         nlp (Language): A spacy language pipeline
         name (str): The name of the component
-        model_path(Union[Path, str, None], optional): Path to the model, if None, the
-            model will be downloaded according to default specifications of the language
-            parameter.
-        language(str): language of the (default) model to load. Has no effect if
-            model_path is given. Options: da, en
+        model_path(Union[Path, str, None], optional): Path to the model, if None, a
+            model will be downloaded according to the language of the pipeline.
         device (int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
         open_unverified_connection (bool, optional): Should you download the model from
@@ -211,7 +215,7 @@ def create_coref_component(
         nlp.vocab,
         name=name,
         model_path=model_path,
-        language=language,
+        language=nlp.lang,
         device=device,
         open_unverified_connection=open_unverified_connection,
     )

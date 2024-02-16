@@ -13,7 +13,7 @@ class DocProcessor:
     def _build_coref_pipeline(self):
         nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
-        nlp_coref.add_pipe("allennlp_coref", config={"language": self.language})
+        nlp_coref.add_pipe("allennlp_coref")
 
         def warn_error(proc_name, proc, docs, e):
             print(
