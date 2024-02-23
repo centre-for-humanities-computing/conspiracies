@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.8.0 (2024-02-23)
+
+### Feature
+
+* Support for English documents Kf/english pipeline ([#65](https://github.com/centre-for-humanities-computing/conspiracies/issues/65)) ([`fa4f28b`](https://github.com/centre-for-humanities-computing/conspiracies/commit/fa4f28bcf0c777d16c4b60c805dfd084bbcd7542))
+
 ## v0.7.0 (2024-02-14)
 
 ### Feature
