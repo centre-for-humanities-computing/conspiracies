@@ -9,6 +9,7 @@ from spacy.pipeline import TrainablePipe
 from spacy.tokens import Doc, Span
 from spacy.util import minibatch
 
+from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.docprocessing.coref import CoreferenceModel
 
 
@@ -18,16 +19,25 @@ class CoreferenceComponent(TrainablePipe):
         vocab: Vocab,
         name: str,
         model_path: Union[Path, str, None],
+        language: str,
         device: int,
         open_unverified_connection: bool,
     ):
         self.name = name
         self.vocab = vocab
-        self.model = CoreferenceModel(  # type: ignore
-            model_path=model_path,
-            device=device,
-            open_unverified_connection=open_unverified_connection,
-        )
+        if model_path is None:
+            self.model = ModelChoice(
+                da=lambda: CoreferenceModel.danish(
+                    device=device,
+                    open_unverified_connection=open_unverified_connection,
+                ),
+                en=lambda: CoreferenceModel.english(device=device),
+            ).get_model(language)
+        else:
+            self.model = CoreferenceModel(  # type: ignore
+                model_path=model_path,
+                device=device,
+            )
 
         # Register custom extension on the Doc and Span
         if not Doc.has_extension("resolve_coref"):
@@ -190,8 +200,8 @@ def create_coref_component(
     Args:
         nlp (Language): A spacy language pipeline
         name (str): The name of the component
-        model_path (Union[Path, str, None]): Path to the model, if None, the
-            model will be downloaded to the default cache directory.
+        model_path(Union[Path, str, None], optional): Path to the model, if None, a
+            model will be downloaded according to the language of the pipeline.
         device (int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
         open_unverified_connection (bool, optional): Should you download the model from
@@ -200,11 +210,11 @@ def create_coref_component(
     Returns:
         CorefenceComponent: The coreference model component
     """
-
     return CoreferenceComponent(
         nlp.vocab,
         name=name,
         model_path=model_path,
+        language=nlp.lang,
         device=device,
         open_unverified_connection=open_unverified_connection,
     )

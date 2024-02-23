@@ -24,7 +24,10 @@ class CoreferenceModel(Predictor):
 
     Args:
         model_path(Union[Path, str, None], optional): Path to the model, if None, the
-            model will be downloaded to the default cache directory.
+            model will be downloaded according to default specifications of the language
+            parameter.
+        language: language of the (default) model to load. Has no effect if
+            model_path is given. Options: da, en
         device(int, optional): Cuda device. If >= 0 will use the corresponding GPU,
             below 0 is CPU. Defaults to -1.
         open_unverified_connection (bool, optional): Should you download from an
@@ -38,16 +41,9 @@ class CoreferenceModel(Predictor):
         self,
         model_path: Union[Path, str, None] = None,
         device: int = -1,
-        open_unverified_connection: bool = False,
-        **kwargs,
     ) -> None:
-        if model_path is None:
-            model_path = download_model(
-                "da_coref_twitter_v1",
-                open_unverified_connection=open_unverified_connection,
-            )
 
-        archive = load_archive(model_path, cuda_device=device, **kwargs)
+        archive = load_archive(model_path, cuda_device=device)
         config = archive.config
         prepare_environment(config)
         dataset_reader = archive.validation_dataset_reader
@@ -62,3 +58,19 @@ class CoreferenceModel(Predictor):
         """Convert a list of docs to Instance and predict the batch."""
         instances = [self._doc_to_instance(doc) for doc in docs]
         return self.predict_batch_instance(instances)
+
+    @classmethod
+    def danish(cls, device: int = -1, open_unverified_connection: bool = False):
+        model_path = download_model(
+            "da_coref_twitter_v1",
+            open_unverified_connection=open_unverified_connection,
+        )
+        return cls(model_path=model_path, device=device)
+
+    @classmethod
+    def english(cls, device: int = -1):
+        model_path = (
+            "https://storage.googleapis.com/allennlp-public-models/"
+            "coref-spanbert-large-2021.03.10.tar.gz"
+        )
+        return cls(model_path=model_path, device=device)

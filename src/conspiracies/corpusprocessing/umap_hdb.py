@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, List, Dict, Optional, Union
+from typing import Tuple, List, Dict, Optional, Union, Set
 import os
 import spacy
 from umap import UMAP
@@ -11,6 +11,8 @@ from numpy import ndarray
 from collections import Counter
 import random
 import argparse
+
+from conspiracies.common.modelchoice import ModelChoice
 
 
 def read_txt(path: str):
@@ -39,7 +41,7 @@ def triplet_from_line(line: str) -> Union[Tuple[str, str, str], None]:
 
 def filter_triplets_with_stopwords(
     triplets: List[Tuple[str, str, str]],
-    stopwords: List[str],
+    stopwords: Set[str],
     soft: bool = True,
 ) -> List[Tuple[str, str, str]]:
     """Filters triplets that contain a stopword.
@@ -69,6 +71,7 @@ def filter_triplets_with_stopwords(
 
 def load_triplets(
     file_path: str,
+    language: str = "danish",
     soft_filtering: bool = True,
     shuffle: bool = True,
 ) -> Tuple[list, list, list, list]:
@@ -84,7 +87,6 @@ def load_triplets(
         objects: List of objects
         filtered_triplets: List of filtered triplets
     """
-    triplets_list: List[Tuple[str, str, str]] = []
     data = read_txt(file_path)
     triplets_list = [
         triplet_from_line(line)
@@ -93,7 +95,7 @@ def load_triplets(
     ]
     filtered_triplets = filter_triplets_with_stopwords(
         triplets_list,
-        get_stop_words("danish"),
+        set(get_stop_words(language)),
         soft=soft_filtering,
     )
 
@@ -290,8 +292,9 @@ def label_clusters(
 
 def embed_and_cluster(
     list_to_embed: List[str],
-    embedding_model: str = "vesteinn/DanskBERT",
-    n_dimensions: int = 40,
+    language: str,
+    embedding_model: str,
+    n_dimensions: int = None,
     n_neighbors: int = 15,
     min_cluster_size: int = 5,
     min_samples: int = 3,
@@ -302,7 +305,10 @@ def embed_and_cluster(
 
     Args:
         list_to_embed: List of strings to embed and cluster
-        n_dimensions: Number of dimensions to reduce the embedding space to
+        language: language for SpaCy pipeline for cluster labeling
+        embedding_model: model name or path, refer to
+            https://www.sbert.net/docs/pretrained_models.html
+        n_dimensions: Number of dimensions to reduce the embedding space to, None to skip
         n_neighbors: Number of neighbors to use for UMAP
         min_cluster_size: Minimum cluster size for HDBscan
         min_samples: Minimum number of samples for HDBscan
@@ -316,12 +322,16 @@ def embed_and_cluster(
 
     embedding_model = SentenceTransformer(embedding_model)
 
-    # Embed and reduce embdding space
-    print("Embedding and reducing embedding space")
+    print("Embedding")
     embeddings = embedding_model.encode(list_to_embed)  # type: ignore
     scaled_embeddings = StandardScaler().fit_transform(embeddings)
-    reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
-    reduced_embeddings = reducer.fit_transform(scaled_embeddings)
+
+    if n_dimensions is not None:
+        print("Reducing embedding space")
+        reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
+        reduced_embeddings = reducer.fit_transform(scaled_embeddings)
+    else:
+        reduced_embeddings = scaled_embeddings
 
     # Cluster with HDBscan
     print("Clustering")
@@ -335,7 +345,8 @@ def embed_and_cluster(
 
     # Label and prune clusters
     print("Labeling clusters")
-    nlp = spacy.load("da_core_news_sm")
+    model = ModelChoice(da="da_core_news_sm", en="en_core_web_sm").get_model(language)
+    nlp = spacy.load(model)
     labeled_clusters = label_clusters(
         clusters,
         nlp,
@@ -420,7 +431,8 @@ def create_nodes_and_edges(
 
 def main(
     path: str,
-    embedding_model: str,
+    language: str,
+    embedding_model: str = None,
     dim=40,
     n_neighbors=15,
     min_cluster_size=5,
@@ -428,10 +440,19 @@ def main(
     min_topic_size=20,
     save: bool = False,
 ):
+    # figure out embedding model if not given explicitly
+    if embedding_model is None:
+        embedding_model = ModelChoice(
+            da="vesteinn/DanskBERT",
+            en="all-MiniLM-L6-v2",
+            fallback="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        ).get_model(language)
+
     # Load triplets
     print("Loading triplets")
     subjects, predicates, objects, filtered_triplets = load_triplets(
         path,
+        language,
         soft_filtering=True,
         shuffle=True,
     )
@@ -443,12 +464,6 @@ def main(
             f"_clust={min_cluster_size}_samp={min_samples}_nodes_edges.json",
         )  # type: ignore
 
-    model = (
-        "vesteinn/DanskBERT"
-        if embedding_model == "danskBERT"
-        else "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-    )
-
     print(
         f"Dimensions: {dim}, neighbors: {n_neighbors}, min cluster size: "
         f"{min_cluster_size}, samples: {min_samples}, min topic size: {min_topic_size}",
@@ -458,7 +473,8 @@ def main(
     # For predicate, we wanna keep all clusters -> min_topic_size=1
     predicate_clusters = embed_and_cluster(
         list_to_embed=predicates,
-        embedding_model=model,
+        language=language,
+        embedding_model=embedding_model,
         n_dimensions=dim,
         n_neighbors=n_neighbors,
         min_cluster_size=min_cluster_size,
@@ -472,7 +488,8 @@ def main(
     subj_obj = subjects + objects
     subj_obj_clusters = embed_and_cluster(
         list_to_embed=subj_obj,
-        embedding_model=model,
+        language=language,
+        embedding_model=embedding_model,
         n_dimensions=dim,
         n_neighbors=n_neighbors,
         min_cluster_size=min_cluster_size,
@@ -504,12 +521,20 @@ if __name__ == "__main__":
         "twitter) and event",
     )
     parser.add_argument(
+        "-lang",
+        "--language",
+        type=str,
+        default="paraphrase",
+        help="Choice of language for embedding model (if not specified) and stop "
+        "words filtering",
+    )
+    parser.add_argument(
         "-emb",
         "--embedding_model",
         type=str,
-        default="paraphrase",
-        help="""Which embedding model to use, default is paraphrase. 
-        The other option is danskBERT""",
+        default=None,
+        help="Which embedding model to use. Automatically determined via language if "
+        "not given.",
     )
     parser.add_argument(
         "-dim",
@@ -552,6 +577,7 @@ if __name__ == "__main__":
     main(
         path,
         embedding_model=args.embedding_model,
+        language=args.language,
         dim=args.n_dimensions,
         n_neighbors=args.n_neighbors,
         min_cluster_size=args.min_cluster_size,

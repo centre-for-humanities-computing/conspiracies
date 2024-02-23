@@ -6,12 +6,13 @@ from jsonlines import jsonlines
 from tqdm import tqdm
 
 from conspiracies import docs_to_jsonl
+from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.document import Document, text_with_context, remove_context
 
 
 class DocProcessor:
     def _build_coref_pipeline(self):
-        nlp_coref = spacy.blank("da")
+        nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
         nlp_coref.add_pipe("allennlp_coref")
 
@@ -25,7 +26,10 @@ class DocProcessor:
         return nlp_coref
 
     def _build_triplet_extraction_pipeline(self):
-        nlp = spacy.load("da_core_news_sm")
+        model = ModelChoice(da="da_core_news_sm", en="en_core_web_sm").get_model(
+            self.language,
+        )
+        nlp = spacy.load(model)
         nlp.add_pipe(
             "heads_extraction",
             config={"normalize_to_entity": True, "normalize_to_noun_chunk": True},
@@ -67,9 +71,16 @@ class DocProcessor:
             )
         return nlp
 
-    def __init__(self, triplet_extraction="multi2oie"):
+    def __init__(
+        self,
+        language="da",
+        batch_size=25,
+        triplet_extraction_method="multi2oie",
+    ):
+        self.language = language
+        self.batch_size = batch_size
         self.coref_pipeline = self._build_coref_pipeline()
-        self.triplet_extraction_component = triplet_extraction
+        self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
 
     def process_docs(
@@ -77,7 +88,6 @@ class DocProcessor:
         docs: Iterable[Document],
         output_path: str,
         continue_from_last=False,
-        batch_size=25,
     ):
         if continue_from_last and os.path.exists(output_path):
             with jsonlines.open(output_path) as annotated_docs:
@@ -91,7 +101,7 @@ class DocProcessor:
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
             ((text_with_context(doc), doc["id"]) for doc in docs),
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             as_tuples=True,
         )
 
@@ -100,7 +110,7 @@ class DocProcessor:
                 (remove_context(doc._.resolve_coref), id_)
                 for doc, id_ in coref_resolved_docs
             ),
-            batch_size=batch_size * 4,
+            batch_size=self.batch_size,
             as_tuples=True,
         )
 
