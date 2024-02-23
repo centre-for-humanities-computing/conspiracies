@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="faq.html" />
 <meta property="og:site_name" content="conspiracies" />
-<meta property="og:description" content="How do I run the pipeline?: If you have cloned this project from git, you can run the pipeline via run.py and, optionally, configurations from config. For a specific pipeline configuration, create ..." />
-<meta name="description" content="How do I run the pipeline?: If you have cloned this project from git, you can run the pipeline via run.py and, optionally, configurations from config. For a specific pipeline configuration, create ..." />
+<meta property="og:description" content="How do I run the pipeline?: If you have installed the package, you can run the pipeline via conspiracies.run. For fine-grained control of pipeline behavior, create a configuration file based on the..." />
+<meta name="description" content="How do I run the pipeline?: If you have installed the package, you can run the pipeline via conspiracies.run. For fine-grained control of pipeline behavior, create a configuration file based on the..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="Getting Started" href="tutorials/overview.html" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
@@ -232,14 +232,13 @@
 <h1>Frequently asked questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this heading">#</a></h1>
 <section id="how-do-i-run-the-pipeline">
 <h2>How do I run the pipeline?<a class="headerlink" href="#how-do-i-run-the-pipeline" title="Permalink to this heading">#</a></h2>
-<p>If you have cloned this project from git, you can run the pipeline via <code class="code docutils literal notranslate"><span class="pre">run.py</span></code>
-and, optionally, configurations from <code class="code docutils literal notranslate"><span class="pre">config</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path
+<p>If you have installed the package, you can run the pipeline via <code class="code docutils literal notranslate"><span class="pre">conspiracies.run</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>conspiracies.run<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path
 </pre></div>
 </div>
-<p>For a specific pipeline configuration, create one using <code class="code docutils literal notranslate"><span class="pre">config/template.toml</span></code> and
+<p>For fine-grained control of pipeline behavior, create a configuration file based on the <a class="reference external" href="https://github.com/centre-for-humanities-computing/conspiracies/blob/main/config/template.toml">config template</a>.  and
 pass it with the <code class="code docutils literal notranslate"><span class="pre">-c</span></code> flag.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path<span class="w"> </span>-c<span class="w"> </span>config/my-config.toml
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>conspiracies.run<span class="w"> </span>my_project_name<span class="w"> </span>my_input_path<span class="w"> </span>-c<span class="w"> </span>my-config.toml
 </pre></div>
 </div>
 <p>Project name and input path can also be specified in the configuration instead in which
@@ -247,7 +246,7 @@ case you can do</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>run.py<span class="w"> </span>-c<span class="w"> </span>config/my-config.toml
 </pre></div>
 </div>
-<p>If you have installed the package via <code class="code docutils literal notranslate"><span class="pre">pip</span></code> and want to integrate (parts of) the
+<p>If you have installed the package and want to integrate (parts of) the
 pipeline into your own workflow, you can use individual components or integrate a
 <code class="code docutils literal notranslate"><span class="pre">Pipeline</span></code> object in your script.</p>
 </section>

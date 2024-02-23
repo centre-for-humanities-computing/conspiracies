@@ -5,21 +5,20 @@ Frequently asked questions
 How do I run the pipeline?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have cloned this project from git, you can run the pipeline via :code:`run.py`
-and, optionally, configurations from :code:`config`.
+If you have installed the package, you can run the pipeline via :code:`conspiracies.run`.
 
 .. code-block:: bash
 
-   python3 run.py my_project_name my_input_path
+   python3 -m conspiracies.run my_project_name my_input_path
 
 
-For a specific pipeline configuration, create one using :code:`config/template.toml` and
+For fine-grained control of pipeline behavior, create a configuration file based on the `config template <https://github.com/centre-for-humanities-computing/conspiracies/blob/main/config/template.toml>`__.  and
 pass it with the :code:`-c` flag.
 
 
 .. code-block:: bash
 
-   python3 run.py my_project_name my_input_path -c config/my-config.toml
+   python3 -m conspiracies.run my_project_name my_input_path -c my-config.toml
 
 
 Project name and input path can also be specified in the configuration instead in which
@@ -29,7 +28,7 @@ case you can do
 
    python3 run.py -c config/my-config.toml
 
-If you have installed the package via :code:`pip` and want to integrate (parts of) the
+If you have installed the package and want to integrate (parts of) the
 pipeline into your own workflow, you can use individual components or integrate a
 :code:`Pipeline` object in your script.
 
