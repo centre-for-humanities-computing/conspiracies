@@ -31,7 +31,6 @@ class DocProcessingConfig(StepConfig):
 class ClusteringThresholds(BaseModel):
     min_cluster_size: int
     min_samples: int
-    min_topic_size: int
 
     @classmethod
     def estimate_from_n_triplets(cls, n_triplets: int):
@@ -39,7 +38,6 @@ class ClusteringThresholds(BaseModel):
         thresholds = cls(
             min_cluster_size=int(factor + 1),
             min_samples=int(factor + 1),
-            min_topic_size=int(factor * 2 + 1),
         )
         return thresholds
 

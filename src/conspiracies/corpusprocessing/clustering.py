@@ -1,9 +1,10 @@
 from collections import defaultdict
-from typing import List, Callable, Any, Hashable
+from typing import List, Callable, Any, Hashable, Dict
 
 import networkx
 import numpy as np
 from hdbscan import HDBSCAN
+from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import StandardScaler
 from umap import UMAP
@@ -12,10 +13,32 @@ from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.corpusprocessing.triplet import TripletField, Triplet
 
 
-class Clustering:
+class Mappings(BaseModel):
+    entities: Dict[str, str]
+    predicates: Dict[str, str]
 
-    def __init__(self, language: str, embedding_model: str = None):
+    def map_entity(self, entity: str):
+        return self.entities[entity] if entity in self.entities else entity
+
+    def map_predicate(self, predicate: str):
+        return self.predicates[predicate] if predicate in self.predicates else predicate
+
+
+class Clustering:
+    def __init__(
+        self,
+        language: str,
+        n_dimensions: int = None,
+        n_neighbors: int = 15,
+        min_cluster_size: int = 5,
+        min_samples: int = 3,
+        embedding_model: str = None,
+    ):
         self.language = language
+        self.n_dimensions = n_dimensions
+        self.n_neighbors = n_neighbors
+        self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
         self._embedding_model = embedding_model
 
     def _get_embedding_model(self):
@@ -65,23 +88,19 @@ class Clustering:
     def _cluster(
         self,
         fields: List[TripletField],
-        n_dimensions: int = None,
-        n_neighbors: int = 15,
-        min_cluster_size: int = 5,
-        min_samples: int = 3,
     ):
         model = self._get_embedding_model()
         embeddings = model.encode([field.text for field in fields])
         embeddings = StandardScaler().fit_transform(embeddings)
 
-        if n_dimensions is not None:
+        if self.n_dimensions is not None:
             print("Reducing embedding space")
-            reducer = UMAP(n_components=n_dimensions, n_neighbors=n_neighbors)
+            reducer = UMAP(n_components=self.n_dimensions, n_neighbors=self.n_neighbors)
             embeddings = reducer.fit_transform(embeddings)
 
         hdbscan_model = HDBSCAN(
-            min_cluster_size=min_cluster_size,
-            min_samples=min_samples,
+            min_cluster_size=self.min_cluster_size,
+            min_samples=self.min_samples,
         )
         hdbscan_model.fit(embeddings)
 
@@ -92,6 +111,7 @@ class Clustering:
             hdbscan_model.labels_,
             hdbscan_model.probabilities_,
         ):
+            # skip noise and low confidence
             if label == -1 or probability < 0.1:
                 continue
             clusters[label].append((field, embedding))
@@ -114,13 +134,14 @@ class Clustering:
         return [[t[0] for t in cluster] for cluster in merged]
 
     @staticmethod
-    def _mapping_to_first_member(clusters: List[List[TripletField]]):
+    def _mapping_to_first_member(clusters: List[List[TripletField]]) -> Dict[str, str]:
         return {
-            cluster[0].text: list(set(member.text for member in cluster))
+            member: cluster[0].text
             for cluster in clusters
+            for member in set(member.text for member in cluster)
         }
 
-    def create_mappings(self, triplets: List[Triplet]):
+    def create_mappings(self, triplets: List[Triplet]) -> Mappings:
         subjects = [triplet.subject for triplet in triplets]
         objects = [triplet.object for triplet in triplets]
         entities = subjects + objects
@@ -129,9 +150,9 @@ class Clustering:
         entity_clusters = self._cluster(entities)
         predicate_clusters = self._cluster(predicates)
 
-        mappings = {
-            "entities": self._mapping_to_first_member(entity_clusters),
-            "predicates": self._mapping_to_first_member(predicate_clusters),
-        }
+        mappings = Mappings(
+            entities=self._mapping_to_first_member(entity_clusters),
+            predicates=self._mapping_to_first_member(predicate_clusters),
+        )
 
         return mappings

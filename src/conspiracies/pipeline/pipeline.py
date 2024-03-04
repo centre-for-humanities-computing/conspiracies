@@ -3,11 +3,12 @@ import os
 
 
 from conspiracies.common.fileutils import iter_lines_of_files
+from conspiracies.corpusprocessing.aggregation import TripletAggregator
 from conspiracies.corpusprocessing.clustering import Clustering
 from conspiracies.corpusprocessing.triplet import Triplet
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig
+from conspiracies.pipeline.config import PipelineConfig, ClusteringThresholds
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -94,46 +95,26 @@ class Pipeline:
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
         Triplet.write_jsonl(f"{self.output_path}/triplets.ndjson", triplets)
 
-        clustering = Clustering(self.config.base.language)
+        if self.config.corpusprocessing.thresholds is None:
+            thresholds = ClusteringThresholds.estimate_from_n_triplets(len(triplets))
+        else:
+            thresholds = self.config.corpusprocessing.thresholds
+        clustering = Clustering(
+            language=self.config.base.language,
+            n_dimensions=self.config.corpusprocessing.dimensions,
+            n_neighbors=self.config.corpusprocessing.n_neighbors,
+            min_cluster_size=thresholds.min_cluster_size,
+            min_samples=thresholds.min_samples,
+        )
         mappings = clustering.create_mappings(triplets)
         with open(f"{self.output_path}/mappings.json", "w") as out:
-            json.dump(mappings, out)
+            out.write(mappings.json())
 
-        # docs = (
-        #     json.loads(line)
-        #     for line in iter_lines_of_files(
-        #         f"{self.output_path}/annotations.ndjson",
-        #     )
-        # )
-        # n_triplets = 0
-        # with open(
-        #     f"{self.output_path}/triplets.csv",
-        #     "w+",
-        # ) as out:
-        #     for doc in docs:
-        #         for triplet in doc["semantic_triplets"]:
-        #             triplet_fields = [
-        #                 triplet[field]["text"]
-        #                 for field in ("subject", "predicate", "object")
-        #             ]
-        #             print(", ".join(triplet_fields), file=out)
-        #             n_triplets += 1
-        #
-        # if self.config.corpusprocessing.thresholds is None:
-        #     thresholds = ClusteringThresholds.estimate_from_n_triplets(n_triplets)
-        # else:
-        #     thresholds = self.config.corpusprocessing.thresholds
-        #
-        # umap_hdb.main(
-        #     f"{self.output_path}/triplets.csv",
-        #     self.config.base.language,
-        #     dim=self.config.corpusprocessing.dimensions,
-        #     n_neighbors=self.config.corpusprocessing.n_neighbors,
-        #     save=f"{self.output_path}/nodes_edges.json",
-        #     min_cluster_size=thresholds.min_cluster_size,
-        #     min_topic_size=thresholds.min_topic_size,
-        #     min_samples=thresholds.min_samples,
-        # )
+        aggregator = TripletAggregator(mappings=mappings)
+        triplet_stats = aggregator.aggregate(triplets)
+        with open(f"{self.output_path}/triplet_stats.json", "w") as out:
+            json.dump(triplet_stats, out)
+
         # nodes, edges = get_nodes_edges(
         #     f"{self.output_path}/",
         #     "nodes_edges.json",
