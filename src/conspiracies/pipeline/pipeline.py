@@ -1,7 +1,6 @@
 import json
 import os
 
-
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.corpusprocessing.aggregation import TripletAggregator
 from conspiracies.corpusprocessing.clustering import Clustering
@@ -14,6 +13,10 @@ from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
 from conspiracies.preprocessing.text import TextFilePreprocessor
 from conspiracies.preprocessing.tweets import TweetsPreprocessor
+from conspiracies.visualization.graph import (
+    transform_triplets_to_graph_data,
+    create_network_graph,
+)
 
 
 class Pipeline:
@@ -113,25 +116,20 @@ class Pipeline:
         aggregator = TripletAggregator(mappings=mappings)
         triplet_stats = aggregator.aggregate(triplets)
         with open(f"{self.output_path}/triplet_stats.json", "w") as out:
-            json.dump(triplet_stats, out)
+            json.dump(triplet_stats.entries(), out)
 
-        # nodes, edges = get_nodes_edges(
-        #     f"{self.output_path}/",
-        #     "nodes_edges.json",
-        # )
-        # graph = create_network_graph(
-        #     nodes,
-        #     edges,
-        #     save=f"{self.output_path}/graph",
-        # )
-        # graph_data = {
-        #     "nodes": [
-        #         {"label": node[0], "data": node[1]} for node in graph.nodes.data()
-        #     ],
-        #     "edges": [
-        #         {"from ": edge[0], "to": edge[1], "data": edge[2]}
-        #         for edge in graph.edges.data()
-        #     ],
-        # }
-        # with open(f"{self.output_path}/graph.json", "w+") as out:
-        #     json.dump(graph_data, out)
+        nodes, edges = transform_triplets_to_graph_data(triplet_stats)
+        graph_data = {
+            "nodes": [{"label": node[0], "weight": node[1]} for node in nodes],
+            "edges": [
+                {"from ": edge[0], "to": edge[1], "weight": edge[2]} for edge in edges
+            ],
+        }
+        with open(f"{self.output_path}/graph.json", "w+") as out:
+            json.dump(graph_data, out)
+
+        create_network_graph(
+            nodes,
+            edges,
+            save=f"{self.output_path}/graph.png",
+        )

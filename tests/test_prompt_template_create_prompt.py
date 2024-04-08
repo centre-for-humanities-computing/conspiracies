@@ -16,7 +16,6 @@ from .test_data.prompt_data import (
     XMLStylePromptTemplate_expected_prompt,
     chatGPTPromptTemplate_expected_prompt,
     load_examples,
-    test_tweet,
 )
 
 
