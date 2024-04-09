@@ -139,6 +139,9 @@ dmypy.json
 # MacOS
 .DS_Store
 
+# visualizer
+inspector/visualizer/node_modules
+
 # data 
 data/
 *extracted_triplets*

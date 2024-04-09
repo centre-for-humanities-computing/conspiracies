@@ -77,6 +77,10 @@ class TripletAggregator:
         entity_counts = Counter(
             entity for triplet in mapped_triplets for entity in (triplet[0], triplet[2])
         )
+        # entity_distinct_triplets = Counter(
+        #     entity for triplet in set(mapped_triplets) for entity in (triplet[0], triplet[2])
+        # )
+
         predicate_counts = Counter(triplet[1] for triplet in mapped_triplets)
         return TripletStats(
             triplets=StatsDict.from_counter(triplet_counts),

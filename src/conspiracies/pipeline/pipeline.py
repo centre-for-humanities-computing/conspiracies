@@ -122,7 +122,7 @@ class Pipeline:
         graph_data = {
             "nodes": [{"label": node[0], "weight": node[1]} for node in nodes],
             "edges": [
-                {"from ": edge[0], "to": edge[1], "weight": edge[2]} for edge in edges
+                {"from": edge[0], "to": edge[1], "weight": edge[2]} for edge in edges
             ],
         }
         with open(f"{self.output_path}/graph.json", "w+") as out:

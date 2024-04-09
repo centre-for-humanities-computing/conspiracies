@@ -22,6 +22,7 @@ class Triplet(BaseModel):
     subject: TripletField
     predicate: TripletField
     object: TripletField
+    doc: Optional[str]
 
     def fields(self):
         return self.subject, self.predicate, self.object
@@ -52,9 +53,9 @@ class Triplet(BaseModel):
     @classmethod
     def from_annotated_docs(cls, path: str) -> Iterator["Triplet"]:
         return (
-            cls(**triplet_data)
-            for line in iter_lines_of_files(path)
-            for triplet_data in json.loads(line)["semantic_triplets"]
+            cls(**triplet_data, doc=json_data["id"])
+            for json_data in (json.loads(line) for line in iter_lines_of_files(path))
+            for triplet_data in json_data["semantic_triplets"]
         )
 
     @staticmethod
