@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from spacy.tokens import Doc
 
-from conspiracies.docprocessing.relationextraction.gptprompting import PromptTemplate
+from conspiracies.docprocessing.relationextraction.gptprompting.prompt_templates import PromptTemplate
 from conspiracies.registry import registry
 
 

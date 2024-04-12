@@ -3,3 +3,7 @@ from conspiracies.docprocessing.relationextraction.data_classes import (
     StringTriplet,  # noqa F401
     DocTriplets,  # noqa F401
 )
+
+from conspiracies.docprocessing.relationextraction.gptprompting.prompt_relation_component import (
+    create_prompt_relation_extraction_component
+)
