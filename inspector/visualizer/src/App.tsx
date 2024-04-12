@@ -2,21 +2,26 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Outlet, Link } from "react-router-dom";
 import { GraphComp } from "./graph/GraphComp";
 import {
+  FileGraphService,
   GraphService,
   SampleGraphService,
   sampleGraphData,
 } from "./graph/GraphService";
+import FileUploadComponent from "./datasources/FileUploadComp";
+import { GraphData } from "react-vis-graph-wrapper";
+import { useState } from "react";
+import { GraphViewer } from "./graph/GraphViewer";
 
 function NavBar() {
   return (
     <div className="navbar">
-      <Link to={"/test"}>Test</Link>
+      <Link to={"/graph"}>Graph Test</Link>
     </div>
   );
 }
 
 export function App() {
-  let graphService: GraphService = new SampleGraphService();
+
 
   return (
     <BrowserRouter>
@@ -25,13 +30,13 @@ export function App() {
           path="/"
           element={
             <>
-              <NavBar /> <Outlet />
+              <NavBar /> <Outlet /> 
             </>
           }
         >
           <Route
-            path="test"
-            element={<GraphComp graphData={graphService.getGraph()} />}
+            path="graph"
+            element={<GraphViewer />}
           />
         </Route>
       </Routes>

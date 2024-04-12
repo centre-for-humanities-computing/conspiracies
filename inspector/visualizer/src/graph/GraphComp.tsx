@@ -1,22 +1,19 @@
-import Graph, { GraphData } from "react-graph-vis";
+import Graph, { GraphData, GraphEvents } from "react-vis-graph-wrapper";
 import "./graph.css";
-import { FileGraphService, SampleGraphService } from "./GraphService";
 
 interface GraphCompProps {
   graphData: GraphData;
+  events?: GraphEvents;
 }
 
-export function GraphComp(props: GraphCompProps) {
-  let { graphData } = props;
+export const GraphComp: React.FC<GraphCompProps> = ({
+  graphData, events,
+}: GraphCompProps) => {
   var options = {};
-
-  var events = {};
-
-  let service = new SampleGraphService();
 
   return (
     <div className="graph-container">
-      <Graph graph={service.getGraph()} options={options} events={events} />
+      <Graph graph={graphData} options={options} events={events} />
     </div>
   );
-}
+};

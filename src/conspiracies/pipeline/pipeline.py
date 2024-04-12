@@ -119,10 +119,15 @@ class Pipeline:
             json.dump(triplet_stats.entries(), out)
 
         nodes, edges = transform_triplets_to_graph_data(triplet_stats)
+
         graph_data = {
-            "nodes": [{"label": node[0], "weight": node[1]} for node in nodes],
+            "nodes": [
+                {"id": label, "label": label, "stats": stats}
+                for label, stats in triplet_stats.entities.items()
+            ],
             "edges": [
-                {"from": edge[0], "to": edge[1], "weight": edge[2]} for edge in edges
+                {"from": subj, "to": obj, "label": pred, "stats": stats}
+                for (subj, pred, obj), stats in triplet_stats.triplets.items()
             ],
         }
         with open(f"{self.output_path}/graph.json", "w+") as out:
