@@ -140,7 +140,7 @@ dmypy.json
 .DS_Store
 
 # visualizer
-inspector/visualizer/node_modules
+visualizer/node_modules
 
 # data 
 data/
