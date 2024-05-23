@@ -1,37 +1,27 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route, Outlet, Link } from "react-router-dom";
-import { GraphViewer } from "./graph/GraphViewer";
+import {BrowserRouter, Link, Route, Routes} from "react-router-dom";
+import {GraphViewer} from "./graph/GraphViewer";
 
 function NavBar() {
-  return (
-    <div className="navbar">
-      <Link to={"/graph"}>Graph Viewer</Link>
-    </div>
-  );
+    return (
+        <div className="navbar">
+            <Link to={"/graph"}>Graph Viewer</Link>
+        </div>
+    );
 }
 
 export function App() {
-
-
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <NavBar /> <Outlet /> 
-            </>
-          }
-        >
-          <Route
-            path="graph"
-            element={<GraphViewer />}
-          />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+    // Create actual routes if/when more functionality is added to the application
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route
+                    path="/"
+                    element={<GraphViewer/>}
+                />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
