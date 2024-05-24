@@ -1,5 +1,7 @@
 import json
 import os
+from pathlib import Path
+
 
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.corpusprocessing.aggregation import TripletAggregator
@@ -22,10 +24,10 @@ from conspiracies.visualization.graph import (
 class Pipeline:
     def __init__(self, config: PipelineConfig):
         self.project_name = config.base.project_name
-        self.input_path = config.preprocessing.input_path
+        self.input_path = Path(config.preprocessing.input_path)
         self.config = config
         print("Initialized Pipeline with config:", config)
-        self.output_path = os.path.join(self.config.base.output_root, self.project_name)
+        self.output_path = Path(self.config.base.output_root, self.project_name)
         os.makedirs(self.output_path, exist_ok=True)
 
     def run(self):
@@ -69,7 +71,7 @@ class Pipeline:
         preprocessor = self._get_preprocessor()
         preprocessor.preprocess_docs(
             self.input_path,
-            f"{self.output_path}/preprocessed.ndjson",
+            self.output_path / "preprocessed.ndjson",
             n_docs=self.config.preprocessing.n_docs,
         )
 
@@ -78,32 +80,34 @@ class Pipeline:
             language=self.config.base.language,
             batch_size=self.config.docprocessing.batch_size,
             triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
+            prefer_gpu_for_coref=self.config.docprocessing.prefer_gpu_for_coref,
         )
 
     def docprocessing(self, continue_from_last=False):
         docprocessor = self._get_docprocessor()
         docprocessor.process_docs(
             (
-                json.loads(line, object_hook=Document)
+                json.loads(line, object_hook=lambda d: Document(**d))
                 for line in iter_lines_of_files(
-                    f"{self.output_path}/preprocessed.ndjson",
+                    self.output_path / "preprocessed.ndjson",
                 )
             ),
-            f"{self.output_path}/annotations.ndjson",
+            self.output_path / "annotations.ndjson",
             continue_from_last=continue_from_last,
         )
 
     def corpusprocessing(self):
-from pathlib import Path
-        output_path = Path(self.output_path) # not needed it it already is a path
-        triplets = Triplet.from_annotated_docs( output_path / "annotations.ndjson") 
+        # TODO: make into logging messages or progress bars instead
+        print("Collecting triplets.")
+        triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
-        Triplet.write_jsonl(f"{self.output_path}/triplets.ndjson", triplets)
+        Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
 
         if self.config.corpusprocessing.thresholds is None:
             thresholds = ClusteringThresholds.estimate_from_n_triplets(len(triplets))
         else:
             thresholds = self.config.corpusprocessing.thresholds
+        print("Clustering entities and predicates to create mappings.")
         clustering = Clustering(
             language=self.config.base.language,
             n_dimensions=self.config.corpusprocessing.dimensions,
@@ -112,16 +116,17 @@ from pathlib import Path
             min_samples=thresholds.min_samples,
         )
         mappings = clustering.create_mappings(triplets)
-        with open(f"{self.output_path}/mappings.json", "w") as out:
+        with open(self.output_path / "mappings.json", "w") as out:
             out.write(mappings.json())
 
+        print("Aggregating triplets, entities and predicates and outputting stats.")
         aggregator = TripletAggregator(mappings=mappings)
         triplet_stats = aggregator.aggregate(triplets)
-        with open(f"{self.output_path}/triplet_stats.json", "w") as out:
+        with open(self.output_path / "triplet_stats.json", "w") as out:
             json.dump(triplet_stats.entries(), out)
 
+        print("Creating graph data.")
         nodes, edges = transform_triplets_to_graph_data(triplet_stats)
-
         graph_data = {
             "nodes": [
                 {"id": label, "label": label, "stats": stats}
@@ -132,11 +137,11 @@ from pathlib import Path
                 for (subj, pred, obj), stats in triplet_stats.triplets.items()
             ],
         }
-        with open(f"{self.output_path}/graph.json", "w+") as out:
+        with open(self.output_path / "graph.json", "w+") as out:
             json.dump(graph_data, out)
 
         create_network_graph(
             nodes,
             edges,
-            save=f"{self.output_path}/graph.png",
+            save=self.output_path / "graph.png",
         )

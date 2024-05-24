@@ -1,7 +1,9 @@
-import os.path
+import os
+from pathlib import Path
 from typing import Iterable
 
 import spacy
+import torch
 from jsonlines import jsonlines
 from tqdm import tqdm
 
@@ -14,7 +16,14 @@ class DocProcessor:
     def _build_coref_pipeline(self):
         nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
-        nlp_coref.add_pipe("allennlp_coref")
+        nlp_coref.add_pipe(
+            "allennlp_coref",
+            config={
+                "device": (
+                    0 if self.prefer_gpu_for_coref and torch.cuda.is_available() else -1
+                ),
+            },
+        )
 
         def warn_error(proc_name, proc, docs, e):
             print(
@@ -76,9 +85,11 @@ class DocProcessor:
         language="da",
         batch_size=25,
         triplet_extraction_method="multi2oie",
+        prefer_gpu_for_coref: bool = False,
     ):
         self.language = language
         self.batch_size = batch_size
+        self.prefer_gpu_for_coref = prefer_gpu_for_coref
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
@@ -86,7 +97,7 @@ class DocProcessor:
     def process_docs(
         self,
         docs: Iterable[Document],
-        output_path: str,
+        output_path: Path,
         continue_from_last=False,
     ):
         if continue_from_last and os.path.exists(output_path):

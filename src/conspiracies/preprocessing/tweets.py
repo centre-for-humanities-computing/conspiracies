@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 from typing import Iterable
 
 from conspiracies.common.fileutils import iter_lines_of_files
@@ -21,7 +22,7 @@ class TweetsPreprocessor(Preprocessor):
         super().__init__(metadata_fields=metadata_fields)
         self.context_length = context_length
 
-    def _do_preprocess_docs(self, glob_pattern: str):
+    def _do_preprocess_docs(self, glob_pattern: str | Path):
         lines = iter_lines_of_files(glob_pattern)
         tweets = [json.loads(line) for line in lines]
 

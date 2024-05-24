@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import networkx as nx
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -77,13 +79,14 @@ def create_network_graph(
     node_color: str = "#146D25",
     edge_color: str = "#54A463",
     fig_size: (int, int) = (10, 10),
-    save: Optional[str] = None,
+    save: Optional[str | Path] = None,
 ):
     """Creates and displays a network graph based on provided nodes and edges,
     with customizable visual attributes.
 
     Parameters:
-    - node_list: List of nodes, where each node can be a string or a tuple of (node identifier, float) representing the node and its size factor.
+    - node_list: List of nodes, where each node can be a string or a tuple of (node identifier, float) representing the
+    node and its size factor.
     - edge_list: List of edges, where each edge is a tuple of (source node, target node, optional weight factor).
     - node_size_scale: Tuple specifying the minimum and maximum size of nodes.
     - edge_weight_scale: Tuple specifying the scale for edge widths.

@@ -26,6 +26,7 @@ class DocProcessingConfig(StepConfig):
     batch_size: int = 25
     continue_from_last: bool = True
     triplet_extraction_method: str = "multi2oie"
+    prefer_gpu_for_coref: bool = False
 
 
 class ClusteringThresholds(BaseModel):

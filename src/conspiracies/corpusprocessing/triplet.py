@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Optional, Set, Iterator, Iterable, List
 
 from jsonlines import jsonlines
@@ -51,7 +52,7 @@ class Triplet(BaseModel):
         ]
 
     @classmethod
-    def from_annotated_docs(cls, path: str) -> Iterator["Triplet"]:
+    def from_annotated_docs(cls, path: Path) -> Iterator["Triplet"]:
         return (
             cls(**triplet_data, doc=json_data["id"])
             for json_data in (json.loads(line) for line in iter_lines_of_files(path))
@@ -59,6 +60,6 @@ class Triplet(BaseModel):
         )
 
     @staticmethod
-    def write_jsonl(path: str, triplets: Iterable["Triplet"]):
+    def write_jsonl(path: str | Path, triplets: Iterable["Triplet"]):
         with jsonlines.open(path, "w") as out:
-            out.write_all(map(Triplet.dict, triplets))
+            out.write_all(map(lambda triplet: triplet.dict(), triplets))
