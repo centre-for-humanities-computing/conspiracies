@@ -1,9 +1,10 @@
 import glob
 import logging
 from pathlib import Path
+from typing import Union
 
 
-def iter_lines_of_files(glob_pattern: str | Path):
+def iter_lines_of_files(glob_pattern: Union[str, Path]):
     if isinstance(glob_pattern, Path):
         glob_pattern = glob_pattern.as_posix()
     files = glob.glob(glob_pattern, recursive=True)

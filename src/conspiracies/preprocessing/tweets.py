@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.document import Document
@@ -22,7 +22,7 @@ class TweetsPreprocessor(Preprocessor):
         super().__init__(metadata_fields=metadata_fields)
         self.context_length = context_length
 
-    def _do_preprocess_docs(self, glob_pattern: str | Path):
+    def _do_preprocess_docs(self, glob_pattern: Union[str, Path]) -> Iterable[str]:
         lines = iter_lines_of_files(glob_pattern)
         tweets = [json.loads(line) for line in lines]
 

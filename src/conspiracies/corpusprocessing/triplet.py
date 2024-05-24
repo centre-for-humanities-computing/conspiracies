@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Optional, Set, Iterator, Iterable, List
+from typing import Optional, Set, Iterator, Iterable, List, Union
 
 from jsonlines import jsonlines
 from pydantic import BaseModel
@@ -60,6 +60,6 @@ class Triplet(BaseModel):
         )
 
     @staticmethod
-    def write_jsonl(path: str | Path, triplets: Iterable["Triplet"]):
+    def write_jsonl(path: Union[str, Path], triplets: Iterable["Triplet"]):
         with jsonlines.open(path, "w") as out:
             out.write_all(map(lambda triplet: triplet.dict(), triplets))

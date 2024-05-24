@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Union
 
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.document import Document
@@ -44,6 +44,6 @@ class CsvPreprocessor(Preprocessor):
                 metadata=metadata,
             )
 
-    def _do_preprocess_docs(self, input_path: str | Path) -> Iterator[str]:
+    def _do_preprocess_docs(self, input_path: Union[str, Path]) -> Iterator[str]:
         lines = iter_lines_of_files(input_path)
         return self._read_lines(lines)
