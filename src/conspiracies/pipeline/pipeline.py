@@ -94,7 +94,9 @@ class Pipeline:
         )
 
     def corpusprocessing(self):
-        triplets = Triplet.from_annotated_docs(f"{self.output_path}/annotations.ndjson")
+from pathlib import Path
+        output_path = Path(self.output_path) # not needed it it already is a path
+        triplets = Triplet.from_annotated_docs( output_path / "annotations.ndjson") 
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
         Triplet.write_jsonl(f"{self.output_path}/triplets.ndjson", triplets)
 
