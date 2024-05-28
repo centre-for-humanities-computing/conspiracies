@@ -1,11 +1,11 @@
-import {GraphData, Node, Edge} from "react-vis-graph-wrapper";
+import {Edge, GraphData, Node} from "react-vis-graph-wrapper";
 
 export interface Stats {
     frequency: number;
     norm_frequency?: number;
     docs?: string[];
-    first_occurrence?: string;
-    last_occurrence?: string;
+    first_occurrence?: Date;
+    last_occurrence?: Date;
     alt_labels?: string[];
 }
 
@@ -25,19 +25,37 @@ export interface EnrichedGraphData extends GraphData {
 export class GraphFilter {
     minimumNodeFrequency: number;
     minimumEdgeFrequency: number;
+    earliestDate?: Date;
+    latestDate?: Date;
     showUnconnectedNodes: boolean = true;
 
     constructor(minimumNodeFrequency: number = 1, minimumEdgeFrequency: number = 1) {
         this.minimumNodeFrequency = minimumNodeFrequency;
         this.minimumEdgeFrequency = minimumEdgeFrequency;
     }
-
-
 }
+
+function hasDateOverlap(node: EnrichedNode, filter: GraphFilter): boolean {
+    if (!node.stats.first_occurrence || !node.stats.last_occurrence) {
+        return true;
+    }
+    const first = new Date(node.stats.first_occurrence);
+    const last = new Date(node.stats.last_occurrence);
+    const afterEarliestDate = !filter.earliestDate
+        || filter.earliestDate < first
+        || filter.earliestDate < last;
+
+    const beforeLatestDate = !filter.latestDate
+        || filter.latestDate > first || filter.latestDate > last;
+
+    return afterEarliestDate && beforeLatestDate;
+}
+
 
 export function filter(filter: GraphFilter, graphData: EnrichedGraphData): EnrichedGraphData {
     let nodes = graphData.nodes.filter((node: EnrichedNode) =>
         node.stats.frequency >= filter.minimumNodeFrequency
+        && hasDateOverlap(node, filter)
     );
     let filteredNodes = new Set(nodes.map(node => node.id));
     let edges = graphData.edges.filter((edge: EnrichedEdge) =>

@@ -121,7 +121,7 @@ export const GraphViewer: React.FC = () => {
 
             </div>
             <div className="graph-container">
-                {altLabelsOfSelectedNode &&
+                {altLabelsOfSelectedNode && altLabelsOfSelectedNode.length > 0 &&
                     <div className={"alt-labels"}>
                         <b>Alternative Labels</b>
                         <hr/>
