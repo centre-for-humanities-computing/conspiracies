@@ -12,13 +12,26 @@ from conspiracies.docprocessing.relationextraction.gptprompting import (
     DocTriplets,
     SpanTriplet,
 )
+from conspiracies.document import Document
 
 
-def _doc_to_json(doc: Union[Doc, Tuple[Doc, str]], include_span_heads=True):
+def _doc_to_json(
+    doc: Union[Doc, Tuple[Doc, Union[str, Document]]],
+    include_span_heads=True,
+):
     if isinstance(doc, Tuple):
-        doc, id_ = doc
+        if isinstance(doc[1], str):
+            doc, id_ = doc
+            timestamp = None
+        elif isinstance(doc[1], Document):
+            doc, src_doc = doc
+            id_ = src_doc.id
+            timestamp = src_doc.timestamp.isoformat()
+        else:
+            raise TypeError(f"Unexpected input type {type(doc[1])}")
     else:
         id_ = None
+        timestamp = None
     if Doc.has_extension("relation_triplets"):
         triplets = doc._.relation_triplets
     else:
@@ -26,6 +39,8 @@ def _doc_to_json(doc: Union[Doc, Tuple[Doc, str]], include_span_heads=True):
     json = doc.to_json()
     if id_ is not None:
         json["id"] = id_
+    if timestamp is not None:
+        json["timestamp"] = timestamp
     json["semantic_triplets"] = [
         triplet.to_dict(include_doc=False, include_span_heads=include_span_heads)
         for triplet in triplets
@@ -46,7 +61,7 @@ def _doc_from_json(json: dict, nlp: Language) -> Doc:
 
 
 def docs_to_jsonl(
-    docs: Iterable[Union[Doc, Tuple[Doc, str]]],
+    docs: Iterable[Union[Doc, Tuple[Doc, Union[str, Document]]]],
     path: Union[Path, str],
     append=False,
     include_span_heads=True,

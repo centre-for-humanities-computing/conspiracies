@@ -32,7 +32,14 @@ class InfoMediaPreprocessor(Preprocessor):
         metadata = {k: obj[k] for k in InfoMediaPreprocessor.METADATA_KEYS}
         text = self.create_text(obj)
 
-        return Document(id=doc_id, metadata=metadata, text=text, context=None)
+        # TODO: get timestamp from metadata
+        return Document(
+            id=doc_id,
+            metadata=metadata,
+            text=text,
+            context=None,
+            timestamp=None,
+        )
 
     @staticmethod
     def create_text(doc_obj: dict):

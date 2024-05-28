@@ -106,20 +106,20 @@ class DocProcessor:
                     annotated_doc["id"] for annotated_doc in annotated_docs
                 }
             print(f"Skipping {len(already_processed)} processed docs.")
-            docs = (doc for doc in docs if doc["id"] not in already_processed)
+            docs = (doc for doc in docs if doc.id not in already_processed)
 
         # The coreference pipeline tends to choke on too large batches because of an
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
-            ((text_with_context(doc), doc["id"]) for doc in docs),
+            ((text_with_context(src_doc), src_doc) for src_doc in docs),
             batch_size=self.batch_size,
             as_tuples=True,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
             (
-                (remove_context(doc._.resolve_coref), id_)
-                for doc, id_ in coref_resolved_docs
+                (remove_context(doc._.resolve_coref), src_doc)
+                for doc, src_doc in coref_resolved_docs
             ),
             batch_size=self.batch_size,
             as_tuples=True,

@@ -44,4 +44,11 @@ class TweetsPreprocessor(Preprocessor):
             metadata = {k: v for k, v in tweet.items() if k != "text"}
             text = tweet["text"]
             context = "\n".join(t["text"] for t in context_tweets)
-            yield Document(id=doc_id, metadata=metadata, text=text, context=context)
+            # TODO: get timestamp from metadata
+            yield Document(
+                id=doc_id,
+                metadata=metadata,
+                text=text,
+                context=context,
+                timestamp=None,
+            )

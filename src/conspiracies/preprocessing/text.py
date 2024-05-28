@@ -22,4 +22,5 @@ class TextFilePreprocessor(Preprocessor):
                 text=text,
                 metadata={},
                 context=None,
+                timestamp=None,
             )

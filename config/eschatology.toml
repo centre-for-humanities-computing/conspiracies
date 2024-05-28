@@ -8,6 +8,7 @@ doc_type = "csv"
 [preprocessing.extra]
 id_column = "id"
 text_column = "body"
+timestamp_column = "timestamp"
 
 [docprocessing]
 enabled = true

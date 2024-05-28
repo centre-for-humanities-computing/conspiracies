@@ -1,8 +1,8 @@
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Set, Iterator, Iterable, List, Union
 
-from jsonlines import jsonlines
 from pydantic import BaseModel
 from stop_words import get_stop_words
 
@@ -24,6 +24,7 @@ class Triplet(BaseModel):
     predicate: TripletField
     object: TripletField
     doc: Optional[str]
+    timestamp: Optional[datetime]
 
     def fields(self):
         return self.subject, self.predicate, self.object
@@ -54,12 +55,16 @@ class Triplet(BaseModel):
     @classmethod
     def from_annotated_docs(cls, path: Path) -> Iterator["Triplet"]:
         return (
-            cls(**triplet_data, doc=json_data["id"])
+            cls(
+                **triplet_data,
+                doc=json_data.get("id", None),
+                timestamp=json_data.get("timestamp", None),
+            )
             for json_data in (json.loads(line) for line in iter_lines_of_files(path))
             for triplet_data in json_data["semantic_triplets"]
         )
 
     @staticmethod
     def write_jsonl(path: Union[str, Path], triplets: Iterable["Triplet"]):
-        with jsonlines.open(path, "w") as out:
-            out.write_all(map(lambda triplet: triplet.dict(), triplets))
+        with open(path, "w") as out:
+            print(*(t.json() for t in triplets), file=out, sep="\n")

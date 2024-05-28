@@ -20,6 +20,7 @@ def docs() -> Iterator[Document]:
                     "two": "something else",
                 },
                 context=None,
+                timestamp=None,
             ),
         )
     return (d for d in docs)
@@ -30,7 +31,7 @@ def test_metadata_filtering_removes_field(docs):
     filtered = list(preprocessor._filter_metadata(docs))
     assert len(filtered) == 2
     for doc in filtered:
-        assert "one" in doc["metadata"] and "two" not in doc["metadata"]
+        assert "one" in doc.metadata and "two" not in doc.metadata
 
 
 def test_metadata_filtering_retains_all(docs):
@@ -38,4 +39,4 @@ def test_metadata_filtering_retains_all(docs):
     filtered = list(preprocessor._filter_metadata(docs))
     assert len(filtered) == 2
     for doc in filtered:
-        assert all(key in doc["metadata"] for key in ("one", "two"))
+        assert all(key in doc.metadata for key in ("one", "two"))

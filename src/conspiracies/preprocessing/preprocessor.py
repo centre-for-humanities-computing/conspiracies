@@ -2,8 +2,6 @@ import logging
 from pathlib import Path
 from typing import Iterator, Iterable
 
-import ndjson
-
 from conspiracies.document import Document
 
 
@@ -28,7 +26,7 @@ class Preprocessor:
                 yield doc
 
         for doc in preprocessed_docs:
-            metadata = doc["metadata"]
+            metadata = doc.metadata
             for key in list(metadata.keys()):
                 if key not in self.metadata_fields:
                     del metadata[key]
@@ -39,10 +37,10 @@ class Preprocessor:
         preprocessed_docs: Iterator[Document],
     ) -> Iterator[Document]:
         for doc in preprocessed_docs:
-            if not doc["text"]:
+            if not doc.text:
                 logging.warning(
                     "Skipping doc with id '%s' because of empty text field",
-                    doc["id"],
+                    doc.id,
                 )
                 continue
             else:
@@ -54,5 +52,6 @@ class Preprocessor:
         if n_docs and n_docs > 0:
             validated = (d for i, d in enumerate(validated) if i < n_docs)
         metadata_filtered = self._filter_metadata(validated)
+
         with output_path.open("w+") as out_file:
-            ndjson.dump(metadata_filtered, out_file)
+            print(*(d.json() for d in metadata_filtered), file=out_file, sep="\n")
