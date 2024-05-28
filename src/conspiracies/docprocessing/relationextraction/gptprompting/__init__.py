@@ -3,6 +3,7 @@ from conspiracies.docprocessing.relationextraction.data_classes import (
     StringTriplet,  # noqa F401
     DocTriplets,  # noqa F401
 )
+
 from .prompt_templates import (  # noqa F401
     MarkdownPromptTemplate1,
     MarkdownPromptTemplate2,

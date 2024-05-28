@@ -7,8 +7,11 @@ import spacy
 from transformers import AutoTokenizer
 import argparse
 
+from conspiracies.preprocessing.wordpiece_length_normalization import (
+    wordpiece_length_normalization,
+)
+
 # Conspiracies
-from conspiracies.preproc import wordpiece_length_normalization
 from extract_utils import load_ndjson, write_txt
 
 

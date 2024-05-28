@@ -26,12 +26,12 @@ class DocProcessingConfig(StepConfig):
     batch_size: int = 25
     continue_from_last: bool = True
     triplet_extraction_method: str = "multi2oie"
+    prefer_gpu_for_coref: bool = False
 
 
 class ClusteringThresholds(BaseModel):
     min_cluster_size: int
     min_samples: int
-    min_topic_size: int
 
     @classmethod
     def estimate_from_n_triplets(cls, n_triplets: int):
@@ -39,7 +39,6 @@ class ClusteringThresholds(BaseModel):
         thresholds = cls(
             min_cluster_size=int(factor + 1),
             min_samples=int(factor + 1),
-            min_topic_size=int(factor * 2 + 1),
         )
         return thresholds
 

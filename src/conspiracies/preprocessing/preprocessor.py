@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Iterator, Iterable
 
 import ndjson
@@ -15,7 +16,7 @@ class Preprocessor:
         """
         self.metadata_fields = set(metadata_fields)
 
-    def _do_preprocess_docs(self, input_path: str) -> Iterator[Document]:
+    def _do_preprocess_docs(self, input_path: Path) -> Iterator[Document]:
         pass
 
     def _filter_metadata(
@@ -47,11 +48,11 @@ class Preprocessor:
             else:
                 yield doc
 
-    def preprocess_docs(self, input_path: str, output_path: str, n_docs: int = None):
+    def preprocess_docs(self, input_path: Path, output_path: Path, n_docs: int = None):
         preprocessed_docs = self._do_preprocess_docs(input_path)
         validated = self._validate_content(preprocessed_docs)
         if n_docs and n_docs > 0:
             validated = (d for i, d in enumerate(validated) if i < n_docs)
         metadata_filtered = self._filter_metadata(validated)
-        with open(output_path, "w+") as out_file:
+        with output_path.open("w+") as out_file:
             ndjson.dump(metadata_filtered, out_file)

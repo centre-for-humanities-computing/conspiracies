@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # write contests to ndjson
     with open(
         os.path.join(
-            f"tweet_threads_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() }_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson",
+            f"tweet_threads_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date()}_{datetime.datetime.strptime(args.start_date, '%Y-%m-%d').date() + datetime.timedelta(days=args.extra_days-1)}.ndjson",
         ),
         "w",
     ) as f:

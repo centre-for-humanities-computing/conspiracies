@@ -278,15 +278,14 @@ class SpanTriplet(BaseModel):
             data = self.span.doc.to_json()
         else:
             data = {}
-        data["semantic_triplets"] = self.dict()
-        data["semantic_triplets"]["subject"] = self.span_to_json(self.subject)
-        data["semantic_triplets"]["predicate"] = self.span_to_json(self.predicate)
-        data["semantic_triplets"]["object"] = self.span_to_json(self.object)
+        data["subject"] = self.span_to_json(self.subject)
+        data["predicate"] = self.span_to_json(self.predicate)
+        data["object"] = self.span_to_json(self.object)
         if include_span_heads and Span.has_extension("most_common_ancestor"):
             subject_head = self.subject._.most_common_ancestor.text
-            data["semantic_triplets"]["subject"]["head"] = subject_head
+            data["subject"]["head"] = subject_head
             object_head = self.object._.most_common_ancestor.text
-            data["semantic_triplets"]["object"]["head"] = object_head
+            data["object"]["head"] = object_head
 
         return data
 
@@ -315,12 +314,12 @@ class SpanTriplet(BaseModel):
     ):
         if doc is None:
             doc = Doc(nlp.vocab).from_json(data)  # type: ignore
-        subject = SpanTriplet.span_from_json(data["semantic_triplets"]["subject"], doc)
+        subject = SpanTriplet.span_from_json(data["subject"], doc)
         predicate = SpanTriplet.span_from_json(
-            data["semantic_triplets"]["predicate"],
+            data["predicate"],
             doc,
         )
-        object = SpanTriplet.span_from_json(data["semantic_triplets"]["object"], doc)
+        object = SpanTriplet.span_from_json(data["object"], doc)
         subject.label_ = "SUBJECT"
         predicate.label_ = "PREDICATE"
         object.label_ = "OBJECT"
