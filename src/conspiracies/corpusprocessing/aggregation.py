@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Optional,
     Any,
+    Mapping,
 )
 
 from pydantic import BaseModel
@@ -35,6 +36,7 @@ class StatsEntry(TypedDict):
     docs: Optional[list[str]]
     first_occurrence: Optional[datetime]
     last_occurrence: Optional[datetime]
+    alt_labels: Optional[list[str]]
 
 
 class StatsDict(Dict[str, StatsEntry]):
@@ -44,6 +46,7 @@ class StatsDict(Dict[str, StatsEntry]):
     def from_iterable(
         cls,
         generator: Iterable[Tuple[Any, Optional[str], Optional[datetime]]],
+        alt_labels: Mapping[str, list[str]] = None,
     ):
         counter = Counter()
         docs = defaultdict(set)
@@ -84,6 +87,9 @@ class StatsDict(Dict[str, StatsEntry]):
                         last_occurrence[key].isoformat()
                         if key in last_occurrence
                         else None
+                    ),
+                    alt_labels=(
+                        alt_labels[key] if alt_labels and key in alt_labels else None
                     ),
                 )
                 for key, value in counter.items()
@@ -148,9 +154,11 @@ class TripletAggregator:
                     (entity, t.doc, t.timestamp)
                     for t in triplets
                     for entity in [t.subject.text, t.object.text]
-                )
+                ),
+                self._mappings.entity_alt_labels(),
             ),
             predicates=StatsDict.from_iterable(
-                ((t.predicate.text, t.doc, t.timestamp) for t in triplets)
+                ((t.predicate.text, t.doc, t.timestamp) for t in triplets),
+                self._mappings.predicate_alt_labels(),
             ),
         )

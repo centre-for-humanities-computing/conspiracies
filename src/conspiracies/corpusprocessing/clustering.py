@@ -20,8 +20,20 @@ class Mappings(BaseModel):
     def map_entity(self, entity: str):
         return self.entities[entity] if entity in self.entities else entity
 
+    def entity_alt_labels(self):
+        alt_labels = defaultdict(list)
+        for entity, label in self.entities.items():
+            alt_labels[label].append(entity)
+        return alt_labels
+
     def map_predicate(self, predicate: str):
         return self.predicates[predicate] if predicate in self.predicates else predicate
+
+    def predicate_alt_labels(self):
+        alt_labels = defaultdict(list)
+        for predicate, label in self.predicates.items():
+            alt_labels[label].append(predicate)
+        return alt_labels
 
 
 class Clustering:
@@ -120,10 +132,12 @@ class Clustering:
             list(clusters.values()),
             get_combine_key=lambda t: t[0].text,
         )
-        merged = self._combine_clusters(
-            merged,
-            get_combine_key=lambda t: t[0].head,
-        )
+
+        # too risky with false positives from this
+        # merged = self._combine_clusters(
+        #     merged,
+        #     get_combine_key=lambda t: t[0].head,
+        # )
 
         # sort by how "prototypical" a member is in the cluster
         for cluster in merged:
