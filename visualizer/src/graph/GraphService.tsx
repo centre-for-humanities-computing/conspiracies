@@ -4,8 +4,8 @@ export interface Stats {
     frequency: number;
     norm_frequency?: number;
     docs?: string[];
-    first_occurrence?: Date;
-    last_occurrence?: Date;
+    first_occurrence?: string;
+    last_occurrence?: string;
     alt_labels?: string[];
 }
 
@@ -27,7 +27,7 @@ export class GraphFilter {
     minimumEdgeFrequency: number;
     earliestDate?: Date;
     latestDate?: Date;
-    showUnconnectedNodes: boolean = true;
+    showUnconnectedNodes: boolean = false;
 
     constructor(minimumNodeFrequency: number = 1, minimumEdgeFrequency: number = 1) {
         this.minimumNodeFrequency = minimumNodeFrequency;
@@ -84,11 +84,11 @@ export abstract class GraphService {
             .flatMap(edge => [edge.from!.toString(), edge.to!.toString()]))
     }
 
-    getAltLabels(nodeId: string): string[] | undefined {
+    getNode(nodeId: string): EnrichedNode | undefined {
         // highly inefficient linear search; overwrite for actual use
         for (let node of this.getGraph().nodes) {
             if (node.id === nodeId) {
-                return node.stats.alt_labels;
+                return node;
             }
         }
         return undefined;

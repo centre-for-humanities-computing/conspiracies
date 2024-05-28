@@ -24,12 +24,13 @@
     margin: 2px;
 }
 
-.alt-labels {
+.node-info {
     position: absolute;
     z-index: 3;
     background: white;
     border: solid 1px gray;
     font-size: small;
+    max-width: 250px;
     padding: 5px;
     margin: 2px;
 }
