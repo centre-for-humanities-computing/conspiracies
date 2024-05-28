@@ -2,6 +2,11 @@ import {GraphData, Node, Edge} from "react-vis-graph-wrapper";
 
 export interface Stats {
     frequency: number;
+    norm_frequency?: number;
+    docs?: string[];
+    first_occurrence?: string;
+    last_occurrence?: string;
+    alt_labels?: string[];
 }
 
 export interface EnrichedNode extends Node {
@@ -60,6 +65,17 @@ export abstract class GraphService {
         return new Set(this.getGraph().edges.filter(edge => edge.from === nodeId || edge.to === nodeId)
             .flatMap(edge => [edge.from!.toString(), edge.to!.toString()]))
     }
+
+    getAltLabels(nodeId: string): string[] | undefined {
+        // highly inefficient linear search; overwrite for actual use
+        for (let node of this.getGraph().nodes) {
+            if (node.id === nodeId) {
+                return node.stats.alt_labels;
+            }
+        }
+        return undefined;
+    }
+
 }
 
 

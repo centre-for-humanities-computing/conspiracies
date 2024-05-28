@@ -24,6 +24,17 @@
     margin: 2px;
 }
 
+.alt-labels {
+    position: absolute;
+    z-index: 3;
+    background: white;
+    border: solid 1px gray;
+    font-size: small;
+    padding: 5px;
+    margin: 2px;
+}
+
+
 .graph-container {
     height: 80vh;
     border: 1px inset;
