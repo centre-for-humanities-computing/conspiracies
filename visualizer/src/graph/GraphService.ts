@@ -70,6 +70,8 @@ export function filter(filter: GraphFilter, graphData: EnrichedGraphData): Enric
 }
 
 export abstract class GraphService {
+    private nodesMap: Map<string, EnrichedNode> | null = null;
+
     abstract getGraph(): EnrichedGraphData;
 
     getSubGraph(nodeIds: Set<string>): EnrichedGraphData {
@@ -85,6 +87,12 @@ export abstract class GraphService {
     }
 
     getNode(nodeId: string): EnrichedNode | undefined {
+        if (this.nodesMap === null) {
+            this.nodesMap = new Map(
+                this.getGraph().nodes.map(node => [node.id!.toString(), node])
+            )
+        }
+
         // highly inefficient linear search; overwrite for actual use
         for (let node of this.getGraph().nodes) {
             if (node.id === nodeId) {
