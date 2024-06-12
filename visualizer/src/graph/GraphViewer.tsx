@@ -1,7 +1,9 @@
 import React, {useEffect, useRef, useState} from "react";
 import {
     EnrichedGraphData,
-    FileGraphService, filter,
+    EnrichedNode,
+    FileGraphService,
+    filter,
     GraphFilter,
     GraphService,
     SampleGraphService,
@@ -10,8 +12,7 @@ import FileUploadComponent from "../datasources/FileUploadComp";
 import Graph, {GraphEvents, Options} from "react-vis-graph-wrapper";
 import {GraphFilterControlPanel} from "./GraphFilterControlPanel";
 import {GraphOptionsControlPanel} from "./GraphOptionsControlPanel";
-
-
+import {NodeInfo} from "./NodeInfo";
 
 
 export const GraphViewer: React.FC = () => {
@@ -25,8 +26,10 @@ export const GraphViewer: React.FC = () => {
         setGraphData(filter(graphFilter, graphServiceRef.current.getGraph()));
     };
 
-    const [graphFilter, setGraphFilter] = useState(new GraphFilter(2))
+    const [graphFilter, setGraphFilter] = useState(new GraphFilter(5, 3))
     const [selected, setSelected] = useState(new Set<string>())
+    const [selectedNode, setSelectedNode] = useState<EnrichedNode | undefined>(undefined)
+
     useEffect(
         () => {
             let newGraphData: EnrichedGraphData;
@@ -65,6 +68,12 @@ export const GraphViewer: React.FC = () => {
             });
             setSelected(newSelected);
         },
+        selectNode: ({nodes}) => {
+            setSelectedNode(graphServiceRef.current.getNode(nodes[0]));
+        },
+        deselectNode: () => {
+            setSelectedNode(undefined);
+        }
     };
 
     let [options, setOptions] = useState<Options>({
@@ -84,12 +93,13 @@ export const GraphViewer: React.FC = () => {
 
     return (
         <div>
+
             <div className={"padded"}>
                 <FileUploadComponent onFileLoaded={handleFileLoaded}/>
             </div>
             <div className={"padded"}>
                 <GraphFilterControlPanel graphFilter={graphFilter} setGraphFilter={setGraphFilter}/>
-                <GraphOptionsControlPanel options={options} setOptions={setOptions} />
+                <GraphOptionsControlPanel options={options} setOptions={setOptions}/>
             </div>
             <div className={"padded"}>
                 <div className={"flex-container"}>
@@ -109,8 +119,12 @@ export const GraphViewer: React.FC = () => {
                         Reset selection
                     </button>
                 </div>
+
+
             </div>
             <div className="graph-container">
+                {selectedNode && <NodeInfo node={selectedNode}/>}
+
                 <Graph graph={graphData} options={options} events={events}/>
             </div>
         </div>

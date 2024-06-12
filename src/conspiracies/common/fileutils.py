@@ -16,4 +16,5 @@ def iter_lines_of_files(glob_pattern: Union[str, Path]):
     for file in files:
         with open(file) as f:
             for line in f:
-                yield line
+                if line.strip():
+                    yield line

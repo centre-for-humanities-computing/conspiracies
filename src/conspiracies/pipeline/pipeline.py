@@ -87,7 +87,7 @@ class Pipeline:
         docprocessor = self._get_docprocessor()
         docprocessor.process_docs(
             (
-                json.loads(line, object_hook=lambda d: Document(**d))
+                Document(**json.loads(line))
                 for line in iter_lines_of_files(
                     self.output_path / "preprocessed.ndjson",
                 )

@@ -20,9 +20,21 @@
     margin-left: 0;
 }
 
-.flex-container__member__element {
+.flex-container__element__sub-element {
     margin: 2px;
 }
+
+.node-info {
+    position: absolute;
+    z-index: 3;
+    background: white;
+    border: solid 1px gray;
+    font-size: small;
+    max-width: 250px;
+    padding: 5px;
+    margin: 2px;
+}
+
 
 .graph-container {
     height: 80vh;
