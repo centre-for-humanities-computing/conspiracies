@@ -18,11 +18,18 @@
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
+  "homepage": "./",
+  "main": "./electron-main.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='node_modules/.*/test|node_modules/.*/docs|node_modules/.cache|.*\\.md|locales/'",
+    "package:win": "npm run package -- --platform=win32",
+    "package:mac": "npm run package -- --platform=darwin",
+    "package:linux": "npm run package -- --platform=linux"
   },
   "eslintConfig": {
     "extends": [
@@ -41,5 +48,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "electron": "^33.0.2",
+    "@electron/packager": "^18.3.5",
+    "serve": "^14.2.4"
   }
 }

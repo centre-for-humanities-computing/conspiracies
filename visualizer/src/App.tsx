@@ -1,5 +1,5 @@
 import "./App.css";
-import {BrowserRouter, Link, Route, Routes} from "react-router-dom";
+import {BrowserRouter, HashRouter, Link, Route, Routes} from "react-router-dom";
 import {GraphViewer} from "./graph/GraphViewer";
 
 function NavBar() {
@@ -13,14 +13,14 @@ function NavBar() {
 export function App() {
     // Create actual routes if/when more functionality is added to the application
     return (
-        <BrowserRouter>
+        <HashRouter>
             <Routes>
                 <Route
                     path="/"
                     element={<GraphViewer/>}
                 />
             </Routes>
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 
