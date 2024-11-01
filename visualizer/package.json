@@ -26,7 +26,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron": "electron .",
-    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='node_modules/.*/test|node_modules/.*/docs|node_modules/.cache|.*\\.md|locales/'",
+    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='node_modules|src|dist|README.md|tsconfig.json|.gitignore'",
     "package:win": "npm run package -- --platform=win32",
     "package:mac": "npm run package -- --platform=darwin",
     "package:linux": "npm run package -- --platform=linux"
