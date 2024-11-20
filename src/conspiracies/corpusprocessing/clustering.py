@@ -102,7 +102,11 @@ class Clustering:
         fields: List[TripletField],
     ):
         model = self._get_embedding_model()
-        embeddings = model.encode([field.text for field in fields])
+        print("Creating embeddings:")
+        embeddings = model.encode(
+            [field.text for field in fields],
+            show_progress_bar=True,
+        )
         embeddings = StandardScaler().fit_transform(embeddings)
 
         if self.n_dimensions is not None:
@@ -110,6 +114,7 @@ class Clustering:
             reducer = UMAP(n_components=self.n_dimensions, n_neighbors=self.n_neighbors)
             embeddings = reducer.fit_transform(embeddings)
 
+        print("Clustering ...")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
             min_samples=self.min_samples,
@@ -161,7 +166,9 @@ class Clustering:
         entities = subjects + objects
         predicates = [triplet.predicate for triplet in triplets]
 
+        print("Creating mappings for entities")
         entity_clusters = self._cluster(entities)
+        print("Creating mappings for predicates")
         predicate_clusters = self._cluster(predicates)
 
         mappings = Mappings(
