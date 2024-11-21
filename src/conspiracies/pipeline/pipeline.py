@@ -9,7 +9,7 @@ from conspiracies.corpusprocessing.clustering import Clustering
 from conspiracies.corpusprocessing.triplet import Triplet
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig, ClusteringThresholds
+from conspiracies.pipeline.config import PipelineConfig, Thresholds
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -101,12 +101,16 @@ class Pipeline:
         print("Collecting triplets.")
         triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
-        Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
-
         if self.config.corpusprocessing.thresholds is None:
-            thresholds = ClusteringThresholds.estimate_from_n_triplets(len(triplets))
+            thresholds = Thresholds.estimate_from_n_triplets(len(triplets))
         else:
             thresholds = self.config.corpusprocessing.thresholds
+        triplets = Triplet.filter_on_entity_label_frequency(
+            triplets,
+            thresholds.min_label_occurrence,
+        )
+        Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
+
         print("Clustering entities and predicates to create mappings.")
         clustering = Clustering(
             language=self.config.base.language,

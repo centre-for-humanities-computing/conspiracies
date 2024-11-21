@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Set, Iterator, Iterable, List, Union
@@ -51,6 +52,22 @@ class Triplet(BaseModel):
             for triplet in triplets
             if not triplet.has_blacklist_match(stopwords)
         ]
+
+    @staticmethod
+    def filter_on_entity_label_frequency(
+        triplets: Iterable["Triplet"],
+        min_frequency: int,
+    ):
+        entity_label_counter = Counter(
+            f.text for triplet in triplets for f in (triplet.subject, triplet.object)
+        )
+        filtered = [
+            triplet
+            for triplet in triplets
+            if entity_label_counter[triplet.subject.text] >= min_frequency
+            and entity_label_counter[triplet.subject.text] >= min_frequency
+        ]
+        return filtered
 
     @classmethod
     def from_annotated_docs(cls, path: Path) -> Iterator["Triplet"]:

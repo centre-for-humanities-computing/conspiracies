@@ -157,6 +157,7 @@ class Clustering:
         print("Clustering ... (Delete cache to ensure recalculation)")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
+            max_cluster_size=20,  # somewhat arbitrary number, mostly to avoid mega clusters that suck up everything
             min_samples=self.min_samples,
             memory=str(self.cache_location),
         )

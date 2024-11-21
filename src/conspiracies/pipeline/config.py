@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 import toml
@@ -29,14 +30,16 @@ class DocProcessingConfig(StepConfig):
     prefer_gpu_for_coref: bool = False
 
 
-class ClusteringThresholds(BaseModel):
+class Thresholds(BaseModel):
+    min_label_occurrence: int
     min_cluster_size: int
     min_samples: int
 
     @classmethod
     def estimate_from_n_triplets(cls, n_triplets: int):
-        factor = n_triplets / 500
+        factor = n_triplets / 1000
         thresholds = cls(
+            min_label_occurrence=math.floor(math.log10(n_triplets)) - 1,
             min_cluster_size=max(int(factor + 1), 2),
             min_samples=int(factor + 1),
         )
@@ -47,7 +50,7 @@ class CorpusProcessingConfig(StepConfig):
     dimensions: int = None
     n_neighbors: int = 15
     embedding_model: str = None
-    thresholds: ClusteringThresholds = None
+    thresholds: Thresholds = None
 
 
 class PipelineConfig(BaseModel):
