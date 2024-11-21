@@ -1,4 +1,6 @@
+import os
 from collections import defaultdict
+from pathlib import Path
 from typing import List, Callable, Any, Hashable, Dict
 
 import networkx
@@ -6,7 +8,6 @@ import numpy as np
 from hdbscan import HDBSCAN
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import StandardScaler
 from umap import UMAP
 
 from conspiracies.common.modelchoice import ModelChoice
@@ -45,6 +46,7 @@ class Clustering:
         min_cluster_size: int = 5,
         min_samples: int = 3,
         embedding_model: str = None,
+        cache_location: Path = None,
     ):
         self.language = language
         self.n_dimensions = n_dimensions
@@ -52,6 +54,9 @@ class Clustering:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self._embedding_model = embedding_model
+        self.cache_location = cache_location
+        if self.cache_location is not None:
+            os.makedirs(self.cache_location, exist_ok=True)
 
     def _get_embedding_model(self):
         # figure out embedding model if not given explicitly
@@ -100,14 +105,31 @@ class Clustering:
     def _cluster(
         self,
         fields: List[TripletField],
+        cache_filename: str,
     ):
-        model = self._get_embedding_model()
-        print("Creating embeddings:")
-        embeddings = model.encode(
-            [field.text for field in fields],
-            show_progress_bar=True,
-        )
-        embeddings = StandardScaler().fit_transform(embeddings)
+        if (
+            self.cache_location
+            and Path(self.cache_location, f"embeddings-{cache_filename}.npy").exists()
+        ):
+            print(
+                "Reusing cached embeddings! Delete cache if this is not supposed to happen.",
+            )
+            embeddings = np.load(
+                Path(self.cache_location, f"embeddings-{cache_filename}.npy"),
+            )
+        else:
+            model = self._get_embedding_model()
+            print("Creating embeddings:")
+            embeddings = model.encode(
+                [field.text for field in fields],
+                normalize_embeddings=True,
+                show_progress_bar=True,
+            )
+            if self.cache_location:
+                np.save(
+                    Path(self.cache_location, f"embeddings-{cache_filename}.npy"),
+                    embeddings,
+                )
 
         if self.n_dimensions is not None:
             print("Reducing embedding space")
@@ -138,12 +160,6 @@ class Clustering:
             get_combine_key=lambda t: t[0].text,
         )
 
-        # too risky with false positives from this
-        # merged = self._combine_clusters(
-        #     merged,
-        #     get_combine_key=lambda t: t[0].head,
-        # )
-
         # sort by how "prototypical" a member is in the cluster
         for cluster in merged:
             mean = np.mean(np.stack([t[1] for t in cluster]), axis=0)
@@ -167,9 +183,9 @@ class Clustering:
         predicates = [triplet.predicate for triplet in triplets]
 
         print("Creating mappings for entities")
-        entity_clusters = self._cluster(entities)
+        entity_clusters = self._cluster(entities, "entities")
         print("Creating mappings for predicates")
-        predicate_clusters = self._cluster(predicates)
+        predicate_clusters = self._cluster(predicates, "predicates")
 
         mappings = Mappings(
             entities=self._mapping_to_first_member(entity_clusters),

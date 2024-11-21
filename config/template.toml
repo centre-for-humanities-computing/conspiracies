@@ -27,6 +27,5 @@ dimensions = 100 # leave out to skip dimensionality reduction
 n_neighbors = 15 # used for dimensionality reduction
 
 [corpusprocessing.thresholds]  # leave out for automatic estimation
-min_cluster_size = 3  # unused if auto_thresholds is true
-min_samples = 3  # unused if auto_thresholds is true
-min_topic_size = 5  # unused if auto_thresholds is true
+min_cluster_size = 3
+min_samples = 3

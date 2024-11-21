@@ -35,7 +35,7 @@ class ClusteringThresholds(BaseModel):
 
     @classmethod
     def estimate_from_n_triplets(cls, n_triplets: int):
-        factor = n_triplets / 1000
+        factor = n_triplets / 500
         thresholds = cls(
             min_cluster_size=max(int(factor + 1), 2),
             min_samples=int(factor + 1),

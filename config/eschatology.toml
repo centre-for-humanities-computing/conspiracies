@@ -17,3 +17,4 @@ prefer_gpu_for_coref = false
 
 [corpusprocessing]
 enabled = true
+dimensions = 50
