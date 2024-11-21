@@ -50,8 +50,9 @@
     ]
   },
   "devDependencies": {
-    "electron": "^33.0.2",
     "@electron/packager": "^18.3.5",
+    "electron": "^33.0.2",
+    "prettier": "^3.3.3",
     "serve": "^14.2.4"
   }
 }
