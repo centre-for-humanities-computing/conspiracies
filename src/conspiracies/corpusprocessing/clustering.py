@@ -107,15 +107,13 @@ class Clustering:
         fields: List[TripletField],
         cache_filename: str,
     ):
-        if (
-            self.cache_location
-            and Path(self.cache_location, f"embeddings-{cache_filename}.npy").exists()
-        ):
+        emb_cache = f"embeddings-{cache_filename}.npy"
+        if self.cache_location and Path(self.cache_location, emb_cache).exists():
             print(
                 "Reusing cached embeddings! Delete cache if this is not supposed to happen.",
             )
             embeddings = np.load(
-                Path(self.cache_location, f"embeddings-{cache_filename}.npy"),
+                Path(self.cache_location, emb_cache),
             )
         else:
             model = self._get_embedding_model()
@@ -127,19 +125,40 @@ class Clustering:
             )
             if self.cache_location:
                 np.save(
-                    Path(self.cache_location, f"embeddings-{cache_filename}.npy"),
+                    Path(self.cache_location, emb_cache),
                     embeddings,
                 )
 
         if self.n_dimensions is not None:
-            print("Reducing embedding space")
-            reducer = UMAP(n_components=self.n_dimensions, n_neighbors=self.n_neighbors)
-            embeddings = reducer.fit_transform(embeddings)
+            reduced_emb_cache = (
+                f"embeddings-{cache_filename}-red{self.n_dimensions}.npy"
+            )
+            if (
+                self.cache_location
+                and Path(self.cache_location, reduced_emb_cache).exists()
+            ):
+                print(
+                    "Reusing cached reduced embeddings! Delete cache if this is not supposed to happen.",
+                )
+                embeddings = np.load(Path(self.cache_location, reduced_emb_cache))
+            else:
+                print("Reducing embedding space ...")
+                reducer = UMAP(
+                    n_components=self.n_dimensions,
+                    n_neighbors=self.n_neighbors,
+                )
+                embeddings = reducer.fit_transform(embeddings)
+                if self.cache_location:
+                    np.save(
+                        Path(self.cache_location, reduced_emb_cache),
+                        embeddings,
+                    )
 
-        print("Clustering ...")
+        print("Clustering ... (Delete cache to ensure recalculation)")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
             min_samples=self.min_samples,
+            memory=str(self.cache_location),
         )
         hdbscan_model.fit(embeddings)
 
