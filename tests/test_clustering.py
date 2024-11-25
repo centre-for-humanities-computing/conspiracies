@@ -29,3 +29,20 @@ class TestCombineClusters:
             Clustering._combine_clusters(clusters, get_combine_key=lambda x: x[1])
             == expected
         )
+
+
+def test_cluster_by_normalization():
+    labels = [
+        "popular label",
+        "popular label",
+        "popular label 2",
+        "another label",
+        "another label",
+        "yet another label",
+        "a third label",
+    ]
+    clusters = Clustering._cluster_via_normalization(labels, top=2)
+    assert clusters == [
+        ["popular label", "popular label 2"],
+        ["another label", "yet another label"],
+    ]

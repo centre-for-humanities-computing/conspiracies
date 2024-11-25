@@ -1,7 +1,8 @@
+import math
 import os
-from collections import defaultdict
+from collections import defaultdict, Counter
 from pathlib import Path
-from typing import List, Callable, Any, Hashable, Dict
+from typing import List, Callable, Any, Hashable, Dict, Union
 
 import networkx
 import numpy as np
@@ -118,8 +119,15 @@ class Clustering:
         else:
             model = self._get_embedding_model()
             print("Creating embeddings:")
+
+            counter = Counter((field.text for field in fields))
+            condensed = [
+                field
+                for field, count in counter.items()
+                for _ in range(math.ceil(count / 1000))
+            ]
             embeddings = model.encode(
-                [field.text for field in fields],
+                condensed,
                 normalize_embeddings=True,
                 show_progress_bar=True,
             )
@@ -171,7 +179,7 @@ class Clustering:
             hdbscan_model.probabilities_,
         ):
             # skip noise and low confidence
-            if label == -1 or probability < 0.1:
+            if label == -1 or probability < 0.5:
                 continue
             clusters[label].append((field, embedding))
 
@@ -189,11 +197,69 @@ class Clustering:
         return [[t[0] for t in cluster] for cluster in merged]
 
     @staticmethod
-    def _mapping_to_first_member(clusters: List[List[TripletField]]) -> Dict[str, str]:
+    def _cluster_via_normalization(
+        labels: List[str],
+        top: Union[int, float] = 1.0,
+        restrictive_labels=True,
+    ) -> List[List[str]]:
+        counter = Counter((label for label in labels))
+        if isinstance(top, float):
+            top = int(top * len(counter))
+
+        norm_map = {
+            label: " "
+            + label.lower()
+            + " "  # surrounding spaces avoids matches like evil <-> devil
+            for label in counter.keys()
+        }
+        cluster_map = {
+            label: []
+            for label, count in counter.most_common(top)
+            # FIXME: hack due to lack of NER and lemmas at the time of writing
+            if not restrictive_labels
+            or len(label) >= 4
+            and label[0].isupper()
+            or len(label.split()) > 1
+        }
+
+        for label in counter.keys():
+            norm_label = norm_map[label]
+            matches = [
+                substring
+                for substring in cluster_map.keys()
+                if norm_map[substring] in norm_label
+            ]
+            if not matches:
+                continue
+
+            best_match = min(
+                matches,
+                key=lambda substring: len(norm_map[substring]),
+            )
+            if best_match != label:
+                cluster_map[best_match].append(label)
+
+        clusters = [
+            [main_label] + alt_labels
+            for main_label, alt_labels in cluster_map.items()
+            if alt_labels
+        ]
+        return clusters
+
+    @staticmethod
+    def _mapping_to_first_member(
+        clusters: List[List[TripletField | str]],
+    ) -> Dict[str, str]:
+        def get_text(member: TripletField | str):
+            if isinstance(member, TripletField):
+                return member.text
+            else:
+                return member
+
         return {
-            member: cluster[0].text
+            member: get_text(cluster[0])
             for cluster in clusters
-            for member in set(member.text for member in cluster)
+            for member in set(get_text(member) for member in cluster)
         }
 
     def create_mappings(self, triplets: List[Triplet]) -> Mappings:
@@ -202,10 +268,23 @@ class Clustering:
         entities = subjects + objects
         predicates = [triplet.predicate for triplet in triplets]
 
+        # FIXME: clustering gets way to aggressive for many triplets
+        # print("Creating mappings for entities")
+        # entity_clusters = self._cluster(entities, "entities")
+        # print("Creating mappings for predicates")
+        # predicate_clusters = self._cluster(predicates, "predicates")
+
         print("Creating mappings for entities")
-        entity_clusters = self._cluster(entities, "entities")
+        entity_clusters = self._cluster_via_normalization(
+            [e.text for e in entities],
+            0.2,
+        )
         print("Creating mappings for predicates")
-        predicate_clusters = self._cluster(predicates, "predicates")
+        predicate_clusters = self._cluster_via_normalization(
+            [p.text for p in predicates],
+            top=0.2,
+            restrictive_labels=False,
+        )
 
         mappings = Mappings(
             entities=self._mapping_to_first_member(entity_clusters),
