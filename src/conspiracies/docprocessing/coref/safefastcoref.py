@@ -15,9 +15,8 @@ class SafeFastCoref(Pipe):
 
     def pipe(self, stream: Iterable, batch_size: int = 128):
         """Wrap the pipe method of the component."""
-        as_list = list(stream)
         try:
-            yield from self.component.pipe(as_list, batch_size=batch_size)
+            yield from self.component.pipe(stream, batch_size=batch_size)
         except Exception as e:
             # Log the error and return the unprocessed documents
             logging.error(f"Error in SafeFastCoref pipe: {e}")
