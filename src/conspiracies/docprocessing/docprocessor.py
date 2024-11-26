@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Iterable, Tuple, Iterator
 
 import spacy
-from fastcoref.spacy_component import spacy_component  # noqa
 import torch
 from spacy.tokens import DocBin, Doc
 from tqdm import tqdm
@@ -21,15 +20,10 @@ class DocProcessor:
         nlp_coref.add_pipe("sentencizer")
         if self.language == "en":
             nlp_coref.add_pipe(
-                "fastcoref",
+                "safe_fastcoref",
                 config={
                     "enable_progress_bar": False,
                     "model_architecture": "LingMessCoref",
-                    "device": (
-                        "cuda:0"
-                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
-                        else "cpu"
-                    ),
                 },
             )
         elif self.language == "da":
@@ -124,7 +118,7 @@ class DocProcessor:
     def _set_user_data_on_docs(docs: Iterator[Tuple[Doc, Document]]) -> Iterator[Doc]:
         for doc, src_doc in docs:
             # FIXME: this is kind of stupid, but with old pydantic this will have to work for now.
-            doc.user_data = json.loads(src_doc.json())
+            doc.user_data["doc_metadata"] = json.loads(src_doc.json())
             yield doc
 
     def _store_doc_bins(self, docs: Iterator[Doc], output_path: Path):
@@ -158,7 +152,7 @@ class DocProcessor:
                 with open(bin_file, "rb") as bytes_data:
                     doc_bin = DocBin().from_bytes(bytes_data.read())
                     for doc in doc_bin.get_docs(self.triplet_extraction_pipeline.vocab):
-                        id_ = doc.user_data["id"]
+                        id_ = doc.user_data["doc_metadata"]["id"]
                         already_processed.add(id_)
 
             print(f"Skipping {len(already_processed)} processed docs.")
@@ -168,9 +162,10 @@ class DocProcessor:
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
             ((text_with_context(src_doc), src_doc) for src_doc in docs),
-            batch_size=5,
+            batch_size=self.batch_size,
             as_tuples=True,
             n_process=self.n_process,
+            component_cfg={"fastcoref": {"resolve_text": True}},
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
