@@ -82,6 +82,7 @@ class Pipeline:
             triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
             prefer_gpu_for_coref=self.config.docprocessing.prefer_gpu_for_coref,
             n_process=self.config.docprocessing.n_process,
+            doc_bin_size=self.config.docprocessing.doc_bin_size,
         )
 
     def docprocessing(self, continue_from_last=False):

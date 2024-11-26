@@ -24,6 +24,11 @@ class DocProcessor:
                 config={
                     "enable_progress_bar": False,
                     "model_architecture": "LingMessCoref",
+                    "device": (
+                        "cuda"
+                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
+                        else "cpu"
+                    ),
                 },
             )
         elif self.language == "da":
