@@ -1,10 +1,12 @@
+import json
 import os
+from glob import glob
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Tuple, Iterator
 
 import spacy
 import torch
-from jsonlines import jsonlines
+from spacy.tokens import DocBin, Doc
 from tqdm import tqdm
 
 from conspiracies import docs_to_jsonl
@@ -87,6 +89,7 @@ class DocProcessor:
         triplet_extraction_method="multi2oie",
         prefer_gpu_for_coref: bool = False,
         n_process: int = 1,
+        doc_bin_size: int = 100,
     ):
         self.language = language
         self.batch_size = batch_size
@@ -95,9 +98,31 @@ class DocProcessor:
         if n_process > 1:
             # multiprocessing and torch with multiple threads result in a deadlock, therefore:
             torch.set_num_threads(1)
+        self.doc_bin_size = doc_bin_size
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
+
+    @staticmethod
+    def _set_user_data_on_docs(docs: Iterator[Tuple[Doc, Document]]) -> Iterator[Doc]:
+        for doc, src_doc in docs:
+            # FIXME: this is kind of stupid, but with old pydantic this will have to work for now.
+            doc.user_data = json.loads(src_doc.json())
+            yield doc
+
+    def _store_doc_bins(self, docs: Iterator[Doc], output_path: Path):
+        output_dir = Path(os.path.dirname(output_path)) / "spacy_docs"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        size = self.doc_bin_size
+        doc_bin = DocBin(store_user_data=True)
+        for i, doc in enumerate(docs, start=1):
+            doc_bin.add(doc)
+            if i % size == 0:
+                with open(output_dir / f"{i//size}.bin", "wb") as f:
+                    f.write(doc_bin.to_bytes())
+                doc_bin = DocBin(store_user_data=True)
+            yield doc
 
     def process_docs(
         self,
@@ -106,10 +131,19 @@ class DocProcessor:
         continue_from_last=False,
     ):
         if continue_from_last and os.path.exists(output_path):
-            with jsonlines.open(output_path) as annotated_docs:
-                already_processed = {
-                    annotated_doc["id"] for annotated_doc in annotated_docs
-                }
+            already_processed = set()
+
+            # FIXME: paths should be given elsewhere and not be inferred like this
+            for bin_file in glob(
+                (Path(os.path.dirname(output_path)) / "spacy_docs").as_posix()
+                + "/*.bin",
+            ):
+                with open(bin_file, "rb") as bytes_data:
+                    doc_bin = DocBin().from_bytes(bytes_data.read())
+                    for doc in doc_bin.get_docs(self.triplet_extraction_pipeline.vocab):
+                        id_ = doc.user_data["id"]
+                        already_processed.add(id_)
+
             print(f"Skipping {len(already_processed)} processed docs.")
             docs = (doc for doc in docs if doc.id not in already_processed)
 
@@ -132,8 +166,12 @@ class DocProcessor:
             n_process=self.n_process,
         )
 
+        with_user_data = self._set_user_data_on_docs(with_triplets)
+
+        stored = self._store_doc_bins(with_user_data, output_path)
+
         docs_to_jsonl(
-            tqdm(d for d in with_triplets),
+            tqdm(stored),
             output_path,
             append=continue_from_last,
         )
