@@ -86,10 +86,15 @@ class DocProcessor:
         batch_size=25,
         triplet_extraction_method="multi2oie",
         prefer_gpu_for_coref: bool = False,
+        n_process: int = 1,
     ):
         self.language = language
         self.batch_size = batch_size
         self.prefer_gpu_for_coref = prefer_gpu_for_coref
+        self.n_process = n_process
+        if n_process > 1:
+            # multiprocessing and torch with multiple threads result in a deadlock, therefore:
+            torch.set_num_threads(1)
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
@@ -114,6 +119,7 @@ class DocProcessor:
             ((text_with_context(src_doc), src_doc) for src_doc in docs),
             batch_size=self.batch_size,
             as_tuples=True,
+            n_process=self.n_process,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
@@ -123,6 +129,7 @@ class DocProcessor:
             ),
             batch_size=self.batch_size,
             as_tuples=True,
+            n_process=self.n_process,
         )
 
         docs_to_jsonl(

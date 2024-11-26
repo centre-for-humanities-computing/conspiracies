@@ -13,8 +13,8 @@ timestamp_column = "timestamp"
 [docprocessing]
 enabled = true
 batch_size = 5
-prefer_gpu_for_coref = false
+prefer_gpu_for_coref = true
+n_process = 2 # might make sense for GPU offloading
 
 [corpusprocessing]
 enabled = true
-dimensions = 50

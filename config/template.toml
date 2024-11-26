@@ -12,13 +12,14 @@ metadata_fields = ["*"]
 
 [preprocessing.extra]
 # specific extra arguments for your preprocessor, e.g. context length for tweets or
-# or field specification for CSVs
+# field specification for CSVs
 
 [docprocessing]
 enabled = true
 batch_size = 25
 continue_from_last = true
 triplet_extraction_method = "multi2oie/prompting"
+n_process = 1 # can be set to 2 or more for multiprocess ofloading to GPU; otherwise might not make sense
 
 [corpusprocessing]
 enabled = true
@@ -27,5 +28,6 @@ dimensions = 100 # leave out to skip dimensionality reduction
 n_neighbors = 15 # used for dimensionality reduction
 
 [corpusprocessing.thresholds]  # leave out for automatic estimation
+min_label_occurrence = 3
 min_cluster_size = 3
 min_samples = 3

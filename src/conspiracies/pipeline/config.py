@@ -28,6 +28,7 @@ class DocProcessingConfig(StepConfig):
     continue_from_last: bool = True
     triplet_extraction_method: str = "multi2oie"
     prefer_gpu_for_coref: bool = False
+    n_process: int = 1
 
 
 class Thresholds(BaseModel):
