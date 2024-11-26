@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  EnrichedGraphData,
   EnrichedNode,
   FileGraphService,
   filter,
@@ -16,42 +15,43 @@ import { NodeInfo } from "./NodeInfo";
 
 export const GraphViewer: React.FC = () => {
   let graphServiceRef = useRef<GraphService>(new SampleGraphService());
-  const [graphData, setGraphData] = useState(
-    graphServiceRef.current.getGraph(),
-  );
 
   const handleFileLoaded = (data: any) => {
-    if (data === "SAMPLE") {
-      graphServiceRef.current = new SampleGraphService();
-      setGraphFilter(new GraphFilter(1, 0));
-    } else {
-      graphServiceRef.current = new FileGraphService(data);
-      const top50 =
-        graphServiceRef.current
-          .getGraph()
-          .nodes.map((n) => n.stats.frequency)
-          .sort()
-          .reverse()
-          .at(100) || 1;
-      setGraphFilter(new GraphFilter(top50, Math.floor(top50 / 2)));
-    }
-    setGraphData(filter(graphFilter, graphServiceRef.current.getGraph()));
+    graphServiceRef.current = new FileGraphService(data);
+    const top50 =
+      graphServiceRef.current
+        .getGraph()
+        .nodes.map((n) => n.stats.frequency)
+        .sort((a, b) => b - a)
+        .at(100) || 1;
+    let { minNodeFrequency, maxNodeFrequency, maxEdgeFrequency } =
+      graphServiceRef.current.getBounds();
+    setGraphFilter(
+      new GraphFilter(
+        minNodeFrequency,
+        top50,
+        maxNodeFrequency,
+        1,
+        Math.floor(top50 / 10),
+        maxEdgeFrequency,
+      ),
+    );
   };
 
-  const [graphFilter, setGraphFilter] = useState(new GraphFilter(5, 3));
+  const [graphFilter, setGraphFilter] = useState<GraphFilter>(
+    new GraphFilter(1, 1, 10, 1, 1, 10),
+  );
   const [selected, setSelected] = useState(new Set<string>());
   const [selectedNode, setSelectedNode] = useState<EnrichedNode | undefined>(
     undefined,
   );
 
-  useEffect(() => {
-    let newGraphData: EnrichedGraphData;
-    if (selected.size > 0) {
-      newGraphData = graphServiceRef.current.getSubGraph(selected);
-    } else {
-      newGraphData = graphServiceRef.current.getGraph();
-    }
-    setGraphData(filter(graphFilter, newGraphData));
+  const filteredGraphData = useMemo(() => {
+    const baseGraphData =
+      selected.size > 0
+        ? graphServiceRef.current.getSubGraph(selected)
+        : graphServiceRef.current.getGraph();
+    return filter(graphFilter, baseGraphData);
   }, [graphFilter, selected]);
 
   let events: GraphEvents = {
@@ -108,7 +108,6 @@ export const GraphViewer: React.FC = () => {
     <div>
       <div className={"padded flex-container"}>
         <FileUploadComponent onFileLoaded={handleFileLoaded} />
-        <button onClick={() => handleFileLoaded("SAMPLE")}>Sample data</button>
       </div>
       <hr />
       <div className={"padded"}>
@@ -138,9 +137,6 @@ export const GraphViewer: React.FC = () => {
           <button
             className={"flex-container__element"}
             onClick={() => {
-              setGraphData(
-                filter(graphFilter, graphServiceRef.current.getGraph()),
-              );
               setSelected(new Set<string>());
             }}
           >
@@ -150,8 +146,7 @@ export const GraphViewer: React.FC = () => {
       </div>
       <div className="graph-container">
         {selectedNode && <NodeInfo node={selectedNode} />}
-
-        <Graph graph={graphData} options={options} events={events} />
+        <Graph graph={filteredGraphData} options={options} events={events} />
       </div>
     </div>
   );

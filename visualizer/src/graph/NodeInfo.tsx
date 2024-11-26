@@ -17,14 +17,14 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
       <hr />
       <div>
         <p>Frequency: {stats.frequency}</p>
-        <p>Norm. frequency: {stats.norm_frequency?.toPrecision(3)}</p>
+        {/*<p>Norm. frequency: {stats.norm_frequency?.toPrecision(3)}</p>*/}
         {stats.first_occurrence && (
           <p>Earliest date: {stats.first_occurrence}</p>
         )}
         {stats.last_occurrence && <p>Latest date: {stats.last_occurrence}</p>}
         {stats.alt_labels && (
           <div>
-            Labels:
+            Alternative Labels:
             <ul>
               {stats.alt_labels.map((l) => (
                 <li key={l}>{l}</li>

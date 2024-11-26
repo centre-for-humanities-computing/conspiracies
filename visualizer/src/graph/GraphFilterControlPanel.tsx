@@ -1,6 +1,7 @@
 import React from "react";
 import { GraphFilter } from "./GraphService";
 import "./graph.css";
+import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
 
 interface GraphFilterControlPanelProps {
   graphFilter: GraphFilter;
@@ -11,59 +12,55 @@ export const GraphFilterControlPanel = ({
   graphFilter,
   setGraphFilter,
 }: GraphFilterControlPanelProps) => {
+  const setMinAndMaxNodeFrequency = (min: number, max: number) => {
+    setGraphFilter({
+      ...graphFilter,
+      minimumNodeFrequency: min,
+      maximumNodeFrequency: max,
+    });
+  };
+  const setMinAndMaxEdgeFrequency = (min: number, max: number) => {
+    setGraphFilter({
+      ...graphFilter,
+      minimumEdgeFrequency: min,
+      maximumEdgeFrequency: max,
+    });
+  };
+
   return (
     <div className={"flex-container"}>
       <div className={"flex-container__element"}>
         <span className={"flex-container__element__sub-element"}>
-          Minimum Node Frequency: {graphFilter.minimumNodeFrequency}
+          Node Frequency:
         </span>
-        <button
-          className={"flex-container__element__sub-element"}
-          onClick={() =>
-            setGraphFilter({
-              ...graphFilter,
-              minimumNodeFrequency: graphFilter.minimumNodeFrequency + 1,
-            })
-          }
-        >
-          +
-        </button>
-        <button
-          className={"flex-container__element__sub-element"}
-          onClick={() =>
-            setGraphFilter({
-              ...graphFilter,
-              minimumNodeFrequency: graphFilter.minimumNodeFrequency - 1,
-            })
-          }
-        >
-          -
-        </button>
       </div>
+      <div style={{ width: "250px" }}>
+        <LogarithmicRangeSlider
+          onChange={(e) => {
+            setMinAndMaxNodeFrequency(e.minValue, e.maxValue);
+          }}
+          min={1}
+          minValue={graphFilter.minimumNodeFrequency}
+          maxValue={graphFilter.maximumNodeFrequency}
+          max={graphFilter.maximumPossibleNodeFrequency}
+          style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
+        ></LogarithmicRangeSlider>
+      </div>
+
       <div className={"flex-container__element"}>
-        Minimum Edge Frequency: {graphFilter.minimumEdgeFrequency}
-        <button
-          className={"flex-container__element__sub-element"}
-          onClick={() =>
-            setGraphFilter({
-              ...graphFilter,
-              minimumEdgeFrequency: graphFilter.minimumEdgeFrequency + 1,
-            })
-          }
-        >
-          +
-        </button>
-        <button
-          className={"flex-container__element__sub-element"}
-          onClick={() =>
-            setGraphFilter({
-              ...graphFilter,
-              minimumEdgeFrequency: graphFilter.minimumEdgeFrequency - 1,
-            })
-          }
-        >
-          -
-        </button>
+        Edge Frequency:
+        <div style={{ width: "250px" }}>
+          <LogarithmicRangeSlider
+            onChange={(e) => {
+              setMinAndMaxEdgeFrequency(e.minValue, e.maxValue);
+            }}
+            min={graphFilter.minimumPossibleEdgeFrequency}
+            minValue={graphFilter.minimumEdgeFrequency}
+            maxValue={graphFilter.maximumEdgeFrequency}
+            max={graphFilter.maximumPossibleEdgeFrequency}
+            style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
+          ></LogarithmicRangeSlider>
+        </div>
       </div>
       <div className={"flex-container__element"}>
         Show unconnected nodes:
@@ -80,7 +77,20 @@ export const GraphFilterControlPanel = ({
         />
       </div>
       <div className={"flex-container__element"}>
-        From:{" "}
+        Search nodes:
+        <input
+          type={"text"}
+          onChange={(event) => {
+            let value = event.target.value;
+            setGraphFilter({
+              ...graphFilter,
+              labelSearch: value,
+            });
+          }}
+        />
+      </div>
+      <div className={"flex-container__element"}>
+        From:
         <input
           className={"flex-container__element__sub-element"}
           type={"date"}
@@ -91,7 +101,7 @@ export const GraphFilterControlPanel = ({
             })
           }
         />
-        To:{" "}
+        To:
         <input
           className={"flex-container__element__sub-element"}
           type={"date"}

@@ -23,18 +23,35 @@ export interface EnrichedGraphData extends GraphData {
 }
 
 export class GraphFilter {
+  minimumPossibleNodeFrequency: number;
   minimumNodeFrequency: number;
+  maximumNodeFrequency: number;
+  maximumPossibleNodeFrequency: number;
+  minimumPossibleEdgeFrequency: number;
   minimumEdgeFrequency: number;
+  maximumEdgeFrequency: number;
+  maximumPossibleEdgeFrequency: number;
+  labelSearch: string = "";
   earliestDate?: Date;
   latestDate?: Date;
   showUnconnectedNodes: boolean = false;
 
   constructor(
-    minimumNodeFrequency: number = 1,
-    minimumEdgeFrequency: number = 1,
+    minimumPossibleNodeFrequency: number,
+    minimumNodeFrequency: number,
+    maximumPossibleNodeFrequency: number,
+    minimumPossibleEdgeFrequency: number,
+    minimumEdgeFrequency: number,
+    maximumPossibleEdgeFrequency: number,
   ) {
+    this.minimumPossibleNodeFrequency = minimumPossibleNodeFrequency;
     this.minimumNodeFrequency = minimumNodeFrequency;
+    this.maximumNodeFrequency = maximumPossibleNodeFrequency;
+    this.maximumPossibleNodeFrequency = maximumPossibleNodeFrequency;
+    this.minimumPossibleEdgeFrequency = minimumPossibleEdgeFrequency;
     this.minimumEdgeFrequency = minimumEdgeFrequency;
+    this.maximumEdgeFrequency = maximumPossibleEdgeFrequency;
+    this.maximumPossibleEdgeFrequency = maximumPossibleEdgeFrequency;
   }
 }
 
@@ -62,12 +79,14 @@ export function filter(
   let nodes = graphData.nodes.filter(
     (node: EnrichedNode) =>
       node.stats.frequency >= filter.minimumNodeFrequency &&
+      node.stats.frequency < filter.maximumNodeFrequency &&
       hasDateOverlap(node, filter),
   );
   let filteredNodes = new Set(nodes.map((node) => node.id));
   let edges = graphData.edges.filter(
     (edge: EnrichedEdge) =>
       edge.stats.frequency >= filter.minimumEdgeFrequency &&
+      edge.stats.frequency < filter.maximumEdgeFrequency &&
       filteredNodes.has(edge.from) &&
       filteredNodes.has(edge.to),
   );
@@ -75,13 +94,40 @@ export function filter(
   if (!filter.showUnconnectedNodes) {
     nodes = nodes.filter((node) => connectedNodes.has(node.id));
   }
+  nodes = nodes.map((node) => ({
+    ...node,
+    ...(node.label?.toLowerCase().includes(filter.labelSearch)
+      ? { opacity: 1 }
+      : { opacity: 0.2 }),
+  }));
+
   return { nodes, edges };
+}
+
+export interface DataBounds {
+  minNodeFrequency: number;
+  maxNodeFrequency: number;
+  maxEdgeFrequency: number;
 }
 
 export abstract class GraphService {
   private nodesMap: Map<string, EnrichedNode> | null = null;
 
   abstract getGraph(): EnrichedGraphData;
+
+  getBounds(): DataBounds {
+    return {
+      minNodeFrequency: Math.min(
+        ...this.getGraph().nodes.map((n) => n.stats.frequency),
+      ),
+      maxNodeFrequency: Math.max(
+        ...this.getGraph().nodes.map((n) => n.stats.frequency),
+      ),
+      maxEdgeFrequency: Math.max(
+        ...this.getGraph().edges.map((n) => n.stats.frequency),
+      ),
+    };
+  }
 
   getSubGraph(nodeIds: Set<string>): EnrichedGraphData {
     return {
