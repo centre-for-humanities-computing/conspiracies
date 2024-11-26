@@ -55,12 +55,15 @@ export class GraphFilter {
   }
 }
 
-function hasDateOverlap(node: EnrichedNode, filter: GraphFilter): boolean {
-  if (!node.stats.first_occurrence || !node.stats.last_occurrence) {
+function hasDateOverlap(
+  nodeOrEdge: EnrichedNode | EnrichedEdge,
+  filter: GraphFilter,
+): boolean {
+  if (!nodeOrEdge.stats.first_occurrence || !nodeOrEdge.stats.last_occurrence) {
     return true;
   }
-  const first = new Date(node.stats.first_occurrence);
-  const last = new Date(node.stats.last_occurrence);
+  const first = new Date(nodeOrEdge.stats.first_occurrence);
+  const last = new Date(nodeOrEdge.stats.last_occurrence);
   const afterEarliestDate =
     !filter.earliestDate ||
     filter.earliestDate < first ||
@@ -87,6 +90,7 @@ export function filter(
     (edge: EnrichedEdge) =>
       edge.stats.frequency >= filter.minimumEdgeFrequency &&
       edge.stats.frequency < filter.maximumEdgeFrequency &&
+      hasDateOverlap(edge, filter) &&
       filteredNodes.has(edge.from) &&
       filteredNodes.has(edge.to),
   );
