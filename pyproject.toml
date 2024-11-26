@@ -45,7 +45,8 @@ dependencies = [
     "sentence-transformers",
     "stop-words",
     "bs4",
-    "toml"
+    "toml",
+    "fastcoref"
 ]
 
 [project.license]
