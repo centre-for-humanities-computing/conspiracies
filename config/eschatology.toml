@@ -2,7 +2,7 @@
 language = "en"
 
 [preprocessing]
-enabled = true
+enabled = false
 doc_type = "csv"
 
 [preprocessing.extra]
@@ -12,9 +12,9 @@ timestamp_column = "timestamp"
 
 [docprocessing]
 enabled = true
-batch_size = 5
+batch_size = 50
 prefer_gpu_for_coref = true
-n_process = 2 # might make sense for GPU offloading
+n_process = 1
 
 [corpusprocessing]
 enabled = true

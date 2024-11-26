@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable, Tuple, Iterator
 
 import spacy
+from fastcoref.spacy_component import spacy_component  # noqa
 import torch
 from spacy.tokens import DocBin, Doc
 from tqdm import tqdm
@@ -18,14 +19,30 @@ class DocProcessor:
     def _build_coref_pipeline(self):
         nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
-        nlp_coref.add_pipe(
-            "allennlp_coref",
-            config={
-                "device": (
-                    0 if self.prefer_gpu_for_coref and torch.cuda.is_available() else -1
-                ),
-            },
-        )
+        if self.language == "en":
+            nlp_coref.add_pipe(
+                "fastcoref",
+                config={
+                    "enable_progress_bar": False,
+                    "model_architecture": "LingMessCoref",
+                    "device": (
+                        "cuda:0"
+                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
+                        else "cpu"
+                    ),
+                },
+            )
+        elif self.language == "da":
+            nlp_coref.add_pipe(
+                "allennlp_coref",
+                config={
+                    "device": (
+                        0
+                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
+                        else -1
+                    ),
+                },
+            )
 
         def warn_error(proc_name, proc, docs, e):
             print(
@@ -119,7 +136,7 @@ class DocProcessor:
         for i, doc in enumerate(docs, start=1):
             doc_bin.add(doc)
             if i % size == 0:
-                with open(output_dir / f"{i//size}.bin", "wb") as f:
+                with open(output_dir / f"{i // size}.bin", "wb") as f:
                     f.write(doc_bin.to_bytes())
                 doc_bin = DocBin(store_user_data=True)
             yield doc
@@ -151,14 +168,14 @@ class DocProcessor:
         # extreme memory pressure, hence the small batch size
         coref_resolved_docs = self.coref_pipeline.pipe(
             ((text_with_context(src_doc), src_doc) for src_doc in docs),
-            batch_size=self.batch_size,
+            batch_size=5,
             as_tuples=True,
             n_process=self.n_process,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
             (
-                (remove_context(doc._.resolve_coref), src_doc)
+                (remove_context(doc._.resolved_text), src_doc)
                 for doc, src_doc in coref_resolved_docs
             ),
             batch_size=self.batch_size,

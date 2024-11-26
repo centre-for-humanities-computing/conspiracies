@@ -22,8 +22,8 @@ def test_coref_clusters(nlp_da_w_coref):  # noqa F811
             assert isinstance(sent._.coref_clusters[0][1], Span)
 
 
-def test_resolve_coref(nlp_da_w_coref):  # noqa F811
-    resolve_coref_text = (
+def test_resolved_text(nlp_da_w_coref):  # noqa F811
+    resolved_text_text = (
         "Aftalepartierne bag Rammeaftalen om plan for genåbning af Danmark blev i"
         + " foråret 2021 enige om at nedsætte en ekspertgruppe, en ekspertgruppe fik "
         + "til opgave at komme med input til den langsigtede strategi for håndtering "
@@ -31,7 +31,7 @@ def test_resolve_coref(nlp_da_w_coref):  # noqa F811
         + "ekspertgruppe rapport."
     )
 
-    resolve_coref_spans = [
+    resolved_text_spans = [
         "Aftalepartierne bag Rammeaftalen om plan for genåbning af Danmark blev i "
         + "foråret 2021 enige om at nedsætte en ekspertgruppe, en ekspertgruppe fik "
         + "til opgave at komme med input til den langsigtede strategi for håndtering "
@@ -39,11 +39,11 @@ def test_resolve_coref(nlp_da_w_coref):  # noqa F811
         "en ekspertgruppe er nu klar med en ekspertgruppe rapport.",
     ]
 
-    doc = nlp_da_w_coref(resolve_coref_text)
+    doc = nlp_da_w_coref(resolved_text_text)
     # test for doc
-    assert doc._.resolve_coref == resolve_coref_text
+    assert doc._.resolved_text == resolved_text_text
 
     # test for spans
     for i, sent in enumerate(doc.sents):
         if sent._.coref_clusters != []:
-            assert sent._.resolve_coref == resolve_coref_spans[i]
+            assert sent._.resolved_text == resolved_text_spans[i]
