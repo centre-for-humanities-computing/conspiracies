@@ -170,7 +170,6 @@ class DocProcessor:
             batch_size=self.batch_size,
             as_tuples=True,
             n_process=self.n_process,
-            component_cfg={"fastcoref": {"resolve_text": True}},
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(

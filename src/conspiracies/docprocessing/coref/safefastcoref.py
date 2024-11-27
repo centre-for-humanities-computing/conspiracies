@@ -9,14 +9,18 @@ logging.getLogger("fastcoref").setLevel(logging.WARNING)
 
 
 class SafeFastCoref(Pipe):
-    def __init__(self, component):
+    def __init__(self, component: FastCorefResolver):
         """Initialize the wrapper with the original component."""
         self.component = component
 
     def pipe(self, stream: Iterable, batch_size: int = 128):
         """Wrap the pipe method of the component."""
         try:
-            yield from self.component.pipe(stream, batch_size=batch_size)
+            yield from self.component.pipe(
+                stream,
+                batch_size=batch_size,
+                resolve_text=True,
+            )
         except Exception as e:
             # Log the error and return the unprocessed documents
             logging.error(f"Error in SafeFastCoref pipe: {e}")
@@ -26,7 +30,7 @@ class SafeFastCoref(Pipe):
     def __call__(self, doc):
         """Wrap the __call__ method of the component."""
         try:
-            return self.component(doc)
+            return self.component(doc, resolve_text=True)
         except Exception as e:
             # Log the error and return the original document
             logging.error(f"Error in SafeFastCoref __call__: {e}")
