@@ -248,9 +248,9 @@ class Clustering:
 
     @staticmethod
     def _mapping_to_first_member(
-        clusters: List[List[TripletField | str]],
+        clusters: List[List[Union[TripletField, str]]],
     ) -> Dict[str, str]:
-        def get_text(member: TripletField | str):
+        def get_text(member: Union[TripletField, str]):
             if isinstance(member, TripletField):
                 return member.text
             else:
