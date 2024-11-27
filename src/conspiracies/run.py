@@ -61,4 +61,11 @@ if __name__ == "__main__":
         config = PipelineConfig.default_with_extra_config(cli_args)
 
     pipeline = Pipeline(config)
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename=config.base.output_path + "/logfile",
+        filemode="w+",
+    )
+
     pipeline.run()
