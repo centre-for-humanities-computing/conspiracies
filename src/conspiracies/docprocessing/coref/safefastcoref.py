@@ -5,6 +5,8 @@ from typing import Iterable
 
 import logging
 
+from spacy.util import minibatch
+
 logging.getLogger("fastcoref").setLevel(logging.WARNING)
 
 
@@ -15,17 +17,19 @@ class SafeFastCoref(Pipe):
 
     def pipe(self, stream: Iterable, batch_size: int = 128):
         """Wrap the pipe method of the component."""
-        try:
-            yield from self.component.pipe(
-                stream,
-                batch_size=batch_size,
-                resolve_text=True,
-            )
-        except Exception as e:
-            # Log the error and return the unprocessed documents
-            logging.error(f"Error in SafeFastCoref pipe: {e}")
-            for doc in stream:
-                yield doc  # Return the original document
+        for mb in minibatch(stream, size=batch_size):
+            try:
+                yield from self.component.pipe(
+                    mb,
+                    batch_size=batch_size,
+                    resolve_text=True,
+                )
+            except Exception as e:
+                # Log the error and return the unprocessed documents
+                logging.error(f"Error in SafeFastCoref pipe: {e}")
+                for doc in mb:
+                    doc._.resolved_text = doc.text
+                    yield doc  # Return the original document
 
     def __call__(self, doc):
         """Wrap the __call__ method of the component."""
