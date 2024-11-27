@@ -23,12 +23,11 @@ from conspiracies.visualization.graph import (
 
 class Pipeline:
     def __init__(self, config: PipelineConfig):
-        self.project_name = config.base.project_name
         self.input_path = Path(config.preprocessing.input_path)
+        self.output_path = Path(config.base.output_path)
+        os.makedirs(self.output_path, exist_ok=True)
         self.config = config
         print("Initialized Pipeline with config:", config)
-        self.output_path = Path(self.config.base.output_root, self.project_name)
-        os.makedirs(self.output_path, exist_ok=True)
 
     def run(self):
         if self.config.preprocessing.enabled:

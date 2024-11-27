@@ -6,8 +6,7 @@ from pydantic import BaseModel
 
 
 class BaseConfig(BaseModel):
-    project_name: str
-    output_root: str = "output"
+    output_path: str
     language: str
 
 
