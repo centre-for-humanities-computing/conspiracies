@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from glob import glob
 from pathlib import Path
@@ -22,7 +23,6 @@ class DocProcessor:
             nlp_coref.add_pipe(
                 "safe_fastcoref",
                 config={
-                    "enable_progress_bar": False,
                     "device": (
                         "cuda"
                         if self.prefer_gpu_for_coref and torch.cuda.is_available()
@@ -118,14 +118,7 @@ class DocProcessor:
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
 
-    @staticmethod
-    def _set_user_data_on_docs(docs: Iterator[Tuple[Doc, Document]]) -> Iterator[Doc]:
-        for doc, src_doc in docs:
-            # FIXME: this is kind of stupid, but with old pydantic this will have to work for now.
-            doc.user_data["doc_metadata"] = json.loads(src_doc.json())
-            yield doc
-
-    def _store_doc_bins(self, docs: Iterator[Doc], output_path: Path):
+    def _store_doc_bins(self, docs: Iterator[Tuple[Doc, Document]], output_path: Path):
         # FIXME: paths should be given elsewhere and not be inferred like this
         output_dir = Path(os.path.dirname(output_path)) / "spacy_docs"
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -141,13 +134,24 @@ class DocProcessor:
 
         size = self.doc_bin_size
         doc_bin = DocBin(store_user_data=True)
-        for i, doc in enumerate(docs, start=start_from + 1):
+        at_doc = start_from
+        for doc, src_doc in docs:
+            at_doc += 1
+
+            # FIXME: this conversion is kind of stupid, but with old pydantic this will have to work for now.
+            doc.user_data["doc_metadata"] = json.loads(src_doc.json())
+
             doc_bin.add(doc)
-            if i % size == 0:
-                with open(output_dir / f"{i}.bin", "wb") as f:
+            if at_doc % size == 0:
+                with open(output_dir / f"{at_doc}.bin", "wb") as f:
                     f.write(doc_bin.to_bytes())
                 doc_bin = DocBin(store_user_data=True)
             yield doc
+
+        if len(doc_bin) > 0:
+            # write final doc bin if any docs are left
+            with open(output_dir / f"{at_doc}.bin", "wb") as f:
+                f.write(doc_bin.to_bytes())
 
     def _read_doc_bins(self, output_path: Path):
         # FIXME: paths should be given elsewhere and not be inferred like this
@@ -159,8 +163,8 @@ class DocProcessor:
                 doc_bin = DocBin().from_bytes(bytes_data.read())
                 for doc in doc_bin.get_docs(self.triplet_extraction_pipeline.vocab):
                     count += 1
-                    yield doc
-        print(f"Read {count} previously processed docs.")
+                    src_doc = Document(**doc.user_data["doc_metadata"])
+                    yield doc, src_doc
 
     def process_docs(
         self,
@@ -173,7 +177,23 @@ class DocProcessor:
             print(
                 "Reading previously processed documents! Disable 'continue_from_last' to avoid this.'",
             )
-            docs_to_jsonl(self._read_doc_bins(output_path), output_path)
+            processed_ids = set()
+
+            def check_processed_ids_and_pass_on():
+                for doc, src_doc in tqdm(
+                    self._read_doc_bins(output_path),
+                    desc="Reading previously processed docs",
+                ):
+                    if src_doc.id in processed_ids:
+                        logging.warning(f"Duplicate processed document: {src_doc.id}")
+                        continue
+                    processed_ids.add(src_doc.id)
+                    yield doc, src_doc
+
+            docs_to_jsonl(check_processed_ids_and_pass_on(), output_path)
+
+            print(f"Read {len(processed_ids)} previously processed docs.")
+            docs = (d for d in docs if d.id not in processed_ids)
 
         # The coreference pipeline tends to choke on too large batches because of an
         # extreme memory pressure, hence the small batch size
@@ -194,10 +214,8 @@ class DocProcessor:
             n_process=self.n_process,
         )
 
-        with_user_data = self._set_user_data_on_docs(with_triplets)
-
         docs_to_output = tqdm(
-            self._store_doc_bins(with_user_data, output_path),
+            self._store_doc_bins(with_triplets, output_path),
             desc="Processing documents",
         )
 

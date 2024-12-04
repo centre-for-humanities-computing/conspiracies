@@ -6,7 +6,10 @@ from typing import Iterable
 import logging
 
 from spacy.util import minibatch
+from datasets.utils.logging import disable_progress_bar
 
+
+disable_progress_bar()  # annoying progress bar per batch
 logging.getLogger("fastcoref").setLevel(logging.WARNING)
 
 
@@ -19,17 +22,24 @@ class SafeFastCoref(Pipe):
         """Wrap the pipe method of the component."""
         for mb in minibatch(stream, size=batch_size):
             try:
-                yield from self.component.pipe(
-                    mb,
-                    batch_size=batch_size,
-                    resolve_text=True,
+                # The pipe method can fail on one document in a loop and thereby fail on all docs in that
+                # minibatch. However, it is made as a generator and may not show before long after the first
+                # documents have passed through the whole pipeline. Therefore, the minibatch is processed fully
+                # and then yielded. If it fails, they will be processed individually.
+                annotated = list(
+                    self.component.pipe(
+                        mb,
+                        batch_size=batch_size,
+                        resolve_text=True,
+                    ),
                 )
             except Exception as e:
                 # Log the error and return the unprocessed documents
-                logging.error(f"Error in SafeFastCoref pipe: {e}")
-                for doc in mb:
-                    doc._.resolved_text = doc.text
-                    yield doc  # Return the original document
+                logging.error(
+                    f"Error in SafeFastCoref pipe: {e}. Trying documents individually",
+                )
+                annotated = [self(d) for d in mb]
+            yield from annotated
 
     def __call__(self, doc):
         """Wrap the __call__ method of the component."""
@@ -38,6 +48,8 @@ class SafeFastCoref(Pipe):
         except Exception as e:
             # Log the error and return the original document
             logging.error(f"Error in SafeFastCoref __call__: {e}")
+            doc._.coref_clusters = []
+            doc._.resolved_text = doc.text
             return doc
 
 
@@ -49,7 +61,7 @@ class SafeFastCoref(Pipe):
         "model_path": "biu-nlp/f-coref",  # You can specify your own trained model path
         "device": None,  # "cuda" or "cpu" None defaults to cuda
         "max_tokens_in_batch": 10000,
-        "enable_progress_bar": True,
+        "enable_progress_bar": False,
     },
 )
 def create_safe_fastcoref(

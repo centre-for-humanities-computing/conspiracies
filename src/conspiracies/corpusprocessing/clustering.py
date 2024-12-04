@@ -9,6 +9,7 @@ import numpy as np
 from hdbscan import HDBSCAN
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
+from tqdm import tqdm
 from umap import UMAP
 
 from conspiracies.common.modelchoice import ModelChoice
@@ -103,24 +104,27 @@ class Clustering:
 
         return merged_clusters
 
-    def _cluster(
+    def _cluster_via_embeddings(
         self,
-        fields: List[TripletField],
-        cache_filename: str,
+        labels: List[str],
+        cache_name: str = None,
+        show_progress: bool = True,
     ):
-        emb_cache = f"embeddings-{cache_filename}.npy"
-        if self.cache_location and Path(self.cache_location, emb_cache).exists():
+        emb_cache = (
+            Path(self.cache_location, f"embeddings-{cache_name}.npy")
+            if self.cache_location and cache_name
+            else None
+        )
+        if emb_cache and emb_cache.exists():
             print(
                 "Reusing cached embeddings! Delete cache if this is not supposed to happen.",
             )
-            embeddings = np.load(
-                Path(self.cache_location, emb_cache),
-            )
+            embeddings = np.load(emb_cache)
         else:
             model = self._get_embedding_model()
             print("Creating embeddings:")
 
-            counter = Counter((field.text for field in fields))
+            counter = Counter((field for field in labels))
             condensed = [
                 field
                 for field, count in counter.items()
@@ -129,26 +133,25 @@ class Clustering:
             embeddings = model.encode(
                 condensed,
                 normalize_embeddings=True,
-                show_progress_bar=True,
+                show_progress_bar=show_progress,
             )
-            if self.cache_location:
-                np.save(
-                    Path(self.cache_location, emb_cache),
-                    embeddings,
-                )
+            if emb_cache:
+                np.save(emb_cache, embeddings)
 
         if self.n_dimensions is not None:
             reduced_emb_cache = (
-                f"embeddings-{cache_filename}-red{self.n_dimensions}.npy"
+                Path(
+                    self.cache_location,
+                    f"embeddings-{cache_name}-red{self.n_dimensions}.npy",
+                )
+                if self.cache_location and cache_name
+                else None
             )
-            if (
-                self.cache_location
-                and Path(self.cache_location, reduced_emb_cache).exists()
-            ):
+            if reduced_emb_cache and reduced_emb_cache.exists():
                 print(
                     "Reusing cached reduced embeddings! Delete cache if this is not supposed to happen.",
                 )
-                embeddings = np.load(Path(self.cache_location, reduced_emb_cache))
+                embeddings = np.load(reduced_emb_cache)
             else:
                 print("Reducing embedding space ...")
                 reducer = UMAP(
@@ -157,23 +160,19 @@ class Clustering:
                 )
                 embeddings = reducer.fit_transform(embeddings)
                 if self.cache_location:
-                    np.save(
-                        Path(self.cache_location, reduced_emb_cache),
-                        embeddings,
-                    )
+                    np.save(reduced_emb_cache, embeddings)
 
         print("Clustering ... (Delete cache to ensure recalculation)")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
             max_cluster_size=20,  # somewhat arbitrary number, mostly to avoid mega clusters that suck up everything
             min_samples=self.min_samples,
-            memory=str(self.cache_location),
         )
         hdbscan_model.fit(embeddings)
 
         clusters = defaultdict(list)
         for field, embedding, label, probability in zip(
-            fields,
+            labels,
             embeddings,
             hdbscan_model.labels_,
             hdbscan_model.probabilities_,
@@ -185,7 +184,7 @@ class Clustering:
 
         merged = self._combine_clusters(
             list(clusters.values()),
-            get_combine_key=lambda t: t[0].text,
+            get_combine_key=lambda t: t[0],
         )
 
         # sort by how "prototypical" a member is in the cluster
@@ -279,6 +278,16 @@ class Clustering:
             [e.text for e in entities],
             0.2,
         )
+        entity_clusters = [
+            sub_cluster
+            for cluster in tqdm(entity_clusters, desc="Creating sub-clusters")
+            for sub_cluster in (
+                self._cluster_via_embeddings(cluster, show_progress=False)
+                if len(cluster) > 10
+                else [cluster]
+            )
+        ]
+
         print("Creating mappings for predicates")
         predicate_clusters = self._cluster_via_normalization(
             [p.text for p in predicates],

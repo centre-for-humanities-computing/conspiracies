@@ -29,6 +29,9 @@ def _doc_to_json(
             timestamp = src_doc.timestamp.isoformat()
         else:
             raise TypeError(f"Unexpected input type {type(doc[1])}")
+    elif "doc_metadata" in doc.user_data:
+        id_ = doc.user_data["doc_metadata"]["id"]
+        timestamp = doc.user_data["doc_metadata"]["timestamp"]
     else:
         id_ = None
         timestamp = None

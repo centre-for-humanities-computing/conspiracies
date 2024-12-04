@@ -65,7 +65,9 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
         filename=config.base.output_path + "/logfile",
-        filemode="w+",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        filemode="a+",
     )
+    logging.info("Running pipeline...")
 
     pipeline.run()
