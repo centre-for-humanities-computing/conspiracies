@@ -117,6 +117,7 @@ class DocProcessor:
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
+        self.deduplicate_processed_docs = False
 
     def _store_doc_bins(self, docs: Iterator[Tuple[Doc, Document]], output_path: Path):
         # FIXME: paths should be given elsewhere and not be inferred like this
@@ -166,32 +167,57 @@ class DocProcessor:
                     src_doc = Document(**doc.user_data["doc_metadata"])
                     yield doc, src_doc
 
+    def _read_deduplicated_doc_bins(
+        self,
+        output_path: Path,
+        processed_ids: set[str] = None,
+    ):
+        if processed_ids is None:
+            processed_ids = set()
+
+        for doc, src_doc in tqdm(
+            self._read_doc_bins(output_path),
+            desc="Reading previously processed docs",
+        ):
+            if src_doc.id in processed_ids:
+                logging.warning(f"Duplicate processed document: {src_doc.id}")
+                continue
+            processed_ids.add(src_doc.id)
+            yield doc, src_doc
+
+    def deduplicate_doc_bins(self, output_path: Path):
+        spacy_docs = Path(os.path.dirname(output_path)) / "spacy_docs"
+        old_docs = Path(os.path.dirname(output_path)) / ".old" / "spacy_docs"
+        old_docs.mkdir(parents=True, exist_ok=True)
+        orig_dir = spacy_docs.rename(old_docs)
+        deduplicated = spacy_docs
+        deduplicated.mkdir()
+        for _ in self._store_doc_bins(
+            self._read_deduplicated_doc_bins(orig_dir),
+            deduplicated,
+        ):
+            pass
+
     def process_docs(
         self,
         docs: Iterable[Document],
         output_path: Path,
         continue_from_last=False,
     ):
-
+        if self.deduplicate_processed_docs:
+            self.deduplicate_doc_bins(output_path)
         if continue_from_last:
             print(
                 "Reading previously processed documents! Disable 'continue_from_last' to avoid this.'",
             )
             processed_ids = set()
-
-            def check_processed_ids_and_pass_on():
-                for doc, src_doc in tqdm(
-                    self._read_doc_bins(output_path),
-                    desc="Reading previously processed docs",
-                ):
-                    if src_doc.id in processed_ids:
-                        logging.warning(f"Duplicate processed document: {src_doc.id}")
-                        continue
-                    processed_ids.add(src_doc.id)
-                    yield doc, src_doc
-
-            docs_to_jsonl(check_processed_ids_and_pass_on(), output_path)
-
+            docs_to_jsonl(
+                self._read_deduplicated_doc_bins(
+                    output_path,
+                    processed_ids=processed_ids,
+                ),
+                output_path,
+            )
             print(f"Read {len(processed_ids)} previously processed docs.")
             docs = (d for d in docs if d.id not in processed_ids)
 

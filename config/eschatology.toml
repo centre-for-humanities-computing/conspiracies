@@ -2,7 +2,7 @@
 language = "en"
 
 [preprocessing]
-enabled = true
+enabled = false
 doc_type = "csv"
 
 [preprocessing.extra]

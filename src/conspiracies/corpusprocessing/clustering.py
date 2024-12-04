@@ -162,10 +162,10 @@ class Clustering:
                 if self.cache_location:
                     np.save(reduced_emb_cache, embeddings)
 
-        print("Clustering ... (Delete cache to ensure recalculation)")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
-            max_cluster_size=20,  # somewhat arbitrary number, mostly to avoid mega clusters that suck up everything
+            max_cluster_size=self.min_cluster_size
+            * 10,  # somewhat arbitrary, mostly to avoid mega clusters that suck up everything
             min_samples=self.min_samples,
         )
         hdbscan_model.fit(embeddings)
