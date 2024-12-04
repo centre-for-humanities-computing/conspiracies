@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
+  EdgeGroup,
   EnrichedNode,
   FileGraphService,
   filter,
@@ -12,6 +13,7 @@ import Graph, { GraphEvents, Options } from "react-vis-graph-wrapper";
 import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 import { GraphOptionsControlPanel } from "./GraphOptionsControlPanel";
 import { NodeInfo } from "./NodeInfo";
+import { EdgeInfo } from "./EdgeInfo";
 
 export const GraphViewer: React.FC = () => {
   let graphServiceRef = useRef<GraphService>(new SampleGraphService());
@@ -41,26 +43,40 @@ export const GraphViewer: React.FC = () => {
   const [graphFilter, setGraphFilter] = useState<GraphFilter>(
     new GraphFilter(1, 1, 10, 1, 1, 10),
   );
-  const [selected, setSelected] = useState(new Set<string>());
+  const [subgraphNodes, setSubgraphNodes] = useState(new Set<string>());
   const [selectedNode, setSelectedNode] = useState<EnrichedNode | undefined>(
+    undefined,
+  );
+  const [selectedEdge, setSelectedEdge] = useState<EdgeGroup | undefined>(
     undefined,
   );
 
   const filteredGraphData = useMemo(() => {
     const baseGraphData =
-      selected.size > 0
-        ? graphServiceRef.current.getSubGraph(selected)
+      subgraphNodes.size > 0
+        ? graphServiceRef.current.getSubGraph(subgraphNodes)
         : graphServiceRef.current.getGraph();
     return filter(graphFilter, baseGraphData);
-  }, [graphFilter, selected]);
+  }, [graphFilter, subgraphNodes]);
+
+  const graphDataMaps = useMemo(() => {
+    return {
+      nodesMap: new Map(
+        filteredGraphData.nodes.map((node) => [node.id!.toString(), node]),
+      ),
+      edgeGroupMap: new Map(
+        filteredGraphData.edges.map((edgeGroup) => [edgeGroup.id, edgeGroup]),
+      ),
+    };
+  }, [filteredGraphData]);
 
   let events: GraphEvents = {
     hold: ({ nodes }) => {
-      const newSelected = new Set(selected);
+      const newSubgraphNodes = new Set(subgraphNodes);
       nodes.forEach((element: string) => {
-        newSelected.delete(element);
+        newSubgraphNodes.delete(element);
       });
-      setSelected(newSelected);
+      setSubgraphNodes(newSubgraphNodes);
     },
     select: ({ nodes }) => {
       let newSelected: Set<string>;
@@ -69,23 +85,31 @@ export const GraphViewer: React.FC = () => {
         nodes.forEach((element: string) => {
           newSelected.add(element);
         });
-        setSelected(newSelected);
+        setSubgraphNodes(newSelected);
       }
     },
     doubleClick: ({ nodes }) => {
-      const newSelected = new Set(selected);
+      const newSelected = new Set(subgraphNodes);
       nodes.forEach((element: string) => {
         Array.from(graphServiceRef.current.getConnectedNodes(element)).forEach(
           (c) => newSelected.add(c),
         );
       });
-      setSelected(newSelected);
+      setSubgraphNodes(newSelected);
     },
     selectNode: ({ nodes }) => {
-      setSelectedNode(graphServiceRef.current.getNode(nodes[0]));
+      setSelectedEdge(undefined);
+      setSelectedNode(graphDataMaps.nodesMap.get(nodes[0]));
+    },
+    selectEdge: ({ edges }) => {
+      setSelectedNode(undefined);
+      setSelectedEdge(graphDataMaps.edgeGroupMap.get(edges[0]));
     },
     deselectNode: () => {
       setSelectedNode(undefined);
+    },
+    deselectEdge: () => {
+      setSelectedEdge(undefined);
     },
   };
 
@@ -137,7 +161,7 @@ export const GraphViewer: React.FC = () => {
           <button
             className={"flex-container__element"}
             onClick={() => {
-              setSelected(new Set<string>());
+              setSubgraphNodes(new Set<string>());
             }}
           >
             Reset selection
@@ -146,6 +170,7 @@ export const GraphViewer: React.FC = () => {
       </div>
       <div className="graph-container">
         {selectedNode && <NodeInfo node={selectedNode} />}
+        {selectedEdge && <EdgeInfo edges={selectedEdge} />}
         <Graph graph={filteredGraphData} options={options} events={events} />
       </div>
     </div>

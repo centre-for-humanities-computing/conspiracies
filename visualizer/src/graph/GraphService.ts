@@ -17,9 +17,13 @@ export interface EnrichedEdge extends Edge {
   stats: Stats;
 }
 
+export interface EdgeGroup extends EnrichedEdge {
+  group?: EnrichedEdge[];
+}
+
 export interface EnrichedGraphData extends GraphData {
   nodes: EnrichedNode[];
-  edges: EnrichedEdge[];
+  edges: EdgeGroup[];
 }
 
 export class GraphFilter {
@@ -86,23 +90,52 @@ export function filter(
       hasDateOverlap(node, filter),
   );
   let filteredNodes = new Set(nodes.map((node) => node.id));
-  let edges = graphData.edges.filter(
-    (edge: EnrichedEdge) =>
-      edge.stats.frequency >= filter.minimumEdgeFrequency &&
-      edge.stats.frequency < filter.maximumEdgeFrequency &&
-      hasDateOverlap(edge, filter) &&
-      filteredNodes.has(edge.from) &&
-      filteredNodes.has(edge.to),
-  );
+  let groupedEdges = graphData.edges
+    .filter(
+      (edge: EnrichedEdge) =>
+        edge.stats.frequency >= filter.minimumEdgeFrequency &&
+        edge.stats.frequency < filter.maximumEdgeFrequency &&
+        hasDateOverlap(edge, filter) &&
+        filteredNodes.has(edge.from) &&
+        filteredNodes.has(edge.to),
+    )
+    .reduce(
+      (acc, curr) => {
+        const key = curr.from + "->" + curr.to;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(curr);
+        return acc;
+      },
+      {} as Record<string, EnrichedEdge[]>,
+    );
+  let edges = Object.values(groupedEdges).map((group) => {
+    group.sort((edge1, edge2) => edge2.stats.frequency - edge1.stats.frequency);
+    const representative: EnrichedEdge = group.at(0)!;
+    return {
+      ...representative,
+      id: representative.from + '->' + representative.to,
+      label: group
+        .slice(0, 3)
+        .map((e) => e.label)
+        .join(", "),
+      width:
+        Math.log(group.map((e) => e.stats.frequency).reduce((a, b) => a + b)),
+      group: group
+    };
+  });
+
   let connectedNodes = new Set(edges.flatMap((edge) => [edge.from, edge.to]));
   if (!filter.showUnconnectedNodes) {
     nodes = nodes.filter((node) => connectedNodes.has(node.id));
   }
   nodes = nodes.map((node) => ({
     ...node,
-    ...(node.label?.toLowerCase().includes(filter.labelSearch)
-      ? { opacity: 1 }
-      : { opacity: 0.2 }),
+    opacity: node.label?.toLowerCase().includes(filter.labelSearch) ? 1 : 0.2,
+    font: {
+      size: 14 + node.stats.frequency / 100
+    }
   }));
 
   return { nodes, edges };
@@ -116,6 +149,7 @@ export interface DataBounds {
 
 export abstract class GraphService {
   private nodesMap: Map<string, EnrichedNode> | null = null;
+  private edgesMap: Map<string, EnrichedNode> | null = null;
 
   abstract getGraph(): EnrichedGraphData;
 
@@ -156,15 +190,18 @@ export abstract class GraphService {
         this.getGraph().nodes.map((node) => [node.id!.toString(), node]),
       );
     }
-
-    // highly inefficient linear search; overwrite for actual use
-    for (let node of this.getGraph().nodes) {
-      if (node.id === nodeId) {
-        return node;
-      }
-    }
-    return undefined;
+    return this.nodesMap.get(nodeId);
   }
+
+  // getEdges(edgeFromAndTo: string): EnrichedEdge[] | undefined {
+  //   if (this.edgesMap === null) {
+  //     this.edgesMap = new Map(
+  //       this.getGraph().edges.map((node) => [node.id!.toString(), node]),
+  //     );
+  //   }
+  //
+  //   return undefined;
+  // }
 }
 
 export class SampleGraphService extends GraphService {
