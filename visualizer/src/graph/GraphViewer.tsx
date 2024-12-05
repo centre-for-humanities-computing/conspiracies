@@ -1,47 +1,35 @@
-import React, { useMemo, useRef, useState } from "react";
-import {
-  EdgeGroup,
-  EnrichedNode,
-  FileGraphService,
-  filter,
-  GraphFilter,
-  GraphService,
-  SampleGraphService,
-} from "./GraphService";
-import FileUploadComponent from "../datasources/FileUploadComp";
+import React, { useMemo, useState } from "react";
+import { EdgeGroup, EnrichedNode, filter, GraphFilter } from "./GraphService";
 import Graph, { GraphEvents, Options } from "react-vis-graph-wrapper";
 import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 import { GraphOptionsControlPanel } from "./GraphOptionsControlPanel";
-import { NodeInfo } from "./NodeInfo";
-import { EdgeInfo } from "./EdgeInfo";
+import { NodeInfo } from "../inspector/NodeInfo";
+import { EdgeInfo } from "../inspector/EdgeInfo";
+import { useServiceContext } from "../service/ServiceContextProvider";
+
+export interface GraphViewerProps {}
 
 export const GraphViewer: React.FC = () => {
-  let graphServiceRef = useRef<GraphService>(new SampleGraphService());
+  const { getGraphService, getDocService } = useServiceContext();
 
-  const handleFileLoaded = (data: any) => {
-    graphServiceRef.current = new FileGraphService(data);
-    const top50 =
-      graphServiceRef.current
-        .getGraph()
-        .nodes.map((n) => n.stats.frequency)
-        .sort((a, b) => b - a)
-        .at(100) || 1;
-    let { minNodeFrequency, maxNodeFrequency, maxEdgeFrequency } =
-      graphServiceRef.current.getBounds();
-    setGraphFilter(
-      new GraphFilter(
-        minNodeFrequency,
-        top50,
-        maxNodeFrequency,
-        1,
-        Math.floor(top50 / 10),
-        maxEdgeFrequency,
-      ),
-    );
-  };
+  const top50 =
+    getGraphService()
+      .getGraph()
+      .nodes.map((n) => n.stats.frequency)
+      .sort((a, b) => b - a)
+      .at(100) || 1;
+  let { minNodeFrequency, maxNodeFrequency, maxEdgeFrequency } =
+    getGraphService().getBounds();
 
   const [graphFilter, setGraphFilter] = useState<GraphFilter>(
-    new GraphFilter(1, 1, 10, 1, 1, 10),
+    new GraphFilter(
+      minNodeFrequency,
+      top50,
+      maxNodeFrequency,
+      1,
+      Math.floor(top50 / 10),
+      maxEdgeFrequency,
+    ),
   );
   const [subgraphNodes, setSubgraphNodes] = useState(new Set<string>());
   const [selectedNode, setSelectedNode] = useState<EnrichedNode | undefined>(
@@ -54,8 +42,8 @@ export const GraphViewer: React.FC = () => {
   const filteredGraphData = useMemo(() => {
     const baseGraphData =
       subgraphNodes.size > 0
-        ? graphServiceRef.current.getSubGraph(subgraphNodes)
-        : graphServiceRef.current.getGraph();
+        ? getGraphService().getSubGraph(subgraphNodes)
+        : getGraphService().getGraph();
     return filter(graphFilter, baseGraphData);
   }, [graphFilter, subgraphNodes]);
 
@@ -91,19 +79,21 @@ export const GraphViewer: React.FC = () => {
     doubleClick: ({ nodes }) => {
       const newSelected = new Set(subgraphNodes);
       nodes.forEach((element: string) => {
-        Array.from(graphServiceRef.current.getConnectedNodes(element)).forEach(
-          (c) => newSelected.add(c),
+        Array.from(getGraphService().getConnectedNodes(element)).forEach((c) =>
+          newSelected.add(c),
         );
       });
       setSubgraphNodes(newSelected);
     },
-    selectNode: ({ nodes }) => {
+    selectNode: ({ nodes, edges }) => {
       setSelectedEdge(undefined);
       setSelectedNode(graphDataMaps.nodesMap.get(nodes[0]));
     },
-    selectEdge: ({ edges }) => {
-      setSelectedNode(undefined);
-      setSelectedEdge(graphDataMaps.edgeGroupMap.get(edges[0]));
+    selectEdge: ({ nodes, edges }) => {
+      if (nodes.length < 1) {
+        setSelectedNode(undefined);
+        setSelectedEdge(graphDataMaps.edgeGroupMap.get(edges[0]));
+      }
     },
     deselectNode: () => {
       setSelectedNode(undefined);
@@ -130,10 +120,6 @@ export const GraphViewer: React.FC = () => {
 
   return (
     <div>
-      <div className={"padded flex-container"}>
-        <FileUploadComponent onFileLoaded={handleFileLoaded} />
-      </div>
-      <hr />
       <div className={"padded"}>
         <GraphFilterControlPanel
           graphFilter={graphFilter}

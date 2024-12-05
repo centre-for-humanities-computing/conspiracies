@@ -1,4 +1,4 @@
-import {EdgeGroup} from "./GraphService";
+import { EdgeGroup } from "../graph/GraphService";
 import React from "react";
 
 export interface EdgeInfoProps {
@@ -8,10 +8,7 @@ export interface EdgeInfoProps {
 
 export const EdgeInfo: React.FC<EdgeInfoProps> = ({ edges }: EdgeInfoProps) => {
   return (
-    <div
-      className={"node-info"}
-      style={{ overflowY: "scroll", maxHeight: "800px" }}
-    >
+    <div className={"node-info"}>
       {edges.group!.map((e, i) => (
         <div key={e.label}>
           <b>{e.label}</b>

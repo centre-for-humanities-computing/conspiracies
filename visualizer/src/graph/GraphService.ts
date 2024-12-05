@@ -115,14 +115,15 @@ export function filter(
     const representative: EnrichedEdge = group.at(0)!;
     return {
       ...representative,
-      id: representative.from + '->' + representative.to,
+      id: representative.from + "->" + representative.to,
       label: group
         .slice(0, 3)
         .map((e) => e.label)
         .join(", "),
-      width:
-        Math.log(group.map((e) => e.stats.frequency).reduce((a, b) => a + b)),
-      group: group
+      width: Math.log(
+        group.map((e) => e.stats.frequency).reduce((a, b) => a + b),
+      ),
+      group: group,
     };
   });
 
@@ -134,8 +135,8 @@ export function filter(
     ...node,
     opacity: node.label?.toLowerCase().includes(filter.labelSearch) ? 1 : 0.2,
     font: {
-      size: 14 + node.stats.frequency / 100
-    }
+      size: 14 + node.stats.frequency / 100,
+    },
   }));
 
   return { nodes, edges };
@@ -148,9 +149,6 @@ export interface DataBounds {
 }
 
 export abstract class GraphService {
-  private nodesMap: Map<string, EnrichedNode> | null = null;
-  private edgesMap: Map<string, EnrichedNode> | null = null;
-
   abstract getGraph(): EnrichedGraphData;
 
   getBounds(): DataBounds {
@@ -183,25 +181,6 @@ export abstract class GraphService {
         .flatMap((edge) => [edge.from!.toString(), edge.to!.toString()]),
     );
   }
-
-  getNode(nodeId: string): EnrichedNode | undefined {
-    if (this.nodesMap === null) {
-      this.nodesMap = new Map(
-        this.getGraph().nodes.map((node) => [node.id!.toString(), node]),
-      );
-    }
-    return this.nodesMap.get(nodeId);
-  }
-
-  // getEdges(edgeFromAndTo: string): EnrichedEdge[] | undefined {
-  //   if (this.edgesMap === null) {
-  //     this.edgesMap = new Map(
-  //       this.getGraph().edges.map((node) => [node.id!.toString(), node]),
-  //     );
-  //   }
-  //
-  //   return undefined;
-  // }
 }
 
 export class SampleGraphService extends GraphService {
