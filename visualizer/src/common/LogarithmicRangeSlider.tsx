@@ -89,19 +89,19 @@ const LogarithmicRangeSlider: React.FC<LogarithmicRangeSliderProps> = ({
   ];
 
   return (
-      <MultiRangeSlider
-        min={linearMin}
-        max={linearMax}
-        minValue={realValueToLinearScale(minValue)}
-        maxValue={realValueToLinearScale(maxValue)}
-        onInput={handleSliderInput}
-        onChange={handleSliderChange}
-        minCaption={String(minCaption)} // Use the updated caption state
-        maxCaption={String(maxCaption)} // Use the updated caption state
-        labels={labels}
-        {...rest}
-        ruler={ruler || false}
-      />
+    <MultiRangeSlider
+      min={linearMin}
+      max={linearMax}
+      minValue={realValueToLinearScale(minValue)}
+      maxValue={realValueToLinearScale(maxValue)}
+      onInput={handleSliderInput}
+      onChange={handleSliderChange}
+      minCaption={String(minCaption)} // Use the updated caption state
+      maxCaption={String(maxCaption)} // Use the updated caption state
+      labels={labels}
+      {...rest}
+      ruler={ruler || false}
+    />
   );
 };
 export default LogarithmicRangeSlider;
