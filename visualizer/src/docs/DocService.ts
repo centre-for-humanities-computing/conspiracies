@@ -12,10 +12,25 @@ export abstract class DocService {
   }
 }
 
+export interface TripletField {
+  text: string;
+  start_char: number;
+  start: number;
+  end_char: number;
+  end: number;
+}
+
+export interface Triplet {
+  subject: TripletField;
+  predicate: TripletField;
+  object: TripletField;
+}
+
 export interface Doc {
   id: string;
   text: string;
   timestamp: string;
+  semantic_triplets: Triplet[];
 }
 
 export class SampleDocService extends DocService {
@@ -25,16 +40,19 @@ export class SampleDocService extends DocService {
         id: "1",
         text: "sample text 1",
         timestamp: "",
+        semantic_triplets: [],
       },
       {
         id: "2",
         text: "sample text 1",
         timestamp: "",
+        semantic_triplets: [],
       },
       {
         id: "3",
         text: "sample text 1",
         timestamp: "",
+        semantic_triplets: [],
       },
     ].map((d) => [d.id, d]),
   );
@@ -58,14 +76,18 @@ export class FileDocService extends DocService {
   constructor(docData: Doc[]) {
     super();
     this.docData = new Map(
-      docData.map((d) => [
-        d.id,
-        {
-          id: d.id,
-          text: d.text,
-          timestamp: d.timestamp,
-        },
-      ]),
+      docData
+        .filter((d) => d.semantic_triplets !== undefined)
+        .map((d) => [
+          d.id,
+          {
+            id: d.id,
+            text: d.text,
+            timestamp: d.timestamp,
+            semantic_triplets: d.semantic_triplets,
+          },
+        ]),
     );
+    console.log(this.docData.size);
   }
 }

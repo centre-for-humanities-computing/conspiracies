@@ -10,7 +10,7 @@ import { useServiceContext } from "../service/ServiceContextProvider";
 export interface GraphViewerProps {}
 
 export const GraphViewer: React.FC = () => {
-  const { getGraphService, getDocService } = useServiceContext();
+  const { getGraphService } = useServiceContext();
 
   const top50 =
     getGraphService()
@@ -45,7 +45,7 @@ export const GraphViewer: React.FC = () => {
         ? getGraphService().getSubGraph(subgraphNodes)
         : getGraphService().getGraph();
     return filter(graphFilter, baseGraphData);
-  }, [graphFilter, subgraphNodes]);
+  }, [getGraphService, graphFilter, subgraphNodes]);
 
   const graphDataMaps = useMemo(() => {
     return {

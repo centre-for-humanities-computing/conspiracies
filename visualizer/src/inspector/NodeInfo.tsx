@@ -15,7 +15,7 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
     <div className={"node-info " + className}>
       <b>{node.label}</b>
       <hr />
-      <StatsInfo stats={node.stats} />
+      <StatsInfo label={node.label!} stats={node.stats} />
     </div>
   );
 };

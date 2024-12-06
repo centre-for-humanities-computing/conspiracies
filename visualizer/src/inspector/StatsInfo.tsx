@@ -4,10 +4,11 @@ import { Stats } from "../graph/GraphService";
 import { useServiceContext } from "../service/ServiceContextProvider";
 
 export interface StatsInfoProps {
+  label: string;
   stats: Stats;
 }
 
-export const StatsInfo: React.FC<StatsInfoProps> = ({ stats }) => {
+export const StatsInfo: React.FC<StatsInfoProps> = ({ label, stats }) => {
   const { getDocService } = useServiceContext();
 
   return (
@@ -42,7 +43,11 @@ export const StatsInfo: React.FC<StatsInfoProps> = ({ stats }) => {
               {getDocService()
                 .getDocs(stats.docs)
                 .map((d) => (
-                  <DocInfo key={d.id} document={d} />
+                  <DocInfo
+                    key={d.id}
+                    document={d}
+                    highlightLabels={[label, ...(stats.alt_labels || [])]}
+                  />
                 ))}
             </div>
           )}
