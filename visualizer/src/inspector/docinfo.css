@@ -1,0 +1,29 @@
+.highlight-subject {
+  background: cyan;
+  opacity: 1;
+}
+
+.subject {
+  background: cyan;
+  opacity: 0.3;
+}
+
+.highlight-predicate {
+  background: lightgreen;
+  opacity: 1;
+}
+
+.predicate {
+  background: lightgreen;
+  opacity: 0.3;
+}
+
+.highlight-object {
+  background: yellow;
+  opacity: 1;
+}
+
+.object {
+  background: yellow;
+  opacity: 0.3;
+}

@@ -9,7 +9,7 @@ from conspiracies.corpusprocessing.clustering import Clustering
 from conspiracies.corpusprocessing.triplet import Triplet
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig, ClusteringThresholds
+from conspiracies.pipeline.config import PipelineConfig, Thresholds
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -23,12 +23,11 @@ from conspiracies.visualization.graph import (
 
 class Pipeline:
     def __init__(self, config: PipelineConfig):
-        self.project_name = config.base.project_name
         self.input_path = Path(config.preprocessing.input_path)
+        self.output_path = Path(config.base.output_path)
+        os.makedirs(self.output_path, exist_ok=True)
         self.config = config
         print("Initialized Pipeline with config:", config)
-        self.output_path = Path(self.config.base.output_root, self.project_name)
-        os.makedirs(self.output_path, exist_ok=True)
 
     def run(self):
         if self.config.preprocessing.enabled:
@@ -81,6 +80,8 @@ class Pipeline:
             batch_size=self.config.docprocessing.batch_size,
             triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
             prefer_gpu_for_coref=self.config.docprocessing.prefer_gpu_for_coref,
+            n_process=self.config.docprocessing.n_process,
+            doc_bin_size=self.config.docprocessing.doc_bin_size,
         )
 
     def docprocessing(self, continue_from_last=False):
@@ -101,12 +102,16 @@ class Pipeline:
         print("Collecting triplets.")
         triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
-        Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
-
         if self.config.corpusprocessing.thresholds is None:
-            thresholds = ClusteringThresholds.estimate_from_n_triplets(len(triplets))
+            thresholds = Thresholds.estimate_from_n_triplets(len(triplets))
         else:
             thresholds = self.config.corpusprocessing.thresholds
+        triplets = Triplet.filter_on_entity_label_frequency(
+            triplets,
+            thresholds.min_label_occurrence,
+        )
+        Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
+
         print("Clustering entities and predicates to create mappings.")
         clustering = Clustering(
             language=self.config.base.language,
@@ -114,6 +119,7 @@ class Pipeline:
             n_neighbors=self.config.corpusprocessing.n_neighbors,
             min_cluster_size=thresholds.min_cluster_size,
             min_samples=thresholds.min_samples,
+            cache_location=self.output_path / "cache",
         )
         mappings = clustering.create_mappings(triplets)
         with open(self.output_path / "mappings.json", "w") as out:

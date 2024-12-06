@@ -1,6 +1,5 @@
 [base]
-project_name = "test"
-output_root = "output"
+output_path = "output/test"
 language = "en"
 
 [preprocessing]

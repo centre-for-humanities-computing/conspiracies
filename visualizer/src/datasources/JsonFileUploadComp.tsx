@@ -1,12 +1,12 @@
 import React from "react";
 
-interface FileUploadComponentProps {
-  onFileLoaded: (data: any ) => void;
+interface JsonFileUploadComponentProps {
+  onFileLoaded: (data: any) => void;
 }
 
-const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
+const JsonFileUploadComponent: React.FC<JsonFileUploadComponentProps> = ({
   onFileLoaded,
-}: FileUploadComponentProps) => {
+}: JsonFileUploadComponentProps) => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -29,4 +29,4 @@ const FileUploadComponent: React.FC<FileUploadComponentProps> = ({
   );
 };
 
-export default FileUploadComponent;
+export default JsonFileUploadComponent;
