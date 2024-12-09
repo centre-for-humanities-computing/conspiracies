@@ -15,3 +15,5 @@ some_extra_value = 1234
 triplet_extraction_method = "test"
 
 [corpusprocessing]
+
+[databasepopulation]

@@ -8,6 +8,7 @@ from conspiracies.pipeline.config import (
     PreProcessingConfig,
     DocProcessingConfig,
     CorpusProcessingConfig,
+    DatabasePopulationConfig,
 )
 
 
@@ -37,6 +38,7 @@ def test_config_loading(path: str):
             triplet_extraction_method="test",
         ),
         corpusprocessing=CorpusProcessingConfig(),
+        databasepopulation=DatabasePopulationConfig(),
     )
 
 
