@@ -88,7 +88,7 @@ def process_file(
 
         # Resolve coreference
         coref_docs = nlp_coref.pipe(normalized_article)
-        resolved_docs = (d._.resolve_coref for d in coref_docs)
+        resolved_docs = (d._.resolved_text for d in coref_docs)
 
         # Extract relations
         docs = nlp.pipe(resolved_docs)

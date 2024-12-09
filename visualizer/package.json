@@ -9,9 +9,12 @@
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.96",
     "@types/react-dom": "^18.2.24",
+    "draft-js": "^0.11.7",
+    "multi-range-slider-react": "^2.0.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-graph-vis": "^1.0.7",
+    "react-highlight-within-textarea": "^3.2.2",
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
     "react-vis-graph-wrapper": "^0.1.3",
@@ -50,8 +53,9 @@
     ]
   },
   "devDependencies": {
-    "electron": "^33.0.2",
     "@electron/packager": "^18.3.5",
+    "electron": "^33.0.2",
+    "prettier": "^3.3.3",
     "serve": "^14.2.4"
   }
 }

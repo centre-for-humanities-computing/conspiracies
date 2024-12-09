@@ -89,7 +89,7 @@ class SpacyRelationExtractor(TrainablePipe):
         try:
             self.do_set_annotations(doc, predictions)
         except Exception as e:
-            self.logger.exception(e)
+            self.logger.error(e)
 
     def do_set_annotations(self, doc: Iterable[Doc], predictions: Dict) -> None:
         # get nested list of indices above confidence threshold
