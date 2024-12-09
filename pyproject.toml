@@ -46,7 +46,8 @@ dependencies = [
     "stop-words",
     "bs4",
     "toml",
-    "fastcoref"
+    "fastcoref",
+    "sqlalchemy"
 ]
 
 [project.license]

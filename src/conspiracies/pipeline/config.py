@@ -48,6 +48,10 @@ class Thresholds(BaseModel):
         return thresholds
 
 
+class DatabasePopulationConfig(StepConfig):
+    clear_and_write: bool = False
+
+
 class CorpusProcessingConfig(StepConfig):
     dimensions: int = None
     n_neighbors: int = 15
@@ -60,6 +64,7 @@ class PipelineConfig(BaseModel):
     preprocessing: PreProcessingConfig
     docprocessing: DocProcessingConfig
     corpusprocessing: CorpusProcessingConfig
+    databasepopulation: DatabasePopulationConfig
 
     @staticmethod
     def update_nested_dict(d: dict[str, Any], path: str, value: Any) -> None:

@@ -122,7 +122,6 @@ class Clustering:
             embeddings = np.load(emb_cache)
         else:
             model = self._get_embedding_model()
-            print("Creating embeddings:")
 
             counter = Counter((field for field in labels))
             condensed = [

@@ -1,12 +1,19 @@
 import json
 import os
+from datetime import datetime
 from pathlib import Path
-
 
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.corpusprocessing.aggregation import TripletAggregator
-from conspiracies.corpusprocessing.clustering import Clustering
+from conspiracies.corpusprocessing.clustering import Clustering, Mappings
 from conspiracies.corpusprocessing.triplet import Triplet
+from conspiracies.database.engine import get_engine, setup_database, get_session
+from conspiracies.database.models import (
+    get_or_create_entity,
+    get_or_create_relation,
+    TripletOrm,
+    DocumentOrm,
+)
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
 from conspiracies.pipeline.config import PipelineConfig, Thresholds
@@ -42,6 +49,9 @@ class Pipeline:
 
         if self.config.corpusprocessing.enabled:
             self.corpusprocessing()
+
+        if self.config.databasepopulation.enabled:
+            self.databasepopulation()
 
     def _get_preprocessor(self) -> Preprocessor:
         config = self.config.preprocessing
@@ -151,3 +161,61 @@ class Pipeline:
             edges,
             save=self.output_path / "graph.png",
         )
+
+    def databasepopulation(self):
+        if self.config.databasepopulation.clear_and_write:
+            if os.path.exists(self.output_path / "database.db"):
+                print("Removing old database.")
+                os.remove(self.output_path / "database.db")
+
+        print("Populating database.")
+        engine = get_engine(self.output_path / "database.db")
+        setup_database(engine)
+        session = get_session(engine)
+
+        with open(self.output_path / "mappings.json") as mappings_file:
+            mappings = Mappings(**json.load(mappings_file))
+
+        with open(self.output_path / "triplets.ndjson") as triplets_file:
+            for line in triplets_file:
+                triplet = Triplet(**json.loads(line))
+                subject_id = get_or_create_entity(
+                    mappings.map_entity(triplet.subject.text),
+                    session,
+                )
+                relation_id = get_or_create_relation(
+                    mappings.map_predicate(triplet.predicate.text),
+                    session,
+                )
+                object_id = get_or_create_entity(
+                    mappings.map_entity(triplet.object.text),
+                    session,
+                )
+
+                triplet_orm = TripletOrm(
+                    doc_id=int(triplet.doc),
+                    subject_entity_id=subject_id,
+                    predicate_relation_id=relation_id,
+                    object_entity_id=object_id,
+                    subj_span_start=triplet.subject.start_char,
+                    subj_span_end=triplet.subject.end_char,
+                    pred_span_start=triplet.predicate.start_char,
+                    pred_span_end=triplet.predicate.end_char,
+                    obj_span_start=triplet.object.start_char,
+                    obj_span_end=triplet.object.end_char,
+                )
+                session.add(triplet_orm)
+
+        session.commit()
+
+        for doc in (
+            json.loads(line)
+            for line in iter_lines_of_files(self.output_path / "annotations.ndjson")
+        ):
+            doc_orm = DocumentOrm(
+                id=doc["id"],
+                text=doc["text"],
+                timestamp=datetime.fromisoformat(doc["timestamp"]),
+            )
+            session.add(doc_orm)
+        session.commit()

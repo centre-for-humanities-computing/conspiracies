@@ -12,6 +12,8 @@ from conspiracies.common.fileutils import iter_lines_of_files
 
 class TripletField(BaseModel):
     text: str
+    start_char: Optional[int]
+    end_char: Optional[int]
     head: Optional[str]
 
     def clear_head_if_blacklist_match(self, blacklist: Set[str]):
