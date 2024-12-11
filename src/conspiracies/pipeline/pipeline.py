@@ -13,7 +13,7 @@ from conspiracies.database.engine import get_engine, setup_database, get_session
 from conspiracies.database.models import (
     TripletOrm,
     DocumentOrm,
-    ModelLookupCache,
+    EntityAndRelationCache,
 )
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
@@ -178,23 +178,16 @@ class Pipeline:
             mappings = Mappings(**json.load(mappings_file))
 
         with open(self.output_path / "triplets.ndjson") as triplets_file:
-            cache = ModelLookupCache(session)
+            cache = EntityAndRelationCache(session, mappings)
             bulk = []
             for line in tqdm(triplets_file, desc="Writing triplets to database"):
                 triplet = Triplet(**json.loads(line))
-                subject_id = cache.get_or_create_entity(
-                    mappings.map_entity(triplet.subject.text),
-                    session,
-                )
-                object_id = cache.get_or_create_entity(
-                    mappings.map_entity(triplet.object.text),
-                    session,
-                )
+                subject_id = cache.get_or_create_entity(triplet.subject.text)
+                object_id = cache.get_or_create_entity(triplet.object.text)
                 relation_id = cache.get_or_create_relation(
                     subject_id,
                     object_id,
-                    mappings.map_predicate(triplet.predicate.text),
-                    session,
+                    triplet.predicate.text,
                 )
 
                 triplet_orm = TripletOrm(

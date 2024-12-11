@@ -8,6 +8,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship, Session
 
+from conspiracies.corpusprocessing.clustering import Mappings
+
 Base = declarative_base()
 
 
@@ -26,6 +28,17 @@ class EntityOrm(Base):
     )
     subnodes = relationship("EntityOrm", back_populates="supernode")
 
+    subject_triplets = relationship(
+        "TripletOrm",
+        back_populates="subject",
+        foreign_keys="TripletOrm.subject_id",
+    )
+    object_triplets = relationship(
+        "TripletOrm",
+        back_populates="object",
+        foreign_keys="TripletOrm.object_id",
+    )
+
 
 class RelationOrm(Base):
     __tablename__ = "relations"
@@ -34,6 +47,7 @@ class RelationOrm(Base):
     subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
     object_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
 
+    # Relationships
     subject = relationship(
         "EntityOrm",
         foreign_keys="RelationOrm.subject_id",
@@ -41,6 +55,11 @@ class RelationOrm(Base):
     object = relationship(
         "EntityOrm",
         foreign_keys="RelationOrm.object_id",
+    )
+    triplets = relationship(
+        "TripletOrm",
+        back_populates="predicate",
+        foreign_keys="TripletOrm.relation_id",
     )
 
 
@@ -59,15 +78,15 @@ class TripletOrm(Base):
     obj_span_end = Column(Integer, nullable=True)
 
     # Relationships
-    subject_entity = relationship(
+    subject = relationship(
         "EntityOrm",
         foreign_keys="TripletOrm.subject_id",
     )
-    predicate_relation = relationship(
+    predicate = relationship(
         "RelationOrm",
         foreign_keys="TripletOrm.relation_id",
     )
-    object_entity = relationship(
+    object = relationship(
         "EntityOrm",
         foreign_keys="TripletOrm.object_id",
     )
@@ -98,22 +117,25 @@ class DocumentOrm(Base):
     triplets = relationship("TripletOrm", back_populates="document")
 
 
-class ModelLookupCache:
+class EntityAndRelationCache:
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, mappings: Mappings):
+        self._session = session
         self._entities = {e.label: e for e in session.query(EntityOrm).all()}
         self._relations = {
             (int(r.subject_id), str(r.label), int(r.object_id)): r  # noqa
             for r in session.query(RelationOrm).all()
         }
 
-    def get_or_create_entity(self, label, session):
+        self._mappings = mappings
+
+    def get_or_create_entity(self, label):
         """Fetch an entity by label, or create it if it doesn't exist."""
         entity = self._entities.get(label, None)
         if entity is None:
             entity = EntityOrm(label=label)
-            session.add(entity)
-            session.flush()  # Get the ID immediately
+            self._session.add(entity)
+            self._session.flush()  # Get the ID immediately
             self._entities[label] = entity  # noqa
         return entity.id
 
@@ -121,18 +143,20 @@ class ModelLookupCache:
         self,
         subject_id: int,
         object_id: int,
-        label: str,
-        session: Session,
+        predicate_label: str,
     ):
         """Fetch a relation by label, or create it if it doesn't exist."""
-        relation = self._relations.get((subject_id, label, object_id), None)
+        relation = self._relations.get(
+            (subject_id, self._mappings.map_predicate(predicate_label), object_id),
+            None,
+        )
         if relation is None:
             relation = RelationOrm(
-                label=label,
+                label=predicate_label,
                 subject_id=subject_id,
                 object_id=object_id,
             )
-            session.add(relation)
-            session.flush()  # Get the ID immediately
-            self._relations[(subject_id, label, object_id)] = relation  # noqa
+            self._session.add(relation)
+            self._session.flush()  # Get the ID immediately
+            self._relations[(subject_id, predicate_label, object_id)] = relation  # noqa
         return relation.id

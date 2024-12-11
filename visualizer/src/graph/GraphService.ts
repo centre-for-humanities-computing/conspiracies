@@ -1,4 +1,9 @@
 import { Edge, GraphData, Node } from "react-vis-graph-wrapper";
+import { DataSource } from "typeorm";
+import { EntityOrm } from "../service/orms/EntityOrm";
+import { RelationOrm } from "../service/orms/RelationOrm";
+import { TripletOrm } from "../service/orms/TripletOrm";
+import { DocumentOrm } from "../service/orms/DocumentOrm";
 
 export interface Stats {
   frequency: number;
@@ -264,3 +269,49 @@ export class FileGraphService extends GraphService {
     return this.data;
   }
 }
+//
+// export class DbGraphService extends GraphService {
+//   private db: DataSource;
+//
+//   constructor(path: string) {
+//     super();
+//     this.db = new DataSource({
+//       type: "sqlite",
+//       database: path,
+//       entities: [EntityOrm, RelationOrm, TripletOrm, DocumentOrm],
+//       synchronize: true,
+//     });
+//
+//     this.db.initialize();
+//     this.initializeGraphData();
+//   }
+//
+//   private entityData: EntityOrm[] = [];
+//   private relationData: RelationOrm[] = [];
+//
+//   // Preload the data during initialization
+//   async initializeGraphData(): Promise<void> {
+//     this.entityData = await this.db.getRepository(EntityOrm).find();
+//     this.relationData = await this.db.getRepository(RelationOrm).find();
+//   }
+//
+//
+//   getGraph(): EnrichedGraphData {
+//     const nodes = this.entityData.map((entity) => ({
+//       id: entity.id,
+//       label: entity.label,
+//     }));
+//
+//     const edges = this.relationData.map((relation) => ({
+//       id: relation.id,
+//       source: relation.subjectId,
+//       target: relation.objectId,
+//       label: relation.label,
+//     }));
+//
+//     return {
+//       nodes: [],
+//       edges: [],
+//     };
+//   }
+// }
