@@ -1,9 +1,4 @@
 import { Edge, GraphData, Node } from "react-vis-graph-wrapper";
-import { DataSource } from "typeorm";
-import { EntityOrm } from "../service/orms/EntityOrm";
-import { RelationOrm } from "../service/orms/RelationOrm";
-import { TripletOrm } from "../service/orms/TripletOrm";
-import { DocumentOrm } from "../service/orms/DocumentOrm";
 
 export interface Stats {
   frequency: number;
@@ -277,7 +272,7 @@ export class FileGraphService extends GraphService {
 //     super();
 //     this.db = new DataSource({
 //       type: "sqlite",
-//       database: path,
+//       api: path,
 //       entities: [EntityOrm, RelationOrm, TripletOrm, DocumentOrm],
 //       synchronize: true,
 //     });

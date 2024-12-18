@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { EdgeGroup, EnrichedNode, filter, GraphFilter } from "./GraphService";
+import {
+  EdgeGroup,
+  EnrichedNode,
+  filter,
+  GraphFilter,
+  SampleGraphService,
+} from "./GraphServiceOld";
 import Graph, { GraphEvents, Options } from "react-vis-graph-wrapper";
 import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 import { GraphOptionsControlPanel } from "./GraphOptionsControlPanel";
@@ -10,7 +16,7 @@ import { useServiceContext } from "../service/ServiceContextProvider";
 export interface GraphViewerProps {}
 
 export const GraphViewer: React.FC = () => {
-  const { getGraphService } = useServiceContext();
+  const getGraphService = () => new SampleGraphService();
 
   const top50 =
     getGraphService()

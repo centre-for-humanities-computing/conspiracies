@@ -1,6 +1,6 @@
 import { DocInfo } from "./DocInfo";
 import React from "react";
-import { Stats } from "../graph/GraphService";
+import { Stats } from "../graph/GraphServiceOld";
 import { useServiceContext } from "../service/ServiceContextProvider";
 
 export interface StatsInfoProps {

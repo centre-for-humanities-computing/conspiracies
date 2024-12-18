@@ -16,34 +16,34 @@ export class TripletOrm {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column("integer")
   docId!: number;
 
-  @Column()
+  @Column("integer")
   subjectId!: number;
 
-  @Column()
+  @Column("integer")
   relationId!: number;
 
-  @Column()
+  @Column("integer")
   objectId!: number;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   subjSpanStart!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   subjSpanEnd!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   predSpanStart!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   predSpanEnd!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   objSpanStart!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   objSpanEnd!: number | null;
 
   @ManyToOne(() => DocumentOrm, (document: DocumentOrm) => document.triplets)

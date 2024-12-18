@@ -4,10 +4,9 @@ import React, {
   useContext,
   useState,
 } from "react";
-import { DocService, FileDocService } from "../docs/DocService";
-import { FileGraphService, GraphService } from "../graph/GraphService";
-import JsonFileUploadComponent from "../datasources/JsonFileUploadComp";
-import NdjsonFileUploadComponent from "../datasources/NdjsonFileUploadComp";
+import { DocService } from "../docs/DocService";
+import { GraphBackend } from "../../../backend/src/orms/core";
+import { GraphService, HostedGraphService } from "./GraphService";
 
 interface Services {
   getGraphService: () => GraphService;
@@ -46,20 +45,39 @@ export const ServiceContextProvider: React.FC<PropsWithChildren> = ({
   };
 
   if (!graphService || !docService) {
-    const handleGraphFileLoaded = (data: any) => {
-      setGraphService(new FileGraphService(data));
-    };
+    // const handleGraphFileLoaded = (data: any) => {
+    //   setGraphService(new FileGraphService(data));
+    // };
+    //
+    // const handleDocsFileLoaded = (data: any) => {
+    //   setDocService(new FileDocService(data));
+    // };
 
-    const handleDocsFileLoaded = (data: any) => {
-      setDocService(new FileDocService(data));
-    };
+    // const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //   const file = event.target.files?.[0];
+    //   if (file) {
+    //     setGraphService(new HostedGraphService(file.name))
+    //   }
+    // };
 
     return (
       <div className={"padded flex-container"}>
-        Load graph:&nbsp;
-        <JsonFileUploadComponent onFileLoaded={handleGraphFileLoaded} />
-        Load documents:&nbsp;
-        <NdjsonFileUploadComponent onFileLoaded={handleDocsFileLoaded} />
+        {/*Load graph:&nbsp;*/}
+        {/*<JsonFileUploadComponent onFileLoaded={handleGraphFileLoaded} />*/}
+        {/*Load documents:&nbsp;*/}
+        {/*<NdjsonFileUploadComponent onFileLoaded={handleDocsFileLoaded} />*/}
+        Choose DB:&nbsp;
+        <input type={"file"} />
+        Mock:&nbsp;
+        <button
+          onClick={() =>
+            fetch("http://localhost:5000/graph")
+              .then((r) => r.json())
+              .then((r) => console.log(r))
+          }
+        >
+          Press
+        </button>
       </div>
     );
   }

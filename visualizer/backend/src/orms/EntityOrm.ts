@@ -13,11 +13,11 @@ export class EntityOrm {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column("text")
   @Index()
   label!: string;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   supernodeId!: number | null;
 
   @ManyToOne(() => EntityOrm, (entity) => entity.subnodes)

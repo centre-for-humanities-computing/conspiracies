@@ -1,5 +1,5 @@
 import React from "react";
-import { GraphFilter } from "./GraphService";
+import { GraphFilter } from "./GraphServiceOld";
 import "./graph.css";
 import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
 

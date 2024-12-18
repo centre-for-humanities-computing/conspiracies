@@ -14,14 +14,14 @@ export class RelationOrm {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column("text")
   @Index()
   label!: string;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   subjectId!: number | null;
 
-  @Column({ nullable: true })
+  @Column("integer", { nullable: true })
   objectId!: number | null;
 
   @ManyToOne(() => EntityOrm, { nullable: true })

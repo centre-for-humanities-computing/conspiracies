@@ -1,4 +1,4 @@
-import { EdgeGroup } from "../graph/GraphService";
+import { EdgeGroup } from "../graph/GraphServiceOld";
 import React from "react";
 import { StatsInfo } from "./StatsInfo";
 

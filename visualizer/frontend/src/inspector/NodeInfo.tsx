@@ -1,4 +1,4 @@
-import { EnrichedNode } from "../graph/GraphService";
+import { EnrichedNode } from "../graph/GraphServiceOld";
 import React from "react";
 import { StatsInfo } from "./StatsInfo";
 

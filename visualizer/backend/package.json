@@ -1,0 +1,26 @@
+{
+  "name": "visualizer-backend",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "nodemon src/index.ts"
+  },
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
