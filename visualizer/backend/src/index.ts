@@ -1,17 +1,6 @@
-import express, { Express } from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import { routes as graphRoutes } from "./routes/graph";
+import { createServer } from "./server";
 
-dotenv.config();
-
-const app: Express = express();
+const { start } = createServer();
 const port = process.env.PORT || 5000;
 
-app.use(cors()); // Allow requests from frontend
-app.use(express.json());
-app.use("/graph", graphRoutes);
-
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+start(port);

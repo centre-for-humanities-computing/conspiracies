@@ -1,7 +1,10 @@
 {
   "name": "visualizer",
   "version": "0.1.0",
-  "dependencies": {},
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5"
+  },
   "homepage": "./",
   "main": "electron-main.js",
   "scripts": {
@@ -20,6 +23,7 @@
   "devDependencies": {
     "@electron/packager": "^18.3.5",
     "electron": "^33.0.2",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "concurrently": "^9.1.0"
   }
 }

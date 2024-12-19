@@ -4,7 +4,7 @@ export interface GraphService {
   getGraph(filter?: GraphFilter): Promise<EnrichedGraphData>;
 }
 
-export class HostedGraphService implements GraphService {
+export class GraphServiceImpl implements GraphService {
   private readonly baseUrl: string;
 
   constructor(baseUrl: string) {

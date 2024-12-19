@@ -18,10 +18,10 @@ export class RelationOrm {
   @Index()
   label!: string;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "subject_id", nullable: true })
   subjectId!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "object_id", nullable: true })
   objectId!: number | null;
 
   @ManyToOne(() => EntityOrm, { nullable: true })

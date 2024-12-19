@@ -1,55 +1,43 @@
-const { app, BrowserWindow } = require("electron");
-const { spawn } = require("child_process");
+const { app, BrowserWindow, dialog } = require("electron");
 const path = require("path");
-
-let mainWindow;
-let backendProcess;
-let frontendProcess;
+const { createServer } = require("./backend/dist/server");
 
 const isDev = process.env.NODE_ENV === "development";
 
-function startBackendServer() {
-  console.log("Starting Express backend...");
-  backendProcess = spawn("npm", ["run", "start:backend"], {
-    cwd: path.resolve(__dirname),
-    shell: true,
-  });
+function pickDatabaseFile() {
+  try {
+    console.log("Opening file dialog...");
+    const filePaths = dialog.showOpenDialogSync({
+      properties: ["openFile"],
+      title: "Select a Database File",
+    });
 
-  backendProcess.stdout.on("data", (data) => {
-    console.log(`[Backend]: ${data}`);
-  });
+    if (filePaths.length === 0) {
+      console.log("No file selected. Exiting...");
+      app.quit();
+      return null;
+    }
 
-  backendProcess.stderr.on("data", (data) => {
-    console.error(`[Backend Error]: ${data}`);
-  });
-
-  backendProcess.on("close", (code) => {
-    console.log(`Backend process exited with code ${code}`);
-  });
+    console.log("Selected file path:", filePaths[0]);
+    return filePaths[0];
+  } catch (err) {
+    console.error("Error during file selection:", err);
+    app.quit();
+    return null;
+  }
 }
 
-function startFrontendServer() {
-  console.log("Starting React frontend...");
-  frontendProcess = spawn("npm", ["run", "start:frontend"], {
-    cwd: path.resolve(__dirname),
-    shell: true,
-  });
+function startBackendServer(filePath) {
+  process.env.DB_PATH = filePath;
 
-  frontendProcess.stdout.on("data", (data) => {
-    console.log(`[Frontend]: ${data}`);
-  });
+  const { start } = createServer();
 
-  frontendProcess.stderr.on("data", (data) => {
-    console.error(`[Frontend Error]: ${data}`);
-  });
-
-  frontendProcess.on("close", (code) => {
-    console.log(`Frontend process exited with code ${code}`);
-  });
+  const port = 5000;
+  start(port);
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -61,23 +49,18 @@ function createWindow() {
     ? "http://localhost:3000" // React development server
     : `file://${path.join(__dirname, "frontend/build/index.html")}`;
 
-  mainWindow.loadURL(startURL);
-
-  mainWindow.on("closed", () => {
-    mainWindow = null;
-  });
+  mainWindow.loadURL(startURL).then(() => "Window loaded.");
 }
 
 app.whenReady().then(() => {
-  startBackendServer();
-  if (isDev) {
-    startFrontendServer();
-  }
+  const selectedFilePath = pickDatabaseFile();
+  if (!selectedFilePath) return;
+
+  startBackendServer(selectedFilePath);
+
   createWindow();
 });
 
 app.on("window-all-closed", () => {
-  if (backendProcess) backendProcess.kill();
-  if (frontendProcess) frontendProcess.kill();
   if (process.platform !== "darwin") app.quit();
 });

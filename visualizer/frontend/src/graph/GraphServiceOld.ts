@@ -23,7 +23,7 @@ export interface EdgeGroup extends EnrichedEdge {
 
 export interface EnrichedGraphData extends GraphData {
   nodes: EnrichedNode[];
-  edges: EdgeGroup[];
+  edges: EnrichedEdge[];
 }
 
 export class GraphFilter {

@@ -11,7 +11,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

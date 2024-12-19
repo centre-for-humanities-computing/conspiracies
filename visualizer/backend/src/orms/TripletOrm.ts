@@ -11,39 +11,39 @@ import { RelationOrm } from "./RelationOrm";
 import { DocumentOrm } from "./DocumentOrm";
 
 @Entity("triplets")
-@Unique(["docId", "subjectId", "relationId", "objectId"]) // Matches the Python unique constraint
+// @Unique(["doc_id", "subject_id", "relation_id", "object_id"])
 export class TripletOrm {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column("integer")
+  @Column("integer", { name: "doc_id" })
   docId!: number;
 
-  @Column("integer")
+  @Column("integer", { name: "subject_id" })
   subjectId!: number;
 
-  @Column("integer")
+  @Column("integer", { name: "relation_id" })
   relationId!: number;
 
-  @Column("integer")
+  @Column("integer", { name: "object_id" })
   objectId!: number;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "subj_span_start" })
   subjSpanStart!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "subj_span_end", nullable: true })
   subjSpanEnd!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "pred_span_start", nullable: true })
   predSpanStart!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "pred_span_end", nullable: true })
   predSpanEnd!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "obj_span_start", nullable: true })
   objSpanStart!: number | null;
 
-  @Column("integer", { nullable: true })
+  @Column("integer", { name: "obj_span_end", nullable: true })
   objSpanEnd!: number | null;
 
   @ManyToOne(() => DocumentOrm, (document: DocumentOrm) => document.triplets)

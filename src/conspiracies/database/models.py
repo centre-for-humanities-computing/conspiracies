@@ -146,10 +146,13 @@ class EntityAndRelationCache:
         predicate_label: str,
     ):
         """Fetch a relation by label, or create it if it doesn't exist."""
-        relation = self._relations.get(
-            (subject_id, self._mappings.map_predicate(predicate_label), object_id),
-            None,
+        relation_key = (
+            subject_id,
+            self._mappings.map_predicate(predicate_label),
+            object_id,
         )
+
+        relation = self._relations.get(relation_key, None)
         if relation is None:
             relation = RelationOrm(
                 label=predicate_label,
@@ -158,5 +161,5 @@ class EntityAndRelationCache:
             )
             self._session.add(relation)
             self._session.flush()  # Get the ID immediately
-            self._relations[(subject_id, predicate_label, object_id)] = relation  # noqa
+            self._relations[relation_key] = relation  # noqa
         return relation.id
