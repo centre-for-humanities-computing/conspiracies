@@ -1,24 +1,66 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Graph, { GraphEvents, Options } from "react-vis-graph-wrapper";
-import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 import { GraphOptionsControlPanel } from "./GraphOptionsControlPanel";
 import { useServiceContext } from "../service/ServiceContextProvider";
-import { EnrichedGraphData } from "./GraphServiceOld";
+import { GraphData, Node, Edge } from "@shared/types/graph";
+import { NodeInfo } from "../inspector/NodeInfo";
+import { EdgeInfo } from "../inspector/EdgeInfo";
+import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
+import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 
 export interface GraphViewerProps {}
 
 export const GraphViewer: React.FC = () => {
   const { getGraphService } = useServiceContext();
 
-  const [enrichedGraphData, setEnrichedGraphData] = useState<EnrichedGraphData>(
-    { edges: [], nodes: [] },
-  );
+  const [graphFilter, setGraphFilter] = useState<GraphFilter>({});
 
-  getGraphService()
-    .getGraph()
-    .then((r) => setEnrichedGraphData(r));
+  const [graphData, setGraphData] = useState<GraphData>({
+    edges: [],
+    nodes: [],
+  });
+  useEffect(() => {
+    getGraphService()
+      .getGraph()
+      .then((r) => setGraphData(r));
+  }, [getGraphService]);
 
-  let events: GraphEvents = {};
+  const [dataBounds, setDataBounds] = useState<DataBounds>();
+  useEffect(() => {
+    getGraphService()
+      .getDataBounds()
+      .then((r) => setDataBounds(r));
+  }, [getGraphService]);
+
+  const [selectedNode, setSelectedNode] = useState<Node>();
+  const [selectedEdge, setSelectedEdge] = useState<Edge>();
+
+  const graphDataMaps = useMemo(() => {
+    console.log(graphData);
+    return {
+      nodesMap: new Map(graphData.nodes.map((node) => [node.id!, node])),
+      edgeGroupMap: new Map(graphData.edges.map((edge) => [edge.id, edge])),
+    };
+  }, [graphData]);
+
+  let events: GraphEvents = {
+    selectNode: ({ nodes, edges }) => {
+      setSelectedEdge(undefined);
+      setSelectedNode(graphDataMaps.nodesMap.get(nodes[0]));
+    },
+    selectEdge: ({ nodes, edges }) => {
+      if (nodes.length < 1) {
+        setSelectedNode(undefined);
+        setSelectedEdge(graphDataMaps.edgeGroupMap.get(edges[0]));
+      }
+    },
+    deselectNode: () => {
+      setSelectedNode(undefined);
+    },
+    deselectEdge: () => {
+      setSelectedEdge(undefined);
+    },
+  };
 
   let [options, setOptions] = useState<Options>({
     physics: {
@@ -38,10 +80,13 @@ export const GraphViewer: React.FC = () => {
   return (
     <div>
       <div className={"padded"}>
-        {/*<GraphFilterControlPanel*/}
-        {/*  graphFilter={graphFilter}*/}
-        {/*  setGraphFilter={setGraphFilter}*/}
-        {/*/>*/}
+        {dataBounds && graphFilter && (
+          <GraphFilterControlPanel
+            dataBounds={dataBounds}
+            graphFilter={graphFilter}
+            setGraphFilter={setGraphFilter}
+          />
+        )}
         <GraphOptionsControlPanel options={options} setOptions={setOptions} />
       </div>
       <div className={"padded"}>
@@ -72,7 +117,9 @@ export const GraphViewer: React.FC = () => {
         </div>
       </div>
       <div className="graph-container">
-        <Graph graph={enrichedGraphData} options={options} events={events} />
+        {selectedNode && <NodeInfo node={selectedNode} />}
+        {selectedEdge && <EdgeInfo edge={selectedEdge} />}
+        <Graph graph={graphData} options={options} events={events} />
       </div>
     </div>
   );

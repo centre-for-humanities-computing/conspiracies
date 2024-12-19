@@ -1,8 +1,16 @@
 import { Router } from "express";
-import { getGraph } from "../controllers/graph";
+import {
+  getGraph,
+  getBounds,
+  getEntity,
+  getRelation,
+} from "../controllers/graph";
 
 const router = Router();
 
-router.get("/", getGraph);
+router.post("/", getGraph);
+router.get("/bounds", getBounds);
+router.get("/node/:id", getEntity);
+router.get("/edge/:id", getRelation);
 
 export const routes = router;

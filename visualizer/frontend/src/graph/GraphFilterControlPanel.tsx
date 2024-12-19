@@ -1,14 +1,16 @@
 import React from "react";
-import { GraphFilter } from "./GraphServiceOld";
 import "./graph.css";
 import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
+import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 
 interface GraphFilterControlPanelProps {
+  dataBounds: DataBounds;
   graphFilter: GraphFilter;
   setGraphFilter: React.Dispatch<React.SetStateAction<GraphFilter>>;
 }
 
 export const GraphFilterControlPanel = ({
+  dataBounds,
   graphFilter,
   setGraphFilter,
 }: GraphFilterControlPanelProps) => {
@@ -39,10 +41,16 @@ export const GraphFilterControlPanel = ({
           onChange={(e) => {
             setMinAndMaxNodeFrequency(e.minValue, e.maxValue);
           }}
-          min={1}
-          minValue={graphFilter.minimumNodeFrequency}
-          maxValue={graphFilter.maximumNodeFrequency}
-          max={graphFilter.maximumPossibleNodeFrequency}
+          min={dataBounds.minimumPossibleNodeFrequency}
+          minValue={
+            graphFilter.minimumNodeFrequency ||
+            dataBounds.minimumPossibleNodeFrequency
+          }
+          maxValue={
+            graphFilter.maximumNodeFrequency ||
+            dataBounds.maximumPossibleNodeFrequency
+          }
+          max={dataBounds.maximumPossibleNodeFrequency}
           style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
         ></LogarithmicRangeSlider>
       </div>
@@ -54,28 +62,34 @@ export const GraphFilterControlPanel = ({
             onChange={(e) => {
               setMinAndMaxEdgeFrequency(e.minValue, e.maxValue);
             }}
-            min={graphFilter.minimumPossibleEdgeFrequency}
-            minValue={graphFilter.minimumEdgeFrequency}
-            maxValue={graphFilter.maximumEdgeFrequency}
-            max={graphFilter.maximumPossibleEdgeFrequency}
+            min={dataBounds.minimumPossibleEdgeFrequency}
+            minValue={
+              graphFilter.minimumEdgeFrequency ||
+              dataBounds.minimumPossibleEdgeFrequency
+            }
+            maxValue={
+              graphFilter.maximumEdgeFrequency ||
+              dataBounds.maximumPossibleEdgeFrequency
+            }
+            max={dataBounds.maximumPossibleEdgeFrequency}
             style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
           ></LogarithmicRangeSlider>
         </div>
       </div>
-      <div className={"flex-container__element"}>
-        Show unconnected nodes:
-        <input
-          type={"checkbox"}
-          className={"flex-container__element__sub-element"}
-          checked={graphFilter.showUnconnectedNodes}
-          onChange={(event) =>
-            setGraphFilter({
-              ...graphFilter,
-              showUnconnectedNodes: event.target.checked,
-            })
-          }
-        />
-      </div>
+      {/*<div className={"flex-container__element"}>*/}
+      {/*  Show unconnected nodes:*/}
+      {/*  <input*/}
+      {/*    type={"checkbox"}*/}
+      {/*    className={"flex-container__element__sub-element"}*/}
+      {/*    checked={graphFilter.showUnconnectedNodes}*/}
+      {/*    onChange={(event) =>*/}
+      {/*      setGraphFilter({*/}
+      {/*        ...graphFilter,*/}
+      {/*        showUnconnectedNodes: event.target.checked,*/}
+      {/*      })*/}
+      {/*    }*/}
+      {/*  />*/}
+      {/*</div>*/}
       <div className={"flex-container__element"}>
         Search nodes:
         <input

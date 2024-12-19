@@ -4,8 +4,8 @@ import React, {
   useContext,
   useState,
 } from "react";
-import { DocService } from "../docs/DocService";
 import { GraphService, GraphServiceImpl } from "./GraphService";
+import { DocService, DocServiceImpl } from "./DocService";
 
 interface Services {
   getGraphService: () => GraphService;
@@ -23,7 +23,7 @@ export const ServiceContextProvider: React.FC<PropsWithChildren> = ({
     new GraphServiceImpl("http://localhost:5000"),
   );
   const [docService, setDocService] = useState<DocService | undefined>(
-    undefined,
+    new DocServiceImpl("http://localhost:5000"),
   );
 
   const value: Services = {

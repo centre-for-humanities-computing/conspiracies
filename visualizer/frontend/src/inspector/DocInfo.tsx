@@ -1,40 +1,22 @@
-import React, { PropsWithChildren } from "react";
-import { Doc, Triplet } from "../docs/DocService";
+import React from "react";
 import HighlightWithinTextarea from "react-highlight-within-textarea";
 import "./docinfo.css";
-
-const BlueHighlight: React.FC<PropsWithChildren> = (props) => {
-  return (
-    <mark style={{ background: "lightblue", opacity: 0.5 }}>
-      {props.children}
-    </mark>
-  );
-};
-
-const GreenHighlight: React.FC<PropsWithChildren> = (props) => {
-  return (
-    <mark style={{ background: "lightgreen", opacity: 0.5 }}>
-      {props.children}
-    </mark>
-  );
-};
-
-const RedHighlight: React.FC<PropsWithChildren> = (props) => {
-  return (
-    <mark style={{ background: "pink", opacity: 0.5 }}>{props.children}</mark>
-  );
-};
+import { Doc, Triplet } from "@shared/types/doc";
 
 interface HighlightedTextProps {
   text: string;
   triplets: Triplet[];
-  highlightLabels: string[];
+  subjectId?: string | number;
+  predicateId?: string | number;
+  objectId?: string | number;
 }
 
 const HighlightedText: React.FC<HighlightedTextProps> = ({
   text,
   triplets,
-  highlightLabels,
+  subjectId,
+  predicateId,
+  objectId,
 }) => {
   const subjects = [];
   const highlightSubjects = [];
@@ -45,22 +27,22 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({
 
   for (let triplet of triplets) {
     const subject = triplet.subject;
-    const subjectSpan = [subject.start_char, subject.end_char];
-    if (highlightLabels.indexOf(subject.text) > -1) {
+    const subjectSpan = [subject.start, subject.end];
+    if (subject.id === subjectId) {
       highlightSubjects.push(subjectSpan);
     } else {
       subjects.push(subjectSpan);
     }
     const predicate = triplet.predicate;
-    const predicateSpan = [predicate.start_char, predicate.end_char];
-    if (highlightLabels.indexOf(predicate.text) > -1) {
+    const predicateSpan = [predicate.start, predicate.end];
+    if (predicate.id === predicateId) {
       highlightPredicates.push(predicateSpan);
     } else {
       predicates.push(predicateSpan);
     }
     const object = triplet.object;
-    const objectSpan = [object.start_char, object.end_char];
-    if (highlightLabels.indexOf(object.text) > -1) {
+    const objectSpan = [object.start, object.end];
+    if (object.id === objectId) {
       highlightObjects.push(objectSpan);
     } else {
       objects.push(objectSpan);
@@ -103,24 +85,31 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({
 
 export interface DocInfoProps {
   document: Doc;
-  highlightLabels: string[];
+  subjectId?: string | number;
+  predicateId?: string | number;
+  objectId?: string | number;
 }
 
 export const DocInfo: React.FC<DocInfoProps> = ({
   document,
-  highlightLabels,
+  subjectId,
+  predicateId,
+  objectId,
 }) => {
   return (
     <div
       style={{ border: "1px solid gray", padding: "2px", marginBottom: "1px" }}
     >
       <h3>
-        {document.id} <i style={{ color: "gray" }}>{document.timestamp}</i>
+        {document.id}{" "}
+        <i style={{ color: "gray" }}>{document.timestamp?.toString()}</i>
       </h3>
       <HighlightedText
         text={document.text}
-        triplets={document.semantic_triplets}
-        highlightLabels={highlightLabels}
+        triplets={document.triplets}
+        subjectId={subjectId}
+        predicateId={predicateId}
+        objectId={objectId}
       />
     </div>
   );

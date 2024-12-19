@@ -2,6 +2,7 @@ import express, { Express } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { routes as graphRoutes } from "./routes/graph";
+import { routes as docRoutes } from "./routes/docs";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ export function createServer(): {
   app.use(cors()); // Allow requests from frontend
   app.use(express.json());
   app.use("/graph", graphRoutes);
+  app.use("/docs", docRoutes);
 
   return {
     start: (port: string | number) => {

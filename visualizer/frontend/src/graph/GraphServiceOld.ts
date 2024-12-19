@@ -1,63 +1,6 @@
 import { Edge, GraphData, Node } from "react-vis-graph-wrapper";
-
-export interface Stats {
-  frequency: number;
-  norm_frequency?: number;
-  docs?: string[];
-  first_occurrence?: string;
-  last_occurrence?: string;
-  alt_labels?: string[];
-}
-
-export interface EnrichedNode extends Node {
-  stats: Stats;
-}
-
-export interface EnrichedEdge extends Edge {
-  stats: Stats;
-}
-
-export interface EdgeGroup extends EnrichedEdge {
-  group?: EnrichedEdge[];
-}
-
-export interface EnrichedGraphData extends GraphData {
-  nodes: EnrichedNode[];
-  edges: EnrichedEdge[];
-}
-
-export class GraphFilter {
-  minimumPossibleNodeFrequency: number;
-  minimumNodeFrequency: number;
-  maximumNodeFrequency: number;
-  maximumPossibleNodeFrequency: number;
-  minimumPossibleEdgeFrequency: number;
-  minimumEdgeFrequency: number;
-  maximumEdgeFrequency: number;
-  maximumPossibleEdgeFrequency: number;
-  labelSearch: string = "";
-  earliestDate?: Date;
-  latestDate?: Date;
-  showUnconnectedNodes: boolean = false;
-
-  constructor(
-    minimumPossibleNodeFrequency: number,
-    minimumNodeFrequency: number,
-    maximumPossibleNodeFrequency: number,
-    minimumPossibleEdgeFrequency: number,
-    minimumEdgeFrequency: number,
-    maximumPossibleEdgeFrequency: number,
-  ) {
-    this.minimumPossibleNodeFrequency = minimumPossibleNodeFrequency;
-    this.minimumNodeFrequency = minimumNodeFrequency;
-    this.maximumNodeFrequency = maximumPossibleNodeFrequency;
-    this.maximumPossibleNodeFrequency = maximumPossibleNodeFrequency;
-    this.minimumPossibleEdgeFrequency = minimumPossibleEdgeFrequency;
-    this.minimumEdgeFrequency = minimumEdgeFrequency;
-    this.maximumEdgeFrequency = maximumPossibleEdgeFrequency;
-    this.maximumPossibleEdgeFrequency = maximumPossibleEdgeFrequency;
-  }
-}
+import { GraphFilter } from "@shared/types/graphfilter";
+import { EnrichedEdge, EnrichedNode } from "@shared/types/graph";
 
 function hasDateOverlap(
   nodeOrEdge: EnrichedNode | EnrichedEdge,

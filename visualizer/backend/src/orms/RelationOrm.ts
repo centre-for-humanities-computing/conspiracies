@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -18,16 +19,18 @@ export class RelationOrm {
   @Index()
   label!: string;
 
-  @Column("integer", { name: "subject_id", nullable: true })
-  subjectId!: number | null;
+  @Column("integer", { name: "subject_id" })
+  subjectId!: number;
 
-  @Column("integer", { name: "object_id", nullable: true })
-  objectId!: number | null;
+  @Column("integer", { name: "object_id" })
+  objectId!: number;
 
   @ManyToOne(() => EntityOrm, { nullable: true })
+  @JoinColumn({ name: "subject_id" })
   subject!: EntityOrm | null;
 
   @ManyToOne(() => EntityOrm, { nullable: true })
+  @JoinColumn({ name: "object_id" })
   object!: EntityOrm | null;
 
   @OneToMany(() => TripletOrm, (triplet) => triplet.predicateRelation)
