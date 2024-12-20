@@ -1,4 +1,4 @@
-import { EnrichedEdge, EnrichedNode, GraphData } from "@shared/types/graph";
+import { Details, GraphData } from "@shared/types/graph";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 
 export interface GraphService {
@@ -6,9 +6,9 @@ export interface GraphService {
 
   getGraph(filter?: GraphFilter): Promise<GraphData>;
 
-  getEnrichedNode(id: string | number): Promise<EnrichedNode>;
+  getEntityDetails(id: string | number): Promise<Details>;
 
-  getEnrichedEdge(id: string | number): Promise<EnrichedEdge>;
+  getRelationDetails(ids: string | number): Promise<Details>;
 }
 
 export class GraphServiceImpl implements GraphService {
@@ -39,24 +39,28 @@ export class GraphServiceImpl implements GraphService {
       throw new Error(`Failed to fetch graph: ${response.statusText}`);
     }
 
-    return await response.json();
+    const r = await response.json();
+    console.log(r);
+    return r;
   }
 
-  async getEnrichedNode(id: string | number): Promise<EnrichedNode> {
+  async getEntityDetails(id: string | number): Promise<Details> {
     const response = await fetch(`${this.baseUrl}/graph/node/${id}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch enriched node: ${response.statusText}`);
+      throw new Error(`Failed to fetch entity details: ${response.statusText}`);
     }
 
     return await response.json();
   }
 
-  async getEnrichedEdge(id: string | number): Promise<EnrichedEdge> {
+  async getRelationDetails(id: string | number): Promise<Details> {
     const response = await fetch(`${this.baseUrl}/graph/edge/${id}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch enriched edge: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch relation details: ${response.statusText}`,
+      );
     }
 
     return await response.json();

@@ -33,17 +33,26 @@ export class TripletOrm {
   @Column("integer", { name: "subj_span_end" })
   subjSpanEnd!: number;
 
+  @Column("text", { name: "subj_span_text" })
+  subjSpanText!: string;
+
   @Column("integer", { name: "pred_span_start" })
   predSpanStart!: number;
 
   @Column("integer", { name: "pred_span_end" })
   predSpanEnd!: number;
 
+  @Column("text", { name: "pred_span_text" })
+  predSpanText!: string;
+
   @Column("integer", { name: "obj_span_start" })
   objSpanStart!: number;
 
   @Column("integer", { name: "obj_span_end" })
   objSpanEnd!: number;
+
+  @Column("text", { name: "obj_span_text" })
+  objSpanText!: string;
 
   @ManyToOne(() => DocumentOrm, (document: DocumentOrm) => document.triplets)
   @JoinColumn({ name: "doc_id" })

@@ -164,6 +164,8 @@ class Pipeline:
         )
 
     def databasepopulation(self):
+        # TODO: move to own class and methods in conspiracies.database package
+
         if self.config.databasepopulation.clear_and_write:
             if os.path.exists(self.output_path / "database.db"):
                 print("Removing old database.")
@@ -197,10 +199,13 @@ class Pipeline:
                     object_id=object_id,
                     subj_span_start=triplet.subject.start_char,
                     subj_span_end=triplet.subject.end_char,
+                    subj_span_text=triplet.subject.text,
                     pred_span_start=triplet.predicate.start_char,
                     pred_span_end=triplet.predicate.end_char,
+                    pred_span_text=triplet.predicate.text,
                     obj_span_start=triplet.object.start_char,
                     obj_span_end=triplet.object.end_char,
+                    obj_span_text=triplet.object.text,
                 )
                 bulk.append(triplet_orm)
                 if len(bulk) >= 500:
@@ -209,6 +214,9 @@ class Pipeline:
         session.bulk_save_objects(bulk)
         bulk.clear()
         session.commit()
+
+        cache.update_entity_counts(session)
+        cache.update_relation_counts(session)
 
         for doc in (
             json.loads(line)

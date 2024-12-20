@@ -1,22 +1,22 @@
 import React, { useState } from "react";
 import { useServiceContext } from "../service/ServiceContextProvider";
-import { Enriched } from "@shared/types/graph";
+import { Details } from "@shared/types/graph";
 import { Doc } from "@shared/types/doc";
 import { DocInfo } from "./DocInfo";
 
 export interface InfoProps {
-  enrichment: Enriched;
+  details: Details;
   type: "entity" | "relation";
 }
 
-export const Info: React.FC<InfoProps> = ({ type, enrichment }) => {
+export const Info: React.FC<InfoProps> = ({ type, details }) => {
   const { getDocService } = useServiceContext();
 
   const [docs, setDocs] = useState<Doc[] | null | undefined>(undefined);
   const loadDocs = () => {
     setDocs(null);
     getDocService()
-      .getDocs(enrichment.docs!)
+      .getDocs(details.docs!)
       .then((r) => {
         setDocs(r);
       });
@@ -28,25 +28,25 @@ export const Info: React.FC<InfoProps> = ({ type, enrichment }) => {
 
   return (
     <div>
-      <p>Frequency: {enrichment.frequency}</p>
+      <p>Frequency: {details.frequency}</p>
       {/*<p>Norm. frequency: {stats.norm_frequency?.toPrecision(3)}</p>*/}
-      {enrichment.firstOccurrence && (
-        <p>Earliest date: {enrichment.firstOccurrence}</p>
+      {details.firstOccurrence && (
+        <p>Earliest date: {details.firstOccurrence.toString()}</p>
       )}
-      {enrichment.lastOccurrence && (
-        <p>Latest date: {enrichment.lastOccurrence}</p>
+      {details.lastOccurrence && (
+        <p>Latest date: {details.lastOccurrence.toString()}</p>
       )}
-      {enrichment.altLabels && (
+      {details.altLabels && (
         <div>
           Alternative Labels:
           <ul>
-            {enrichment.altLabels.map((l) => (
+            {details.altLabels.map((l) => (
               <li key={l}>{l}</li>
             ))}
           </ul>
         </div>
       )}
-      {enrichment.docs && (
+      {details.docs && (
         <div>
           {docs === undefined && <button onClick={loadDocs}>Load docs</button>}
           {docs === null && <p>Loading ...</p>}
@@ -59,11 +59,9 @@ export const Info: React.FC<InfoProps> = ({ type, enrichment }) => {
                     <DocInfo
                       key={d.id}
                       document={d}
-                      subjectId={type === "entity" ? enrichment.id : undefined}
-                      predicateId={
-                        type === "relation" ? enrichment.id : undefined
-                      }
-                      objectId={type === "entity" ? enrichment.id : undefined}
+                      subjectId={type === "entity" ? details.id : undefined}
+                      predicateId={type === "relation" ? details.id : undefined}
+                      objectId={type === "entity" ? details.id : undefined}
                     />
                   ))}
               {visibleDocs < docs.length && (

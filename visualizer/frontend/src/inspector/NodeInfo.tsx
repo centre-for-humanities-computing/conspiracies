@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Info } from "./Info";
-import { EnrichedNode, Node } from "@shared/types/graph";
+import { Details, Node } from "@shared/types/graph";
 import { useServiceContext } from "../service/ServiceContextProvider";
 
 export interface NodeInfoProps {
@@ -14,21 +14,19 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
 }: NodeInfoProps) => {
   const { getGraphService } = useServiceContext();
 
-  const [nodeEnrichment, setNodeEnrichment] = useState<
-    EnrichedNode | undefined
-  >(undefined);
+  const [details, setDetails] = useState<Details | undefined>(undefined);
 
   useEffect(() => {
-    setNodeEnrichment(undefined);
-    getGraphService().getEnrichedNode(node.id).then(setNodeEnrichment);
+    setDetails(undefined);
+    getGraphService().getEntityDetails(node.id).then(setDetails);
   }, [getGraphService, node.id]);
 
   return (
     <div className={"node-info " + className}>
       <b>{node.label}</b>
       <hr />
-      {!nodeEnrichment && <p>Loading ...</p>}
-      {nodeEnrichment && <Info enrichment={nodeEnrichment} type={"entity"} />}
+      {!details && <p>Loading ...</p>}
+      {details && <Info details={details} type={"entity"} />}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Graph, { GraphEvents, Options } from "react-vis-graph-wrapper";
 import { GraphOptionsControlPanel } from "./GraphOptionsControlPanel";
 import { useServiceContext } from "../service/ServiceContextProvider";
-import { GraphData, Node, Edge } from "@shared/types/graph";
+import { Edge, GraphData, Node } from "@shared/types/graph";
 import { NodeInfo } from "../inspector/NodeInfo";
 import { EdgeInfo } from "../inspector/EdgeInfo";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
@@ -13,7 +13,10 @@ export interface GraphViewerProps {}
 export const GraphViewer: React.FC = () => {
   const { getGraphService } = useServiceContext();
 
-  const [graphFilter, setGraphFilter] = useState<GraphFilter>({});
+  const [graphFilter, setGraphFilter] = useState<GraphFilter>({
+    limit: 50,
+    minimumEdgeFrequency: 5,
+  });
 
   const [graphData, setGraphData] = useState<GraphData>({
     edges: [],
@@ -21,9 +24,9 @@ export const GraphViewer: React.FC = () => {
   });
   useEffect(() => {
     getGraphService()
-      .getGraph()
+      .getGraph(graphFilter)
       .then((r) => setGraphData(r));
-  }, [getGraphService]);
+  }, [getGraphService, graphFilter]);
 
   const [dataBounds, setDataBounds] = useState<DataBounds>();
   useEffect(() => {
@@ -36,7 +39,6 @@ export const GraphViewer: React.FC = () => {
   const [selectedEdge, setSelectedEdge] = useState<Edge>();
 
   const graphDataMaps = useMemo(() => {
-    console.log(graphData);
     return {
       nodesMap: new Map(graphData.nodes.map((node) => [node.id!, node])),
       edgeGroupMap: new Map(graphData.edges.map((edge) => [edge.id, edge])),
@@ -80,6 +82,7 @@ export const GraphViewer: React.FC = () => {
   return (
     <div>
       <div className={"padded"}>
+        <GraphOptionsControlPanel options={options} setOptions={setOptions} />
         {dataBounds && graphFilter && (
           <GraphFilterControlPanel
             dataBounds={dataBounds}
@@ -87,7 +90,6 @@ export const GraphViewer: React.FC = () => {
             setGraphFilter={setGraphFilter}
           />
         )}
-        <GraphOptionsControlPanel options={options} setOptions={setOptions} />
       </div>
       <div className={"padded"}>
         <div className={"flex-container"}>

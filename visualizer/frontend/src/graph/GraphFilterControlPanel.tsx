@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./graph.css";
 import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
@@ -14,6 +14,11 @@ export const GraphFilterControlPanel = ({
   graphFilter,
   setGraphFilter,
 }: GraphFilterControlPanelProps) => {
+  const [limit, setLimit] = useState<number>(graphFilter.limit);
+  const [search, setSearch] = useState<string | undefined>(
+    graphFilter.labelSearch,
+  );
+
   const setMinAndMaxNodeFrequency = (min: number, max: number) => {
     setGraphFilter({
       ...graphFilter,
@@ -33,30 +38,56 @@ export const GraphFilterControlPanel = ({
     <div className={"flex-container"}>
       <div className={"flex-container__element"}>
         <span className={"flex-container__element__sub-element"}>
-          Node Frequency:
+          Limit nodes:&nbsp;
         </span>
-      </div>
-      <div style={{ width: "250px" }}>
-        <LogarithmicRangeSlider
-          onChange={(e) => {
-            setMinAndMaxNodeFrequency(e.minValue, e.maxValue);
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setGraphFilter((prevState) => ({
+              ...prevState,
+              limit: limit,
+            }));
           }}
-          min={dataBounds.minimumPossibleNodeFrequency}
-          minValue={
-            graphFilter.minimumNodeFrequency ||
-            dataBounds.minimumPossibleNodeFrequency
-          }
-          maxValue={
-            graphFilter.maximumNodeFrequency ||
-            dataBounds.maximumPossibleNodeFrequency
-          }
-          max={dataBounds.maximumPossibleNodeFrequency}
-          style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
-        ></LogarithmicRangeSlider>
+        >
+          <input
+            min={1}
+            max={999}
+            type={"number"}
+            value={limit}
+            onChange={(event) => {
+              setLimit(Number(event.target.value));
+            }}
+          />
+          <input type={"submit"} />
+        </form>
       </div>
-
       <div className={"flex-container__element"}>
-        Edge Frequency:
+        <span className={"flex-container__element__sub-element"}>
+          Node Frequency:&nbsp;
+        </span>
+        <div style={{ width: "250px" }}>
+          <LogarithmicRangeSlider
+            onChange={(e) => {
+              setMinAndMaxNodeFrequency(e.minValue, e.maxValue);
+            }}
+            min={dataBounds.minimumPossibleNodeFrequency}
+            minValue={
+              graphFilter.minimumNodeFrequency ||
+              dataBounds.minimumPossibleNodeFrequency
+            }
+            maxValue={
+              graphFilter.maximumNodeFrequency ||
+              dataBounds.maximumPossibleNodeFrequency
+            }
+            max={dataBounds.maximumPossibleNodeFrequency}
+            style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
+          ></LogarithmicRangeSlider>
+        </div>
+      </div>
+      <div className={"flex-container__element"}>
+        <span className={"flex-container__element__sub-element"}>
+          Edge Frequency:&nbsp;
+        </span>
         <div style={{ width: "250px" }}>
           <LogarithmicRangeSlider
             onChange={(e) => {
@@ -91,17 +122,26 @@ export const GraphFilterControlPanel = ({
       {/*  />*/}
       {/*</div>*/}
       <div className={"flex-container__element"}>
-        Search nodes:
-        <input
-          type={"text"}
-          onChange={(event) => {
-            let value = event.target.value;
-            setGraphFilter({
-              ...graphFilter,
-              labelSearch: value,
-            });
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setGraphFilter((prevState) => ({
+              ...prevState,
+              labelSearch: search || undefined,
+            }));
           }}
-        />
+        >
+          Search nodes:
+          <input
+            type={"text"}
+            value={search || ""}
+            onChange={(event) => {
+              let value = event.target.value;
+              setSearch(value);
+            }}
+          />
+          <input type={"submit"} />
+        </form>
       </div>
       <div className={"flex-container__element"}>
         From:

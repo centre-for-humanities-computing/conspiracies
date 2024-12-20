@@ -35,6 +35,40 @@ export class EntityOrm {
   @OneToMany(() => TripletOrm, (triplet) => triplet.objectEntity)
   objectTriplets!: TripletOrm[];
 
+  @Column("integer", { name: "term_frequency" })
+  termFrequency!: number;
+
+  @Column("integer", { name: "doc_frequency" })
+  docFrequency!: number | null;
+
+  async updateFrequencyCounts() {
+    const dataSource = await getDataSource();
+    const tripletRepository = dataSource.getRepository(TripletOrm);
+
+    if (!this.subjectTriplets || !this.objectTriplets) {
+      const [subjectTriplets, objectTriplets] = await Promise.all([
+        tripletRepository.find({ where: { subjectId: this.id } }),
+        tripletRepository.find({ where: { objectId: this.id } }),
+      ]);
+
+      this.subjectTriplets = subjectTriplets;
+      this.objectTriplets = objectTriplets;
+    }
+
+    // term frequency = total number of triplets involving this entity
+    this.termFrequency =
+      this.subjectTriplets.length + this.objectTriplets.length;
+
+    // document frequency = unique document IDs
+    this.docFrequency = new Set(
+      [...this.subjectTriplets, ...this.objectTriplets].map((t) => t.docId),
+    ).size;
+
+    // Commit the changes to the database
+    const entityRepository = dataSource.getRepository(EntityOrm);
+    await entityRepository.save(this);
+  }
+
   async getDocumentIds(): Promise<number[]> {
     const dataSource = await getDataSource();
 

@@ -1,4 +1,4 @@
-interface Identifiable {
+export interface Identifiable {
   id: string | number;
   label: string;
 }
@@ -10,6 +10,10 @@ export interface Node extends Identifiable {
 export interface Edge extends Identifiable {
   from: string | number;
   to: string | number;
+  subjectLabel: string;
+  objectLabel: string;
+  width?: number;
+  group: Identifiable[];
 }
 
 export interface GraphData {
@@ -17,17 +21,10 @@ export interface GraphData {
   edges: Edge[];
 }
 
-export interface Enriched extends Identifiable {
+export interface Details extends Identifiable {
   frequency: number;
   docs?: string[] | number[];
-  firstOccurrence?: string;
-  lastOccurrence?: string;
+  firstOccurrence?: Date;
+  lastOccurrence?: Date;
   altLabels?: string[];
-}
-
-export interface EnrichedNode extends Node, Enriched {}
-
-export interface EnrichedEdge extends Edge, Enriched {
-  subjectLabel: string;
-  objectLabel: string;
 }

@@ -6,7 +6,8 @@ from sqlalchemy import (
     Text,
     DateTime,
 )
-from sqlalchemy.orm import declarative_base, relationship, Session
+from sqlalchemy.orm import declarative_base, relationship, Session, Mapped
+from tqdm import tqdm
 
 from conspiracies.corpusprocessing.clustering import Mappings
 
@@ -18,6 +19,8 @@ class EntityOrm(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     label = Column(String, nullable=False, index=True)
     supernode_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    term_frequency = Column(Integer, default=-1, nullable=False)
+    doc_frequency = Column(Integer, default=-1, nullable=False)
 
     # Relationships
     supernode = relationship(
@@ -28,12 +31,12 @@ class EntityOrm(Base):
     )
     subnodes = relationship("EntityOrm", back_populates="supernode")
 
-    subject_triplets = relationship(
+    subject_triplets: Mapped[list["TripletOrm"]] = relationship(
         "TripletOrm",
         back_populates="subject",
         foreign_keys="TripletOrm.subject_id",
     )
-    object_triplets = relationship(
+    object_triplets: Mapped[list["TripletOrm"]] = relationship(
         "TripletOrm",
         back_populates="object",
         foreign_keys="TripletOrm.object_id",
@@ -44,8 +47,10 @@ class RelationOrm(Base):
     __tablename__ = "relations"
     id = Column(Integer, primary_key=True, autoincrement=True)
     label = Column(String, nullable=False, index=True)
-    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
-    object_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    object_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    term_frequency = Column(Integer, default=-1, nullable=False)
+    doc_frequency = Column(Integer, default=-1, nullable=False)
 
     # Relationships
     subject = relationship(
@@ -56,7 +61,7 @@ class RelationOrm(Base):
         "EntityOrm",
         foreign_keys="RelationOrm.object_id",
     )
-    triplets = relationship(
+    triplets: Mapped[list["TripletOrm"]] = relationship(
         "TripletOrm",
         back_populates="predicate",
         foreign_keys="TripletOrm.relation_id",
@@ -67,15 +72,18 @@ class TripletOrm(Base):
     __tablename__ = "triplets"
     id = Column(Integer, primary_key=True, autoincrement=True)
     doc_id = Column(Integer, ForeignKey("docs.id"), nullable=False)
-    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
-    relation_id = Column(Integer, ForeignKey("relations.id"), nullable=False)
-    object_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
-    subj_span_start = Column(Integer, nullable=True)
-    subj_span_end = Column(Integer, nullable=True)
-    pred_span_start = Column(Integer, nullable=True)
-    pred_span_end = Column(Integer, nullable=True)
-    obj_span_start = Column(Integer, nullable=True)
-    obj_span_end = Column(Integer, nullable=True)
+    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    relation_id = Column(Integer, ForeignKey("relations.id"), nullable=True)
+    object_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    subj_span_start = Column(Integer, nullable=False)
+    subj_span_end = Column(Integer, nullable=False)
+    subj_span_text = Column(String, nullable=False)
+    pred_span_start = Column(Integer, nullable=False)
+    pred_span_end = Column(Integer, nullable=False)
+    pred_span_text = Column(String, nullable=False)
+    obj_span_start = Column(Integer, nullable=False)
+    obj_span_end = Column(Integer, nullable=False)
+    obj_span_text = Column(String, nullable=False)
 
     # Relationships
     subject = relationship(
@@ -131,7 +139,9 @@ class EntityAndRelationCache:
 
     def get_or_create_entity(self, label):
         """Fetch an entity by label, or create it if it doesn't exist."""
-        entity = self._entities.get(label, None)
+        entity_key = self._mappings.map_entity(label)
+
+        entity = self._entities.get(entity_key, None)
         if entity is None:
             entity = EntityOrm(label=label)
             self._session.add(entity)
@@ -163,3 +173,22 @@ class EntityAndRelationCache:
             self._session.flush()  # Get the ID immediately
             self._relations[relation_key] = relation  # noqa
         return relation.id
+
+    def update_entity_counts(self, session: Session):
+        for entity in tqdm(self._entities.values(), desc="Calculating entity counts"):
+            entity.term_frequency = len(entity.subject_triplets) + len(
+                entity.object_triplets,
+            )  # noqa
+            entity.doc_frequency = len(
+                set(t.doc_id for t in entity.subject_triplets + entity.object_triplets),
+            )
+        session.commit()
+
+    def update_relation_counts(self, session: Session):
+        for relation in tqdm(
+            self._relations.values(),
+            desc="Calculating relation counts",
+        ):
+            relation.term_frequency = len(relation.triplets)  # noqa
+            relation.doc_frequency = len(set(t.doc_id for t in relation.triplets))
+        session.commit()

@@ -21,6 +21,5 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src"],
-  "exclude": ["src/graph/GraphViewerOld.tsx", "src/graph/GraphServiceOld.ts"]
+  "include": ["src"]
 }
