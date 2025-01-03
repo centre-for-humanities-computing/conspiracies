@@ -13,6 +13,16 @@ export interface GraphViewerProps {}
 export const GraphViewer: React.FC = () => {
   const { graphService } = useServiceContext();
 
+  const [selectedNode, setSelectedNode] = useState<Node>();
+  const [selectedEdge, setSelectedEdge] = useState<Edge>();
+
+  const [whitelistSet, setWhitelistSet] = useState<Set<string>>(
+    new Set<string>(),
+  );
+  const whitelist = useMemo<string[] | undefined>(() => {
+    return whitelistSet.size === 0 ? undefined : [...whitelistSet];
+  }, [whitelistSet]);
+
   const [graphFilter, setGraphFilter] = useState<GraphFilter>({
     limit: 50,
     minimumEdgeFrequency: 5,
@@ -23,16 +33,24 @@ export const GraphViewer: React.FC = () => {
     nodes: [],
   });
   useEffect(() => {
-    graphService.getGraph(graphFilter).then((r) => setGraphData(r));
-  }, [graphService, graphFilter]);
+    graphService
+      .getGraph({ ...graphFilter, whitelistedEntityIds: whitelist })
+      .then((r) =>
+        setGraphData({
+          ...r,
+          // TODO: do this elsewhere!
+          nodes: r.nodes.map((n) => ({
+            ...n,
+            color: whitelistSet.has(n.id.toString()) ? "lightgreen" : "cyan",
+          })),
+        }),
+      );
+  }, [graphService, graphFilter, whitelist, whitelistSet]);
 
   const [dataBounds, setDataBounds] = useState<DataBounds>();
   useEffect(() => {
     graphService.getDataBounds().then((r) => setDataBounds(r));
   }, [graphService]);
-
-  const [selectedNode, setSelectedNode] = useState<Node>();
-  const [selectedEdge, setSelectedEdge] = useState<Edge>();
 
   const graphDataMaps = useMemo(() => {
     return {
@@ -42,6 +60,24 @@ export const GraphViewer: React.FC = () => {
   }, [graphData]);
 
   let events: GraphEvents = {
+    doubleClick: ({ nodes }) => {
+      if (nodes.length === 0) return;
+      const node = nodes.map((v: number) => v.toString())[0];
+      if (whitelistSet.has(node)) {
+        setWhitelistSet(
+          (prevState) => new Set([...prevState].filter((n) => n !== node)),
+        );
+      } else {
+        setWhitelistSet((prevState) => new Set([...prevState, node]));
+      }
+    },
+    // hold: ({ nodes }) => {
+    //   nodes = nodes.map((v: number) => v.toString());
+    //   setWhitelistSet(
+    //     (prevState) =>
+    //       new Set([...prevState].filter((n) => nodes.indexOf(n) < 0)),
+    //   );
+    // },
     selectNode: ({ nodes, edges }) => {
       setSelectedEdge(undefined);
       setSelectedNode(graphDataMaps.nodesMap.get(nodes[0]));
@@ -91,19 +127,16 @@ export const GraphViewer: React.FC = () => {
         <div className={"flex-container"}>
           <div className={"flex-container__element"}>
             <span>
-              <b>Shift+mark multiple</b> to make subgraph.
+              <b>Double-click</b> to add or remove nodes from whitelist (marked
+              green).
             </span>
           </div>
-          <div className={"flex-container__element"}>
-            <span>
-              <b>Hold</b> node to remove it.
-            </span>
-          </div>
-          <div className={"flex-container__element"}>
-            <span>
-              <b>Double-click</b> to expand from node.
-            </span>
-          </div>
+          {/*<div className={"flex-container__element"}>*/}
+          {/*  <span>*/}
+          {/*    <b>Hold</b> node to remove it from the whitelist.*/}
+          {/*  </span>*/}
+          {/*</div>*/}
+
           {/*<button*/}
           {/*  className={"flex-container__element"}*/}
           {/*  onClick={() => {*/}

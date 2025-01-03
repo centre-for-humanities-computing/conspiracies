@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { TripletOrm } from "./TripletOrm";
 import { getDataSource } from "../datasource";
+import { RelationOrm } from "./RelationOrm";
 
 @Entity("entities")
 export class EntityOrm {
@@ -28,6 +29,12 @@ export class EntityOrm {
 
   @OneToMany(() => EntityOrm, (entity) => entity.supernode)
   subnodes!: EntityOrm[];
+
+  @OneToMany(() => RelationOrm, (relation) => relation.subject)
+  subjectRelations!: TripletOrm[];
+
+  @OneToMany(() => RelationOrm, (relation) => relation.object)
+  objectRelations!: TripletOrm[];
 
   @OneToMany(() => TripletOrm, (triplet) => triplet.subjectEntity)
   subjectTriplets!: TripletOrm[];

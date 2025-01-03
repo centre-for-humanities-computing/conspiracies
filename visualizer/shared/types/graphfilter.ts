@@ -14,4 +14,5 @@ export interface GraphFilter {
   labelSearch?: string;
   earliestDate?: Date;
   latestDate?: Date;
+  whitelistedEntityIds?: string[];
 }

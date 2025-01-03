@@ -21,6 +21,8 @@ function rangeFilter(min: any | undefined, max: any | undefined) {
 export async function getGraph(req: Request, res: Response) {
   const graphFilter: GraphFilter = req.body.graphFilter;
 
+  // console.log(graphFilter)
+
   let ds = await getDataSource();
 
   const dateFilter = {
@@ -32,21 +34,69 @@ export async function getGraph(req: Request, res: Response) {
       : undefined,
   };
 
-  const entities = await ds.getRepository(EntityOrm).find({
-    take: graphFilter.limit,
+  const entityLabelFilter = {
+    label: graphFilter.labelSearch
+      ? Like(`%${graphFilter.labelSearch}%`)
+      : undefined,
+  };
+  const entityFreqFilter = {
+    termFrequency: rangeFilter(
+      graphFilter.minimumNodeFrequency,
+      graphFilter.maximumNodeFrequency,
+    ),
+  };
+
+  const entityFilter = {
+    ...dateFilter,
+    ...entityFreqFilter,
+    ...entityLabelFilter,
+  };
+
+  const relationFilter = {
+    ...dateFilter,
+    termFrequency: rangeFilter(
+      graphFilter.minimumEdgeFrequency,
+      graphFilter.maximumEdgeFrequency,
+    ),
+  };
+
+  const whiteListedEntities = graphFilter.whitelistedEntityIds
+    ? await ds.getRepository(EntityOrm).find({
+        take: graphFilter.limit,
+        select: { id: true, label: true, termFrequency: true },
+        where: {
+          id: In(graphFilter.whitelistedEntityIds),
+        },
+        order: { termFrequency: "desc" },
+      })
+    : [];
+
+  const extraEntities = await ds.getRepository(EntityOrm).find({
+    take: graphFilter.limit - whiteListedEntities.length,
     select: { id: true, label: true, termFrequency: true },
-    where: {
-      ...dateFilter,
-      label: graphFilter.labelSearch
-        ? Like(`%${graphFilter.labelSearch}%`)
-        : undefined,
-      termFrequency: rangeFilter(
-        graphFilter.minimumNodeFrequency,
-        graphFilter.maximumNodeFrequency,
-      ),
-    },
+    where: [
+      {
+        ...entityFilter,
+        subjectRelations: graphFilter.whitelistedEntityIds
+          ? {
+              ...relationFilter,
+              objectId: In(graphFilter.whitelistedEntityIds),
+            }
+          : undefined,
+      },
+      {
+        ...entityFilter,
+        objectRelations: graphFilter.whitelistedEntityIds
+          ? {
+              ...relationFilter,
+              subjectId: In(graphFilter.whitelistedEntityIds),
+            }
+          : undefined,
+      },
+    ],
     order: { termFrequency: "desc" },
   });
+  const entities = whiteListedEntities.concat(extraEntities);
   const entityMap = new Map(entities.map((e) => [e.id, e]));
   const entityIds = [...new Set(entities.map((e) => e.id))];
 
