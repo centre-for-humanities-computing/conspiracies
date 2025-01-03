@@ -194,6 +194,7 @@ class Pipeline:
 
                 triplet_orm = TripletOrm(
                     doc_id=int(triplet.doc),
+                    timestamp=triplet.timestamp,
                     subject_id=subject_id,
                     relation_id=relation_id,
                     object_id=object_id,

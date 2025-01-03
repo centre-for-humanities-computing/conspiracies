@@ -1,16 +1,9 @@
 import { Request, Response } from "express";
 import { RelationOrm } from "../orms/RelationOrm";
 import { EntityOrm } from "../orms/EntityOrm";
-import {
-  Between,
-  FindOptionsWhere,
-  In,
-  LessThanOrEqual,
-  Like,
-  MoreThanOrEqual,
-} from "typeorm";
+import { Between, In, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
 import { getDataSource } from "../datasource";
-import { Details, Edge } from "@shared/types/graph";
+import { Edge } from "@shared/types/graph";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 
 function rangeFilter(min: any | undefined, max: any | undefined) {
@@ -30,26 +23,28 @@ export async function getGraph(req: Request, res: Response) {
 
   let ds = await getDataSource();
 
-  const relationFindOptions: FindOptionsWhere<RelationOrm> = {
-    termFrequency: rangeFilter(
-      graphFilter.minimumEdgeFrequency,
-      graphFilter.maximumEdgeFrequency,
-    ),
-  };
-  const entityFindOptions: FindOptionsWhere<EntityOrm> = {
-    label: graphFilter.labelSearch
-      ? Like(`%${graphFilter.labelSearch}%`)
+  const dateFilter = {
+    lastOccurrence: graphFilter.earliestDate
+      ? MoreThanOrEqual(graphFilter.earliestDate)
       : undefined,
-    termFrequency: rangeFilter(
-      graphFilter.minimumNodeFrequency,
-      graphFilter.maximumNodeFrequency,
-    ),
+    firstOccurrence: graphFilter.latestDate
+      ? LessThanOrEqual(graphFilter.latestDate)
+      : undefined,
   };
 
   const entities = await ds.getRepository(EntityOrm).find({
     take: graphFilter.limit,
     select: { id: true, label: true, termFrequency: true },
-    where: entityFindOptions,
+    where: {
+      ...dateFilter,
+      label: graphFilter.labelSearch
+        ? Like(`%${graphFilter.labelSearch}%`)
+        : undefined,
+      termFrequency: rangeFilter(
+        graphFilter.minimumNodeFrequency,
+        graphFilter.maximumNodeFrequency,
+      ),
+    },
     order: { termFrequency: "desc" },
   });
   const entityMap = new Map(entities.map((e) => [e.id, e]));
@@ -64,7 +59,11 @@ export async function getGraph(req: Request, res: Response) {
       termFrequency: true,
     },
     where: {
-      ...relationFindOptions,
+      ...dateFilter,
+      termFrequency: rangeFilter(
+        graphFilter.minimumEdgeFrequency,
+        graphFilter.maximumEdgeFrequency,
+      ),
       subjectId: In(entityIds),
       objectId: In(entityIds),
     },

@@ -16,6 +16,9 @@ export class TripletOrm {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column("datetime")
+  timestamp!: Date;
+
   @Column("integer", { name: "doc_id" })
   @Index()
   docId!: number;

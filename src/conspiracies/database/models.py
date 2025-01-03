@@ -21,6 +21,8 @@ class EntityOrm(Base):
     supernode_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
     term_frequency = Column(Integer, default=-1, nullable=False)
     doc_frequency = Column(Integer, default=-1, nullable=False)
+    first_occurrence = Column(DateTime, nullable=True)
+    last_occurrence = Column(DateTime, nullable=True)
 
     # Relationships
     supernode = relationship(
@@ -51,6 +53,8 @@ class RelationOrm(Base):
     object_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
     term_frequency = Column(Integer, default=-1, nullable=False)
     doc_frequency = Column(Integer, default=-1, nullable=False)
+    first_occurrence = Column(DateTime, nullable=True)
+    last_occurrence = Column(DateTime, nullable=True)
 
     # Relationships
     subject = relationship(
@@ -71,6 +75,7 @@ class RelationOrm(Base):
 class TripletOrm(Base):
     __tablename__ = "triplets"
     id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, nullable=False)
     doc_id = Column(Integer, ForeignKey("docs.id"), nullable=False, index=True)
     subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True, index=True)
     relation_id = Column(Integer, ForeignKey("relations.id"), nullable=True, index=True)
@@ -176,12 +181,17 @@ class EntityAndRelationCache:
 
     def update_entity_counts(self, session: Session):
         for entity in tqdm(self._entities.values(), desc="Calculating entity counts"):
-            entity.term_frequency = len(entity.subject_triplets) + len(
-                entity.object_triplets,
-            )  # noqa
+            as_subject = len(entity.subject_triplets)  # noqa
+            as_object = len(entity.object_triplets)  # noqa
+            entity.term_frequency = as_subject + as_object
             entity.doc_frequency = len(
                 set(t.doc_id for t in entity.subject_triplets + entity.object_triplets),
             )
+            dates = [
+                t.timestamp for t in entity.subject_triplets + entity.object_triplets
+            ]
+            entity.first_occurrence = min(dates)
+            entity.last_occurrence = max(dates)
         session.commit()
 
     def update_relation_counts(self, session: Session):
@@ -191,4 +201,7 @@ class EntityAndRelationCache:
         ):
             relation.term_frequency = len(relation.triplets)  # noqa
             relation.doc_frequency = len(set(t.doc_id for t in relation.triplets))
+            dates = [t.timestamp for t in relation.triplets]
+            relation.first_occurrence = min(dates)
+            relation.last_occurrence = max(dates)
         session.commit()

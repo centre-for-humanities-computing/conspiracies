@@ -3,7 +3,7 @@ import { getDataSource } from "../datasource";
 import { EntityOrm } from "../orms/EntityOrm";
 import { Details } from "@shared/types/graph";
 import { DocumentOrm } from "../orms/DocumentOrm";
-import { getDocs, transformOrmToDto } from "../services/docs";
+import { getDocs } from "../services/docs";
 
 function transformEntityOrmToDetails(entity: EntityOrm): Details {
   return {
@@ -11,9 +11,8 @@ function transformEntityOrmToDetails(entity: EntityOrm): Details {
     label: entity.label,
     frequency: entity.termFrequency,
     altLabels: [],
-    // docs: docs,
-    firstOccurrence: undefined,
-    lastOccurrence: undefined,
+    firstOccurrence: entity.firstOccurrence,
+    lastOccurrence: entity.lastOccurrence,
   };
 }
 

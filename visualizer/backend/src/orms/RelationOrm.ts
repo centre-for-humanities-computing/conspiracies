@@ -43,6 +43,12 @@ export class RelationOrm {
   @Column("integer", { name: "doc_frequency" })
   docFrequency!: number;
 
+  @Column("datetime", { name: "first_occurrence", nullable: true })
+  firstOccurrence!: Date | null;
+
+  @Column("datetime", { name: "last_occurrence", nullable: true })
+  lastOccurrence!: Date | null;
+
   async updateFrequencyCounts() {
     const dataSource = await getDataSource();
     const tripletRepository = dataSource.getRepository(TripletOrm);

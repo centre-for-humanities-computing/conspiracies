@@ -41,6 +41,12 @@ export class EntityOrm {
   @Column("integer", { name: "doc_frequency" })
   docFrequency!: number | null;
 
+  @Column("datetime", { name: "first_occurrence" })
+  firstOccurrence!: Date | null;
+
+  @Column("datetime", { name: "last_occurrence" })
+  lastOccurrence!: Date | null;
+
   async updateFrequencyCounts() {
     const dataSource = await getDataSource();
     const tripletRepository = dataSource.getRepository(TripletOrm);

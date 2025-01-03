@@ -3,7 +3,7 @@ import { RelationOrm } from "../orms/RelationOrm";
 import { getDataSource } from "../datasource";
 import { Details } from "@shared/types/graph";
 import { DocumentOrm } from "../orms/DocumentOrm";
-import { getDocs, transformOrmToDto } from "../services/docs";
+import { getDocs } from "../services/docs";
 
 function transformRelationOrmToDetails(relation: RelationOrm): Details {
   return {
@@ -11,8 +11,8 @@ function transformRelationOrmToDetails(relation: RelationOrm): Details {
     label: relation.label,
     frequency: relation.termFrequency,
     altLabels: [],
-    firstOccurrence: undefined,
-    lastOccurrence: undefined,
+    firstOccurrence: relation.firstOccurrence,
+    lastOccurrence: relation.lastOccurrence,
   };
 }
 
