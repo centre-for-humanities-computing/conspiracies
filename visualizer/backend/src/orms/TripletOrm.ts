@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -16,15 +17,19 @@ export class TripletOrm {
   id!: number;
 
   @Column("integer", { name: "doc_id" })
+  @Index()
   docId!: number;
 
   @Column("integer", { name: "subject_id" })
+  @Index()
   subjectId!: number;
 
   @Column("integer", { name: "relation_id" })
+  @Index()
   relationId!: number;
 
   @Column("integer", { name: "object_id" })
+  @Index()
   objectId!: number;
 
   @Column("integer", { name: "subj_span_start" })

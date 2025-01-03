@@ -16,13 +16,13 @@ const RelationInfo: React.FC<RelationInfoProps> = ({
   subjectLabel,
   objectLabel,
 }) => {
-  const { getGraphService } = useServiceContext();
+  const { graphService } = useServiceContext();
 
   const [edgeDetails, setEdgeDetails] = useState<Details>();
 
   useEffect(() => {
-    getGraphService().getRelationDetails(id).then(setEdgeDetails);
-  }, [getGraphService, id]);
+    graphService.getRelationDetails(id).then(setEdgeDetails);
+  }, [graphService, id]);
 
   return (
     <div>

@@ -71,10 +71,10 @@ class RelationOrm(Base):
 class TripletOrm(Base):
     __tablename__ = "triplets"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    doc_id = Column(Integer, ForeignKey("docs.id"), nullable=False)
-    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
-    relation_id = Column(Integer, ForeignKey("relations.id"), nullable=True)
-    object_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    doc_id = Column(Integer, ForeignKey("docs.id"), nullable=False, index=True)
+    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True, index=True)
+    relation_id = Column(Integer, ForeignKey("relations.id"), nullable=True, index=True)
+    object_id = Column(Integer, ForeignKey("entities.id"), nullable=True, index=True)
     subj_span_start = Column(Integer, nullable=False)
     subj_span_end = Column(Integer, nullable=False)
     subj_span_text = Column(String, nullable=False)
@@ -146,7 +146,7 @@ class EntityAndRelationCache:
             entity = EntityOrm(label=label)
             self._session.add(entity)
             self._session.flush()  # Get the ID immediately
-            self._entities[label] = entity  # noqa
+            self._entities[entity_key] = entity  # noqa
         return entity.id
 
     def get_or_create_relation(

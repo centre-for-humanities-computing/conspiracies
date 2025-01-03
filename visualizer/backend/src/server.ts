@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { routes as graphRoutes } from "./routes/graph";
 import { routes as docRoutes } from "./routes/docs";
+import { routes as entityRoutes } from "./routes/entities";
+import { routes as relationRoutes } from "./routes/relations";
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ export function createServer(): {
   app.use(express.json());
   app.use("/graph", graphRoutes);
   app.use("/docs", docRoutes);
+  app.use("/entities", entityRoutes);
+  app.use("/relations", relationRoutes);
 
   return {
     start: (port: string | number) => {

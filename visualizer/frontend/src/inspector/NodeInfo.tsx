@@ -12,14 +12,14 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
   node,
   className,
 }: NodeInfoProps) => {
-  const { getGraphService } = useServiceContext();
+  const { graphService } = useServiceContext();
 
   const [details, setDetails] = useState<Details | undefined>(undefined);
 
   useEffect(() => {
     setDetails(undefined);
-    getGraphService().getEntityDetails(node.id).then(setDetails);
-  }, [getGraphService, node.id]);
+    graphService.getEntityDetails(node.id).then(setDetails);
+  }, [graphService, node.id]);
 
   return (
     <div className={"node-info " + className}>

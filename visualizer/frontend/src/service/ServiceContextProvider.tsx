@@ -1,17 +1,14 @@
-import React, {
-  createContext,
-  PropsWithChildren,
-  useContext,
-  useState,
-} from "react";
+import React, { createContext, PropsWithChildren, useContext } from "react";
 import { GraphService, GraphServiceImpl } from "./GraphService";
 import { DocService, DocServiceImpl } from "./DocService";
+import { EntityService, EntityServiceImpl } from "./EntityService";
+import { RelationService, RelationServiceImpl } from "./RelationService";
 
 interface Services {
-  getGraphService: () => GraphService;
-  setGraphService: (service: GraphService) => void;
-  getDocService: () => DocService;
-  setDocService: (service: DocService) => void;
+  graphService: GraphService;
+  docService: DocService;
+  entityService: EntityService;
+  relationService: RelationService;
 }
 
 const ServiceContext = createContext<Services | undefined>(undefined);
@@ -19,28 +16,11 @@ const ServiceContext = createContext<Services | undefined>(undefined);
 export const ServiceContextProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  const [graphService, setGraphService] = useState<GraphService | undefined>(
-    new GraphServiceImpl("http://localhost:5000"),
-  );
-  const [docService, setDocService] = useState<DocService | undefined>(
-    new DocServiceImpl("http://localhost:5000"),
-  );
-
   const value: Services = {
-    getGraphService: () => {
-      if (!graphService) {
-        throw new Error("DocService has not been initialized!");
-      }
-      return graphService;
-    },
-    setGraphService: (service: GraphService) => setGraphService(service),
-    getDocService: () => {
-      if (!docService) {
-        throw new Error("DocService has not been initialized!");
-      }
-      return docService;
-    },
-    setDocService: (service: DocService) => setDocService(service),
+    graphService: new GraphServiceImpl("http://localhost:5000"),
+    docService: new DocServiceImpl("http://localhost:5000"),
+    entityService: new EntityServiceImpl("http://localhost:5000"),
+    relationService: new RelationServiceImpl("http://localhost:5000"),
   };
 
   return (

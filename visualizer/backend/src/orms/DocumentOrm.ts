@@ -9,7 +9,7 @@ export class DocumentOrm {
   @Column("text")
   text!: string;
 
-  @Column("text", { nullable: true })
+  @Column("text", { name: "orig_text", nullable: true })
   origText!: string | null;
 
   @Column("datetime", { nullable: true })

@@ -11,7 +11,7 @@ import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 export interface GraphViewerProps {}
 
 export const GraphViewer: React.FC = () => {
-  const { getGraphService } = useServiceContext();
+  const { graphService } = useServiceContext();
 
   const [graphFilter, setGraphFilter] = useState<GraphFilter>({
     limit: 50,
@@ -23,17 +23,13 @@ export const GraphViewer: React.FC = () => {
     nodes: [],
   });
   useEffect(() => {
-    getGraphService()
-      .getGraph(graphFilter)
-      .then((r) => setGraphData(r));
-  }, [getGraphService, graphFilter]);
+    graphService.getGraph(graphFilter).then((r) => setGraphData(r));
+  }, [graphService, graphFilter]);
 
   const [dataBounds, setDataBounds] = useState<DataBounds>();
   useEffect(() => {
-    getGraphService()
-      .getDataBounds()
-      .then((r) => setDataBounds(r));
-  }, [getGraphService]);
+    graphService.getDataBounds().then((r) => setDataBounds(r));
+  }, [graphService]);
 
   const [selectedNode, setSelectedNode] = useState<Node>();
   const [selectedEdge, setSelectedEdge] = useState<Edge>();
@@ -72,7 +68,7 @@ export const GraphViewer: React.FC = () => {
       },
     },
     edges: {
-      smooth: false,
+      smooth: true,
       font: {
         align: "top",
       },

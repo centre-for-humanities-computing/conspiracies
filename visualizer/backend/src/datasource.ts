@@ -16,7 +16,7 @@ async function createDataSource() {
     type: "sqlite",
     database: path,
     entities: [EntityOrm, RelationOrm, TripletOrm, DocumentOrm],
-    synchronize: true,
+    synchronize: false,
   });
   await dataSource.initialize();
   return dataSource;

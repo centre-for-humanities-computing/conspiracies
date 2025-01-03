@@ -40,12 +40,11 @@ export class GraphServiceImpl implements GraphService {
     }
 
     const r = await response.json();
-    console.log(r);
     return r;
   }
 
   async getEntityDetails(id: string | number): Promise<Details> {
-    const response = await fetch(`${this.baseUrl}/graph/node/${id}`);
+    const response = await fetch(`${this.baseUrl}/entities/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch entity details: ${response.statusText}`);
@@ -55,7 +54,7 @@ export class GraphServiceImpl implements GraphService {
   }
 
   async getRelationDetails(id: string | number): Promise<Details> {
-    const response = await fetch(`${this.baseUrl}/graph/edge/${id}`);
+    const response = await fetch(`${this.baseUrl}/relations/${id}`);
 
     if (!response.ok) {
       throw new Error(

@@ -13,38 +13,6 @@ import { getDataSource } from "../datasource";
 import { Details, Edge } from "@shared/types/graph";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 
-function transformEntityOrmToDetails(entity: EntityOrm): Details {
-  const docs = [
-    ...new Set(
-      [...entity.subjectTriplets, ...entity.objectTriplets].map((t) => t.docId),
-    ),
-  ];
-
-  return {
-    id: entity.id,
-    label: entity.label,
-    frequency: entity.termFrequency,
-    altLabels: [],
-    docs: docs,
-    firstOccurrence: undefined,
-    lastOccurrence: undefined,
-  };
-}
-
-function transformRelationOrmToDetails(relation: RelationOrm): Details {
-  const docs = [...new Set(relation.triplets)].map((t) => t.docId);
-
-  return {
-    id: relation.id,
-    label: relation.label,
-    frequency: relation.termFrequency,
-    altLabels: [],
-    docs: docs,
-    firstOccurrence: undefined,
-    lastOccurrence: undefined,
-  };
-}
-
 function rangeFilter(min: any | undefined, max: any | undefined) {
   if (min !== undefined && max !== undefined) {
     return Between(min, max);
@@ -154,36 +122,4 @@ export async function getBounds(req: Request, res: Response) {
       (await relationOrmRepository.maximum("termFrequency")) || NaN,
   };
   res.json(dataBounds);
-}
-
-export async function getEntity(req: Request, res: Response) {
-  const { id } = req.params;
-
-  let ds = await getDataSource();
-
-  const entity = await ds.getRepository(EntityOrm).findOne({
-    where: { id: Number(id) },
-    relations: ["subjectTriplets", "objectTriplets"],
-  });
-  if (!entity) {
-    res.status(404).send("Node/Entity not found.");
-    return;
-  }
-  res.json(transformEntityOrmToDetails(entity));
-}
-
-export async function getRelation(req: Request, res: Response) {
-  const { id } = req.params;
-
-  let ds = await getDataSource();
-
-  const relation = await ds.getRepository(RelationOrm).findOne({
-    where: { id: Number(id) },
-    relations: ["subject", "object", "triplets"],
-  });
-  if (!relation) {
-    res.status(404).send("Node/Entity not found.");
-    return;
-  }
-  res.json(transformRelationOrmToDetails(relation));
 }
