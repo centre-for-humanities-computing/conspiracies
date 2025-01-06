@@ -1,7 +1,15 @@
 import { Request, Response } from "express";
 import { RelationOrm } from "../orms/RelationOrm";
 import { EntityOrm } from "../orms/EntityOrm";
-import { Between, In, LessThanOrEqual, Like, MoreThanOrEqual } from "typeorm";
+import {
+  And,
+  Between,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Not,
+} from "typeorm";
 import { getDataSource } from "../datasource";
 import { Edge } from "@shared/types/graph";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
@@ -20,8 +28,6 @@ function rangeFilter(min: any | undefined, max: any | undefined) {
 
 export async function getGraph(req: Request, res: Response) {
   const graphFilter: GraphFilter = req.body.graphFilter;
-
-  // console.log(graphFilter)
 
   let ds = await getDataSource();
 
@@ -45,11 +51,21 @@ export async function getGraph(req: Request, res: Response) {
       graphFilter.maximumNodeFrequency,
     ),
   };
+  const entityWhitelistFilter = {
+    id: graphFilter.whitelistedEntityIds
+      ? In(graphFilter.whitelistedEntityIds)
+      : undefined,
+  };
+  const entityBlacklistFilter = {
+    id: graphFilter.blacklistedEntityIds
+      ? Not(In(graphFilter.blacklistedEntityIds))
+      : undefined,
+  };
 
   const entityFilter = {
     ...dateFilter,
     ...entityFreqFilter,
-    ...entityLabelFilter,
+    ...entityBlacklistFilter,
   };
 
   const relationFilter = {
@@ -60,43 +76,67 @@ export async function getGraph(req: Request, res: Response) {
     ),
   };
 
-  const whiteListedEntities = graphFilter.whitelistedEntityIds
-    ? await ds.getRepository(EntityOrm).find({
-        take: graphFilter.limit,
+  let entities;
+
+  if (graphFilter.whitelistedEntityIds || graphFilter.labelSearch) {
+    const focusEntities = await ds.getRepository(EntityOrm).find({
+      take: graphFilter.limit,
+      select: { id: true, label: true, termFrequency: true },
+      where: [entityWhitelistFilter, entityLabelFilter],
+      order: { termFrequency: "desc" },
+    });
+
+    let extraEntities: EntityOrm[] = [];
+    if (focusEntities.length < graphFilter.limit) {
+      const focusEntityIds = focusEntities.map((e) => e.id);
+      const connections = await ds.getRepository(RelationOrm).find({
+        select: {
+          subjectId: true,
+          objectId: true,
+        },
+        where: [
+          {
+            ...relationFilter,
+            subjectId: In(focusEntityIds),
+          },
+          {
+            ...relationFilter,
+            objectId: In(focusEntityIds),
+          },
+        ],
+      });
+
+      const connectedEntityIds = connections
+        .flatMap((conn) => [conn.subjectId, conn.objectId])
+        .filter((id) => focusEntityIds.indexOf(id) === -1);
+
+      extraEntities = await ds.getRepository(EntityOrm).find({
+        take: graphFilter.limit - focusEntities.length,
         select: { id: true, label: true, termFrequency: true },
         where: {
-          id: In(graphFilter.whitelistedEntityIds),
+          ...entityFilter,
+          // have to rebuild the ID condition here
+          id: And(
+            In(connectedEntityIds),
+            Not(In(graphFilter.blacklistedEntityIds || [])),
+          ),
         },
         order: { termFrequency: "desc" },
-      })
-    : [];
+      });
+    }
 
-  const extraEntities = await ds.getRepository(EntityOrm).find({
-    take: graphFilter.limit - whiteListedEntities.length,
-    select: { id: true, label: true, termFrequency: true },
-    where: [
-      {
-        ...entityFilter,
-        subjectRelations: graphFilter.whitelistedEntityIds
-          ? {
-              ...relationFilter,
-              objectId: In(graphFilter.whitelistedEntityIds),
-            }
-          : undefined,
-      },
-      {
-        ...entityFilter,
-        objectRelations: graphFilter.whitelistedEntityIds
-          ? {
-              ...relationFilter,
-              subjectId: In(graphFilter.whitelistedEntityIds),
-            }
-          : undefined,
-      },
-    ],
-    order: { termFrequency: "desc" },
-  });
-  const entities = whiteListedEntities.concat(extraEntities);
+    entities = focusEntities
+      .map((e) => ({ ...e, focus: true }))
+      .concat(extraEntities.map((e) => ({ ...e, focus: false })));
+  } else {
+    entities = await ds.getRepository(EntityOrm).find({
+      take: graphFilter.limit,
+      select: { id: true, label: true, termFrequency: true },
+      where: entityFilter,
+      order: { termFrequency: "desc" },
+    });
+  }
+
   const entityMap = new Map(entities.map((e) => [e.id, e]));
   const entityIds = [...new Set(entities.map((e) => e.id))];
 
@@ -109,11 +149,7 @@ export async function getGraph(req: Request, res: Response) {
       termFrequency: true,
     },
     where: {
-      ...dateFilter,
-      termFrequency: rangeFilter(
-        graphFilter.minimumEdgeFrequency,
-        graphFilter.maximumEdgeFrequency,
-      ),
+      ...relationFilter,
       subjectId: In(entityIds),
       objectId: In(entityIds),
     },

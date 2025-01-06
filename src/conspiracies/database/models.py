@@ -49,8 +49,8 @@ class RelationOrm(Base):
     __tablename__ = "relations"
     id = Column(Integer, primary_key=True, autoincrement=True)
     label = Column(String, nullable=False, index=True)
-    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
-    object_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("entities.id"), nullable=False, index=True)
+    object_id = Column(Integer, ForeignKey("entities.id"), nullable=False, index=True)
     term_frequency = Column(Integer, default=-1, nullable=False)
     doc_frequency = Column(Integer, default=-1, nullable=False)
     first_occurrence = Column(DateTime, nullable=True)

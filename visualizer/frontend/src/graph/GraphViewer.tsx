@@ -5,7 +5,7 @@ import { useServiceContext } from "../service/ServiceContextProvider";
 import { Edge, GraphData, Node } from "@shared/types/graph";
 import { NodeInfo } from "../inspector/NodeInfo";
 import { EdgeInfo } from "../inspector/EdgeInfo";
-import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
+import { GraphFilter } from "@shared/types/graphfilter";
 import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
 
 export interface GraphViewerProps {}
@@ -23,7 +23,21 @@ export const GraphViewer: React.FC = () => {
     return whitelistSet.size === 0 ? undefined : [...whitelistSet];
   }, [whitelistSet]);
 
-  const [graphFilter, setGraphFilter] = useState<GraphFilter>({
+  const [blacklistParts, setBlacklistParts] = useState<string[][]>([]);
+  const blacklistSet = useMemo(() => {
+    const result = new Set<string>();
+    for (let add of blacklistParts) {
+      for (let member of add) {
+        result.add(member);
+      }
+    }
+    return result;
+  }, [blacklistParts]);
+  const blacklist = useMemo<string[] | undefined>(() => {
+    return blacklistSet.size === 0 ? undefined : [...blacklistSet];
+  }, [blacklistSet]);
+
+  const [partialGraphFilter, setPartialGraphFilter] = useState<GraphFilter>({
     limit: 50,
     minimumEdgeFrequency: 5,
   });
@@ -34,23 +48,30 @@ export const GraphViewer: React.FC = () => {
   });
   useEffect(() => {
     graphService
-      .getGraph({ ...graphFilter, whitelistedEntityIds: whitelist })
-      .then((r) =>
-        setGraphData({
-          ...r,
-          // TODO: do this elsewhere!
-          nodes: r.nodes.map((n) => ({
-            ...n,
-            color: whitelistSet.has(n.id.toString()) ? "lightgreen" : "cyan",
-          })),
-        }),
-      );
-  }, [graphService, graphFilter, whitelist, whitelistSet]);
+      .getGraph({
+        ...partialGraphFilter,
+        whitelistedEntityIds: whitelist,
+        blacklistedEntityIds: blacklist,
+      })
+      .then((r) => setGraphData(r));
+  }, [graphService, partialGraphFilter, whitelist, whitelistSet, blacklist]);
 
-  const [dataBounds, setDataBounds] = useState<DataBounds>();
-  useEffect(() => {
-    graphService.getDataBounds().then((r) => setDataBounds(r));
-  }, [graphService]);
+  const coloredGraphData = useMemo(() => {
+    return {
+      ...graphData,
+      nodes: graphData.nodes.map((n) => ({
+        ...n,
+        // TODO: fix this horrible block
+        color: whitelistSet.has(n.id.toString())
+          ? "lightgreen"
+          : n.focus
+            ? "yellow"
+            : blacklistSet.has(n.id.toString())
+              ? "red"
+              : "cyan",
+      })),
+    };
+  }, [blacklistSet, graphData, whitelistSet]);
 
   const graphDataMaps = useMemo(() => {
     return {
@@ -71,13 +92,23 @@ export const GraphViewer: React.FC = () => {
         setWhitelistSet((prevState) => new Set([...prevState, node]));
       }
     },
-    // hold: ({ nodes }) => {
-    //   nodes = nodes.map((v: number) => v.toString());
-    //   setWhitelistSet(
-    //     (prevState) =>
-    //       new Set([...prevState].filter((n) => nodes.indexOf(n) < 0)),
-    //   );
-    // },
+    hold: ({ nodes }) => {
+      if (nodes.length === 0) return;
+      const node = nodes.map((v: number) => v.toString())[0];
+      if (whitelistSet.has(node)) {
+        setWhitelistSet(
+          (prevState) => new Set([...prevState].filter((n) => n !== node)),
+        );
+      }
+      setBlacklistParts((prev) => [...prev, [node]]);
+    },
+    select: ({ nodes }) => {
+      if (nodes.length < 2) return;
+      nodes = nodes
+        .map((v: number) => v.toString())
+        .filter((n: string) => !whitelistSet.has(n));
+      setBlacklistParts((prev) => [...prev, nodes]);
+    },
     selectNode: ({ nodes, edges }) => {
       setSelectedEdge(undefined);
       setSelectedNode(graphDataMaps.nodesMap.get(nodes[0]));
@@ -115,11 +146,10 @@ export const GraphViewer: React.FC = () => {
     <div>
       <div className={"padded"}>
         <GraphOptionsControlPanel options={options} setOptions={setOptions} />
-        {dataBounds && graphFilter && (
+        {partialGraphFilter && (
           <GraphFilterControlPanel
-            dataBounds={dataBounds}
-            graphFilter={graphFilter}
-            setGraphFilter={setGraphFilter}
+            graphFilter={partialGraphFilter}
+            setGraphFilter={setPartialGraphFilter}
           />
         )}
       </div>
@@ -127,30 +157,41 @@ export const GraphViewer: React.FC = () => {
         <div className={"flex-container"}>
           <div className={"flex-container__element"}>
             <span>
-              <b>Double-click</b> to add or remove nodes from whitelist (marked
-              green).
+              <b>Double-click</b> to add or remove nodes from whitelist.
             </span>
           </div>
-          {/*<div className={"flex-container__element"}>*/}
-          {/*  <span>*/}
-          {/*    <b>Hold</b> node to remove it from the whitelist.*/}
-          {/*  </span>*/}
-          {/*</div>*/}
+          <div className={"flex-container__element"}>
+            <span>
+              <b>Hold</b> or <b>shift+mark</b> to add or remove nodes from the
+              blacklist.
+            </span>
+            <button
+              disabled={blacklistParts.length === 0}
+              onClick={() =>
+                setBlacklistParts((prevState) =>
+                  prevState.slice(0, prevState.length - 1),
+                )
+              }
+            >
+              &#8617;
+            </button>
+          </div>
 
-          {/*<button*/}
-          {/*  className={"flex-container__element"}*/}
-          {/*  onClick={() => {*/}
-          {/*    setSubgraphNodes(new Set<string>());*/}
-          {/*  }}*/}
-          {/*>*/}
-          {/*  Reset selection*/}
-          {/*</button>*/}
+          <button
+            className={"flex-container__element"}
+            onClick={() => {
+              setWhitelistSet(new Set<string>());
+              setBlacklistParts([]);
+            }}
+          >
+            Reset selection
+          </button>
         </div>
       </div>
       <div className="graph-container">
         {selectedNode && <NodeInfo node={selectedNode} />}
         {selectedEdge && <EdgeInfo edge={selectedEdge} />}
-        <Graph graph={graphData} options={options} events={events} />
+        <Graph graph={coloredGraphData} options={options} events={events} />
       </div>
     </div>
   );

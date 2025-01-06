@@ -1,19 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./graph.css";
 import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
+import { useServiceContext } from "../service/ServiceContextProvider";
 
 interface GraphFilterControlPanelProps {
-  dataBounds: DataBounds;
   graphFilter: GraphFilter;
   setGraphFilter: React.Dispatch<React.SetStateAction<GraphFilter>>;
 }
 
 export const GraphFilterControlPanel = ({
-  dataBounds,
   graphFilter,
   setGraphFilter,
 }: GraphFilterControlPanelProps) => {
+  const { graphService } = useServiceContext();
+
+  const [dataBounds, setDataBounds] = useState<DataBounds>();
+  useEffect(() => {
+    graphService.getDataBounds().then((r) => setDataBounds(r));
+  }, [graphService]);
+
   const [limit, setLimit] = useState<number>(graphFilter.limit);
   const [search, setSearch] = useState<string | undefined>(
     graphFilter.labelSearch,
@@ -33,6 +39,10 @@ export const GraphFilterControlPanel = ({
       maximumEdgeFrequency: max,
     });
   };
+
+  if (!dataBounds) {
+    return <div className={"flex-container"}>Loading ...</div>;
+  }
 
   return (
     <div className={"flex-container"}>

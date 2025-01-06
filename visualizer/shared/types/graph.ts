@@ -5,6 +5,7 @@ export interface Identifiable {
 
 export interface Node extends Identifiable {
   supernodeId?: number;
+  focus?: boolean;
 }
 
 export interface Edge extends Identifiable {

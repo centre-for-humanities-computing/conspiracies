@@ -15,4 +15,5 @@ export interface GraphFilter {
   earliestDate?: Date;
   latestDate?: Date;
   whitelistedEntityIds?: string[];
+  blacklistedEntityIds?: string[];
 }
