@@ -99,7 +99,7 @@ def concat_resolve_unconcat_contexts(file_path: str):
 
     coref_nlp = build_coref_pipeline()
     coref_docs = coref_nlp.pipe(context_tweets)
-    resolved_docs = (d._.resolve_coref for d in coref_docs)
+    resolved_docs = (d._.resolved_text for d in coref_docs)
 
     resolved_tweets = (tweet_from_context_text(tweet) for tweet in resolved_docs)
     return resolved_tweets
@@ -240,7 +240,7 @@ def prompt_gpt3(
     for i, batch in enumerate(batch_generator(concatenated_tweets, batch_size)):
         start = time.time()
         coref_docs = coref_nlp.pipe(batch)
-        resolved_docs = (d._.resolve_coref for d in coref_docs)
+        resolved_docs = (d._.resolved_text for d in coref_docs)
         resolved_target_tweets = (
             tweet_from_context_text(tweet) for tweet in resolved_docs
         )

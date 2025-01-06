@@ -1,12 +1,15 @@
-from collections import defaultdict
-from typing import List, Callable, Any, Hashable, Dict
+import math
+import os
+from collections import defaultdict, Counter
+from pathlib import Path
+from typing import List, Callable, Any, Hashable, Dict, Union
 
 import networkx
 import numpy as np
 from hdbscan import HDBSCAN
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
 from umap import UMAP
 
 from conspiracies.common.modelchoice import ModelChoice
@@ -45,6 +48,7 @@ class Clustering:
         min_cluster_size: int = 5,
         min_samples: int = 3,
         embedding_model: str = None,
+        cache_location: Path = None,
     ):
         self.language = language
         self.n_dimensions = n_dimensions
@@ -52,6 +56,9 @@ class Clustering:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self._embedding_model = embedding_model
+        self.cache_location = cache_location
+        if self.cache_location is not None:
+            os.makedirs(self.cache_location, exist_ok=True)
 
     def _get_embedding_model(self):
         # figure out embedding model if not given explicitly
@@ -97,52 +104,87 @@ class Clustering:
 
         return merged_clusters
 
-    def _cluster(
+    def _cluster_via_embeddings(
         self,
-        fields: List[TripletField],
+        labels: List[str],
+        cache_name: str = None,
+        show_progress: bool = True,
     ):
-        model = self._get_embedding_model()
-        print("Creating embeddings:")
-        embeddings = model.encode(
-            [field.text for field in fields],
-            show_progress_bar=True,
+        emb_cache = (
+            Path(self.cache_location, f"embeddings-{cache_name}.npy")
+            if self.cache_location and cache_name
+            else None
         )
-        embeddings = StandardScaler().fit_transform(embeddings)
+        if emb_cache and emb_cache.exists():
+            print(
+                "Reusing cached embeddings! Delete cache if this is not supposed to happen.",
+            )
+            embeddings = np.load(emb_cache)
+        else:
+            model = self._get_embedding_model()
+
+            counter = Counter((field for field in labels))
+            condensed = [
+                field
+                for field, count in counter.items()
+                for _ in range(math.ceil(count / 1000))
+            ]
+            embeddings = model.encode(
+                condensed,
+                normalize_embeddings=True,
+                show_progress_bar=show_progress,
+            )
+            if emb_cache:
+                np.save(emb_cache, embeddings)
 
         if self.n_dimensions is not None:
-            print("Reducing embedding space")
-            reducer = UMAP(n_components=self.n_dimensions, n_neighbors=self.n_neighbors)
-            embeddings = reducer.fit_transform(embeddings)
+            reduced_emb_cache = (
+                Path(
+                    self.cache_location,
+                    f"embeddings-{cache_name}-red{self.n_dimensions}.npy",
+                )
+                if self.cache_location and cache_name
+                else None
+            )
+            if reduced_emb_cache and reduced_emb_cache.exists():
+                print(
+                    "Reusing cached reduced embeddings! Delete cache if this is not supposed to happen.",
+                )
+                embeddings = np.load(reduced_emb_cache)
+            else:
+                print("Reducing embedding space ...")
+                reducer = UMAP(
+                    n_components=self.n_dimensions,
+                    n_neighbors=self.n_neighbors,
+                )
+                embeddings = reducer.fit_transform(embeddings)
+                if self.cache_location:
+                    np.save(reduced_emb_cache, embeddings)
 
-        print("Clustering ...")
         hdbscan_model = HDBSCAN(
             min_cluster_size=self.min_cluster_size,
+            max_cluster_size=self.min_cluster_size
+            * 10,  # somewhat arbitrary, mostly to avoid mega clusters that suck up everything
             min_samples=self.min_samples,
         )
         hdbscan_model.fit(embeddings)
 
         clusters = defaultdict(list)
         for field, embedding, label, probability in zip(
-            fields,
+            labels,
             embeddings,
             hdbscan_model.labels_,
             hdbscan_model.probabilities_,
         ):
             # skip noise and low confidence
-            if label == -1 or probability < 0.1:
+            if label == -1 or probability < 0.5:
                 continue
             clusters[label].append((field, embedding))
 
         merged = self._combine_clusters(
             list(clusters.values()),
-            get_combine_key=lambda t: t[0].text,
+            get_combine_key=lambda t: t[0],
         )
-
-        # too risky with false positives from this
-        # merged = self._combine_clusters(
-        #     merged,
-        #     get_combine_key=lambda t: t[0].head,
-        # )
 
         # sort by how "prototypical" a member is in the cluster
         for cluster in merged:
@@ -153,11 +195,69 @@ class Clustering:
         return [[t[0] for t in cluster] for cluster in merged]
 
     @staticmethod
-    def _mapping_to_first_member(clusters: List[List[TripletField]]) -> Dict[str, str]:
+    def _cluster_via_normalization(
+        labels: List[str],
+        top: Union[int, float] = 1.0,
+        restrictive_labels=True,
+    ) -> List[List[str]]:
+        counter = Counter((label for label in labels))
+        if isinstance(top, float):
+            top = int(top * len(counter))
+
+        norm_map = {
+            label: " "
+            + label.lower()
+            + " "  # surrounding spaces avoids matches like evil <-> devil
+            for label in counter.keys()
+        }
+        cluster_map = {
+            label: []
+            for label, count in counter.most_common(top)
+            # FIXME: hack due to lack of NER and lemmas at the time of writing
+            if not restrictive_labels
+            or len(label) >= 4
+            and label[0].isupper()
+            or len(label.split()) > 1
+        }
+
+        for label in counter.keys():
+            norm_label = norm_map[label]
+            matches = [
+                substring
+                for substring in cluster_map.keys()
+                if norm_map[substring] in norm_label
+            ]
+            if not matches:
+                continue
+
+            best_match = min(
+                matches,
+                key=lambda substring: len(norm_map[substring]),
+            )
+            if best_match != label:
+                cluster_map[best_match].append(label)
+
+        clusters = [
+            [main_label] + alt_labels
+            for main_label, alt_labels in cluster_map.items()
+            if alt_labels
+        ]
+        return clusters
+
+    @staticmethod
+    def _mapping_to_first_member(
+        clusters: List[List[Union[TripletField, str]]],
+    ) -> Dict[str, str]:
+        def get_text(member: Union[TripletField, str]):
+            if isinstance(member, TripletField):
+                return member.text
+            else:
+                return member
+
         return {
-            member: cluster[0].text
+            member: get_text(cluster[0])
             for cluster in clusters
-            for member in set(member.text for member in cluster)
+            for member in set(get_text(member) for member in cluster)
         }
 
     def create_mappings(self, triplets: List[Triplet]) -> Mappings:
@@ -166,10 +266,33 @@ class Clustering:
         entities = subjects + objects
         predicates = [triplet.predicate for triplet in triplets]
 
+        # FIXME: clustering gets way to aggressive for many triplets
+        # print("Creating mappings for entities")
+        # entity_clusters = self._cluster(entities, "entities")
+        # print("Creating mappings for predicates")
+        # predicate_clusters = self._cluster(predicates, "predicates")
+
         print("Creating mappings for entities")
-        entity_clusters = self._cluster(entities)
+        entity_clusters = self._cluster_via_normalization(
+            [e.text for e in entities],
+            0.2,
+        )
+        entity_clusters = [
+            sub_cluster
+            for cluster in tqdm(entity_clusters, desc="Creating sub-clusters")
+            for sub_cluster in (
+                self._cluster_via_embeddings(cluster, show_progress=False)
+                if len(cluster) > 10
+                else [cluster]
+            )
+        ]
+
         print("Creating mappings for predicates")
-        predicate_clusters = self._cluster(predicates)
+        predicate_clusters = self._cluster_via_normalization(
+            [p.text for p in predicates],
+            top=0.2,
+            restrictive_labels=False,
+        )
 
         mappings = Mappings(
             entities=self._mapping_to_first_member(entity_clusters),

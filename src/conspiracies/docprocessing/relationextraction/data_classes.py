@@ -264,7 +264,9 @@ class SpanTriplet(BaseModel):
             span = span[:]
         return {
             "text": span.text,
+            "start_char": span.start_char,
             "start": span.start,
+            "end_char": span.end_char,
             "end": span.end,
         }
 
