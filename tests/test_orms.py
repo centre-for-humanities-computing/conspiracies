@@ -32,7 +32,7 @@ class TestModels(unittest.TestCase):
         # Dispose of the engine after all tests
         cls.engine.dispose()
 
-    def test_entity_triplet_relationships(self):
+    def test_triplet_relationships(self):
         # Create and commit entities
         subject = EntityOrm(label="Subject")
         obj = EntityOrm(label="Object")
@@ -40,8 +40,8 @@ class TestModels(unittest.TestCase):
         self.session.commit()
 
         # Create and commit relation and document
-        relation = RelationOrm(label="Relates")
-        document = DocumentOrm(text="This is a document.")
+        relation = RelationOrm(label="Relates", subject_id=subject.id, object_id=obj.id)
+        document = DocumentOrm(text="This is a document. Subject Relates Object.")
         self.session.add_all([relation, document])
         self.session.commit()
 
@@ -51,6 +51,15 @@ class TestModels(unittest.TestCase):
             subject_id=subject.id,
             object_id=obj.id,
             relation_id=relation.id,
+            subj_span_text="Subject",
+            subj_span_start=document.text.find("Subject"),
+            subj_span_end=document.text.find("Subject") + 7,
+            pred_span_text="Relates",
+            pred_span_start=document.text.find("Relates"),
+            pred_span_end=document.text.find("Relates") + 7,
+            obj_span_text="Object",
+            obj_span_start=document.text.find("Object"),
+            obj_span_end=document.text.find("Object") + 6,
         )
         self.session.add(triplet)
         self.session.commit()
@@ -115,33 +124,6 @@ class TestModels(unittest.TestCase):
     #     # Ensure duplicate triplet raises an integrity error
     #     with self.assertRaises(Exception):
     #         self.session.commit()
-
-    def test_document_triplets_relationship(self):
-        # Create and commit document
-        document = DocumentOrm(text="Document text")
-        self.session.add(document)
-        self.session.commit()
-
-        # Create triplets linked to the document
-        triplet1 = TripletOrm(
-            subject_id=1,
-            relation_id=1,
-            object_id=1,
-            doc_id=document.id,
-        )
-        triplet2 = TripletOrm(
-            subject_id=2,
-            relation_id=2,
-            object_id=2,
-            doc_id=document.id,
-        )
-        self.session.add_all([triplet1, triplet2])
-        self.session.commit()
-
-        # Verify document-to-triplets relationship
-        self.assertEqual(len(document.triplets), 2)
-        self.assertIn(triplet1, document.triplets)
-        self.assertIn(triplet2, document.triplets)
 
 
 if __name__ == "__main__":

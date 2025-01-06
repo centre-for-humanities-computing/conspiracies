@@ -75,7 +75,7 @@ class RelationOrm(Base):
 class TripletOrm(Base):
     __tablename__ = "triplets"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, nullable=False)
+    timestamp = Column(DateTime, nullable=True)
     doc_id = Column(Integer, ForeignKey("docs.id"), nullable=False, index=True)
     subject_id = Column(Integer, ForeignKey("entities.id"), nullable=True, index=True)
     relation_id = Column(Integer, ForeignKey("relations.id"), nullable=True, index=True)
@@ -124,7 +124,7 @@ class DocumentOrm(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     text = Column(Text, nullable=False)
     orig_text = Column(Text, nullable=True)
-    timestamp = Column(DateTime)
+    timestamp = Column(DateTime, nullable=True)
 
     # Relationships
     triplets = relationship("TripletOrm", back_populates="document")
