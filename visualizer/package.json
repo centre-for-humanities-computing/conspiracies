@@ -15,7 +15,7 @@
     "install": "npm install --prefix backend && npm install --prefix frontend",
     "electron:dev": "NODE_ENV=development electron .",
     "electron": "electron .",
-    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='node_modules|src|dist|README.md|tsconfig.json|.gitignore'",
+    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='README.md|tsconfig.json|.gitignore|frontend/(node_modules|src)|backend/src'",
     "package:win": "npm run package -- --platform=win32",
     "package:mac": "npm run package -- --platform=darwin",
     "package:linux": "npm run package -- --platform=linux"
