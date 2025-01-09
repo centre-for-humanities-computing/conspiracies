@@ -17,7 +17,7 @@ prefer_gpu_for_coref = true
 n_process = 1
 
 [corpusprocessing]
-enabled = false
+enabled = true
 
 [databasepopulation]
 enabled = true

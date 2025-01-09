@@ -109,10 +109,11 @@ class Pipeline:
         )
 
     def corpusprocessing(self):
-        # TODO: make into logging messages or progress bars instead
-        print("Collecting triplets.")
         triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
-        triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
+        triplets = Triplet.filter_on_label_length(triplets, 50)
+        triplets = list(
+            Triplet.filter_on_stopwords(triplets, self.config.base.language),
+        )
         if self.config.corpusprocessing.thresholds is None:
             thresholds = Thresholds.estimate_from_n_triplets(len(triplets))
         else:
@@ -216,8 +217,8 @@ class Pipeline:
         bulk.clear()
         session.commit()
 
-        cache.update_entity_counts(session)
-        cache.update_relation_counts(session)
+        cache.update_entity_info(session)
+        cache.update_relation_info(session)
 
         for doc in (
             json.loads(line)

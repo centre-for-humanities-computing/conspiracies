@@ -72,6 +72,19 @@ export const GraphFilterControlPanel = ({
         </form>
       </div>
       <div className={"flex-container__element"}>
+        Only supernodes:
+        <input
+          type={"checkbox"}
+          checked={graphFilter.onlySupernodes || false}
+          onChange={(event) =>
+            setGraphFilter((prevState) => ({
+              ...prevState,
+              onlySupernodes: event.target.checked,
+            }))
+          }
+        />
+      </div>
+      <div className={"flex-container__element"}>
         <span className={"flex-container__element__sub-element"}>
           Node Frequency:&nbsp;
         </span>

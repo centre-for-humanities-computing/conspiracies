@@ -4,7 +4,8 @@ export interface Identifiable {
 }
 
 export interface Node extends Identifiable {
-  supernodeId?: number;
+  supernode?: Identifiable;
+  subnodes?: Identifiable[];
   focus?: boolean;
 }
 

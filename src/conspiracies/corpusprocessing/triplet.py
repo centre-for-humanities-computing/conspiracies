@@ -2,24 +2,20 @@ import json
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Set, Iterator, Iterable, List, Union
+from typing import Optional, Set, Iterator, Iterable, Union
 
 from pydantic import BaseModel
 from stop_words import get_stop_words
+from tqdm import tqdm
 
 from conspiracies.common.fileutils import iter_lines_of_files
 
 
 class TripletField(BaseModel):
     text: str
-    start_char: Optional[int]
-    end_char: Optional[int]
-    head: Optional[str]
-
-    def clear_head_if_blacklist_match(self, blacklist: Set[str]):
-        if self.head and self.head in blacklist:
-            self.head = None
-        return self
+    start_char: int
+    end_char: int
+    lemma: str
 
 
 class Triplet(BaseModel):
@@ -35,25 +31,33 @@ class Triplet(BaseModel):
     def text_fields(self):
         return (f.text for f in self.fields())
 
-    def clear_field_heads_if_blacklist_match(self, blacklist: Set[str]):
-        for field in self.fields():
-            field.clear_head_if_blacklist_match(blacklist)
-        return self
-
     def has_blacklist_match(self, blacklist: Set[str]):
         return any(text_field.lower() in blacklist for text_field in self.text_fields())
+
+    @staticmethod
+    def filter_on_label_length(
+        triplets: Iterable["Triplet"],
+        max_length: int,
+    ) -> Iterator["Triplet"]:
+        return (
+            triplet
+            for triplet in triplets
+            if not any(
+                len(text_field) > max_length for text_field in triplet.text_fields()
+            )
+        )
 
     @staticmethod
     def filter_on_stopwords(
         triplets: Iterable["Triplet"],
         language: str,
-    ) -> List["Triplet"]:
+    ) -> Iterator["Triplet"]:
         stopwords = set(get_stop_words(language))
-        return [
-            triplet.clear_field_heads_if_blacklist_match(stopwords)
+        return (
+            triplet
             for triplet in triplets
             if not triplet.has_blacklist_match(stopwords)
-        ]
+        )
 
     @staticmethod
     def filter_on_entity_label_frequency(
@@ -76,6 +80,7 @@ class Triplet(BaseModel):
             if entity_label_counter[triplet.subject.text] >= min_frequency
             and entity_label_counter[triplet.object.text] >= min_frequency
             and doc_frequency[triplet.subject.text] >= min_doc_frequency
+            and doc_frequency[triplet.object.text] >= min_doc_frequency
         ]
         return filtered
 
@@ -87,7 +92,10 @@ class Triplet(BaseModel):
                 doc=json_data.get("id", None),
                 timestamp=json_data.get("timestamp", None),
             )
-            for json_data in (json.loads(line) for line in iter_lines_of_files(path))
+            for json_data in tqdm(
+                (json.loads(line) for line in iter_lines_of_files(path)),
+                desc="Loading triplets",
+            )
             for triplet_data in json_data["semantic_triplets"]
         )
 

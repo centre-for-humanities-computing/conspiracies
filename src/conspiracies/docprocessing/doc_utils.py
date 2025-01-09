@@ -17,7 +17,6 @@ from conspiracies.document import Document
 
 def _doc_to_json(
     doc: Union[Doc, Tuple[Doc, Union[str, Document]]],
-    include_span_heads=True,
 ):
     if isinstance(doc, Tuple):
         if isinstance(doc[1], str):
@@ -45,8 +44,7 @@ def _doc_to_json(
     if timestamp is not None:
         json["timestamp"] = timestamp
     json["semantic_triplets"] = [
-        triplet.to_dict(include_doc=False, include_span_heads=include_span_heads)
-        for triplet in triplets
+        triplet.to_dict(include_doc=False) for triplet in triplets
     ]
     return json
 
@@ -67,7 +65,6 @@ def docs_to_jsonl(
     docs: Iterable[Union[Doc, Tuple[Doc, Union[str, Document]]]],
     path: Union[Path, str],
     append=False,
-    include_span_heads=True,
 ) -> None:
     """Write docs and triplets to a jsonl file.
 
@@ -76,13 +73,9 @@ def docs_to_jsonl(
             "relation_triplets", the triplets will written to the jsonl file.
         path: path to the jsonl file.
         append: whether to append to file instead of overwriting
-        include_span_heads: whether to output an "extracted_head" field in the JSON
-            output from :class:`HeadWordExtractionComponent`
     """
     with jsonlines.open(path, "a" if append else "w") as writer:
-        writer.write_all(
-            _doc_to_json(doc, include_span_heads=include_span_heads) for doc in docs
-        )
+        writer.write_all(_doc_to_json(doc) for doc in docs)
 
 
 def docs_from_jsonl(

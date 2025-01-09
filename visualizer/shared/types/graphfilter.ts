@@ -7,6 +7,7 @@ export interface DataBounds {
 
 export interface GraphFilter {
   limit: number;
+  onlySupernodes?: boolean;
   minimumNodeFrequency?: number;
   maximumNodeFrequency?: number;
   minimumEdgeFrequency?: number;

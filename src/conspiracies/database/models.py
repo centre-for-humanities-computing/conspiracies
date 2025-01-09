@@ -5,6 +5,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     DateTime,
+    Boolean,
 )
 from sqlalchemy.orm import declarative_base, relationship, Session, Mapped
 from tqdm import tqdm
@@ -18,7 +19,8 @@ class EntityOrm(Base):
     __tablename__ = "entities"
     id = Column(Integer, primary_key=True, autoincrement=True)
     label = Column(String, nullable=False, index=True)
-    supernode_id = Column(Integer, ForeignKey("entities.id"), nullable=True)
+    supernode_id = Column(Integer, ForeignKey("entities.id"), nullable=True, index=True)
+    is_supernode = Column(Boolean, nullable=False, default=False)
     term_frequency = Column(Integer, default=-1, nullable=False)
     doc_frequency = Column(Integer, default=-1, nullable=False)
     first_occurrence = Column(DateTime, nullable=True)
@@ -161,16 +163,17 @@ class EntityAndRelationCache:
         predicate_label: str,
     ):
         """Fetch a relation by label, or create it if it doesn't exist."""
+        mapped_predicate = self._mappings.map_predicate(predicate_label)
         relation_key = (
             subject_id,
-            self._mappings.map_predicate(predicate_label),
+            mapped_predicate,
             object_id,
         )
 
         relation = self._relations.get(relation_key, None)
         if relation is None:
             relation = RelationOrm(
-                label=predicate_label,
+                label=mapped_predicate,
                 subject_id=subject_id,
                 object_id=object_id,
             )
@@ -179,8 +182,8 @@ class EntityAndRelationCache:
             self._relations[relation_key] = relation  # noqa
         return relation.id
 
-    def update_entity_counts(self, session: Session):
-        for entity in tqdm(self._entities.values(), desc="Calculating entity counts"):
+    def update_entity_info(self, session: Session):
+        for entity in tqdm(self._entities.values(), desc="Updating entity info"):
             as_subject = len(entity.subject_triplets)  # noqa
             as_object = len(entity.object_triplets)  # noqa
             entity.term_frequency = as_subject + as_object
@@ -192,12 +195,16 @@ class EntityAndRelationCache:
             ]
             entity.first_occurrence = min(dates)
             entity.last_occurrence = max(dates)
+            super_entity = self._mappings.get_super_entity(entity.label)
+            if super_entity is not None:
+                entity.supernode_id = self.get_or_create_entity(super_entity)
+                entity.is_supernode = entity.label == super_entity
         session.commit()
 
-    def update_relation_counts(self, session: Session):
+    def update_relation_info(self, session: Session):
         for relation in tqdm(
             self._relations.values(),
-            desc="Calculating relation counts",
+            desc="Updating relation info",
         ):
             relation.term_frequency = len(relation.triplets)  # noqa
             relation.doc_frequency = len(set(t.doc_id for t in relation.triplets))

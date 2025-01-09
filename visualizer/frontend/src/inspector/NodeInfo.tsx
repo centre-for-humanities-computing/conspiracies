@@ -14,7 +14,7 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
 }: NodeInfoProps) => {
   const { graphService } = useServiceContext();
 
-  const [details, setDetails] = useState<Details | undefined>(undefined);
+  const [details, setDetails] = useState<Details>();
 
   useEffect(() => {
     setDetails(undefined);
@@ -24,9 +24,23 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
   return (
     <div className={"node-info " + className}>
       <b>{node.label}</b>
+      {node.supernode && <i> [{node.supernode.label}]</i>}
       <hr />
       {!details && <p>Loading ...</p>}
-      {details && <Info details={details} type={"entity"} />}
+      {details && <Info id={node.id} type={"entity"} />}
+
+      {node.subnodes && node.subnodes.length > 0 && (
+        <details>
+          <summary>Subnodes</summary>
+          {node.subnodes.map((sn) => (
+            <div key={sn.id}>
+              <b>{sn.label}</b>
+              <Info id={sn.id} type={"entity"} />
+              <hr />
+            </div>
+          ))}
+        </details>
+      )}
     </div>
   );
 };

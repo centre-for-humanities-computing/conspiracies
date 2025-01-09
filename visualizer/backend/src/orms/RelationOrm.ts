@@ -26,13 +26,13 @@ export class RelationOrm {
   @Column("integer", { name: "object_id" })
   objectId!: number;
 
-  @ManyToOne(() => EntityOrm, { nullable: true })
+  @ManyToOne(() => EntityOrm)
   @JoinColumn({ name: "subject_id" })
-  subject!: EntityOrm | null;
+  subject!: EntityOrm;
 
-  @ManyToOne(() => EntityOrm, { nullable: true })
+  @ManyToOne(() => EntityOrm)
   @JoinColumn({ name: "object_id" })
-  object!: EntityOrm | null;
+  object!: EntityOrm;
 
   @OneToMany(() => TripletOrm, (triplet) => triplet.predicateRelation)
   triplets!: TripletOrm[];

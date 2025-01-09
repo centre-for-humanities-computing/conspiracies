@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Info } from "./Info";
-import { Details, Edge } from "@shared/types/graph";
-import { useServiceContext } from "../service/ServiceContextProvider";
+import { Edge } from "@shared/types/graph";
 
 interface RelationInfoProps {
   id: string | number;
@@ -16,21 +15,12 @@ const RelationInfo: React.FC<RelationInfoProps> = ({
   subjectLabel,
   objectLabel,
 }) => {
-  const { graphService } = useServiceContext();
-
-  const [edgeDetails, setEdgeDetails] = useState<Details>();
-
-  useEffect(() => {
-    graphService.getRelationDetails(id).then(setEdgeDetails);
-  }, [graphService, id]);
-
   return (
     <div>
       <i>{subjectLabel}</i>
       <b> {label} </b>
       <i>{objectLabel}</i>
-      {!edgeDetails && <p>Loading ...</p>}
-      {edgeDetails && <Info details={edgeDetails} type={"relation"} />}
+      <Info id={id} type={"relation"} />
       <hr />
     </div>
   );

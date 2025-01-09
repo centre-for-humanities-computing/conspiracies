@@ -268,6 +268,7 @@ class SpanTriplet(BaseModel):
             "start": span.start,
             "end_char": span.end_char,
             "end": span.end,
+            "lemma": span.lemma_,
         }
 
     @staticmethod
@@ -275,7 +276,7 @@ class SpanTriplet(BaseModel):
         span = doc[json["start"] : json["end"]]
         return span
 
-    def to_dict(self, include_doc=True, include_span_heads=False) -> Dict[str, Any]:
+    def to_dict(self, include_doc=True) -> Dict[str, Any]:
         if include_doc:
             data = self.span.doc.to_json()
         else:
@@ -283,12 +284,6 @@ class SpanTriplet(BaseModel):
         data["subject"] = self.span_to_json(self.subject)
         data["predicate"] = self.span_to_json(self.predicate)
         data["object"] = self.span_to_json(self.object)
-        if include_span_heads and Span.has_extension("most_common_ancestor"):
-            subject_head = self.subject._.most_common_ancestor.text
-            data["subject"]["head"] = subject_head
-            object_head = self.object._.most_common_ancestor.text
-            data["object"]["head"] = object_head
-
         return data
 
     @staticmethod

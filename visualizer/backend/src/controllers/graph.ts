@@ -4,6 +4,7 @@ import { EntityOrm } from "../orms/EntityOrm";
 import {
   And,
   Between,
+  FindOptionsWhere,
   In,
   LessThanOrEqual,
   Like,
@@ -14,24 +15,10 @@ import { getDataSource } from "../datasource";
 import { Edge } from "@shared/types/graph";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 
-function rangeFilter(min: any | undefined, max: any | undefined) {
-  if (min !== undefined && max !== undefined) {
-    return Between(min, max);
-  } else if (min !== undefined) {
-    return MoreThanOrEqual(min);
-  } else if (max !== undefined) {
-    return LessThanOrEqual(max);
-  } else {
-    return undefined;
-  }
-}
-
-export async function getGraph(req: Request, res: Response) {
-  const graphFilter: GraphFilter = req.body.graphFilter;
-
-  let ds = await getDataSource();
-
-  const dateFilter = {
+function dateFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm | RelationOrm> {
+  return {
     lastOccurrence: graphFilter.earliestDate
       ? MoreThanOrEqual(graphFilter.earliestDate)
       : undefined,
@@ -39,50 +26,125 @@ export async function getGraph(req: Request, res: Response) {
       ? LessThanOrEqual(graphFilter.latestDate)
       : undefined,
   };
+}
 
-  const entityLabelFilter = {
-    label: graphFilter.labelSearch
-      ? Like(`%${graphFilter.labelSearch}%`)
-      : undefined,
-  };
-  const entityFreqFilter = {
-    termFrequency: rangeFilter(
-      graphFilter.minimumNodeFrequency,
-      graphFilter.maximumNodeFrequency,
-    ),
-  };
-  const entityWhitelistFilter = {
-    id: graphFilter.whitelistedEntityIds
-      ? In(graphFilter.whitelistedEntityIds)
-      : undefined,
-  };
-  const entityBlacklistFilter = {
-    id: graphFilter.blacklistedEntityIds
-      ? Not(In(graphFilter.blacklistedEntityIds))
-      : undefined,
-  };
+function termFrequencyFilter(
+  min: number | undefined,
+  max: number | undefined,
+): FindOptionsWhere<EntityOrm | RelationOrm> {
+  let filter;
+  if (min !== undefined && max !== undefined) {
+    return { termFrequency: Between(min, max) };
+  } else if (min !== undefined) {
+    return { termFrequency: MoreThanOrEqual(min) };
+  } else if (max !== undefined) {
+    return { termFrequency: LessThanOrEqual(max) };
+  } else {
+    return {};
+  }
+}
 
-  const entityFilter = {
-    ...dateFilter,
-    ...entityFreqFilter,
-    ...entityBlacklistFilter,
+function entityTermFrequencyFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm> {
+  return termFrequencyFilter(
+    graphFilter.minimumNodeFrequency,
+    graphFilter.maximumNodeFrequency,
+  );
+}
+
+function relationTermFrequencyFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<RelationOrm> {
+  return termFrequencyFilter(
+    graphFilter.minimumEdgeFrequency,
+    graphFilter.maximumEdgeFrequency,
+  );
+}
+
+function entitySupernodeFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm> {
+  if (graphFilter.onlySupernodes) {
+    return { isSupernode: true };
+  } else {
+    return {};
+  }
+}
+
+function entityBlacklistFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm> {
+  if (graphFilter.blacklistedEntityIds) {
+    return {
+      id: Not(In(graphFilter.blacklistedEntityIds)),
+    };
+  } else {
+    return {};
+  }
+}
+
+function entityWhitelistFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm> {
+  if (graphFilter.whitelistedEntityIds) {
+    return { id: In(graphFilter.whitelistedEntityIds) };
+  } else {
+    return {};
+  }
+}
+
+function entityLabelFilter(
+  graphFilter: GraphFilter,
+): FindOptionsWhere<EntityOrm> {
+  if (graphFilter.labelSearch) {
+    console.log("here");
+    return { label: Like(`%${graphFilter.labelSearch}%`) };
+  } else {
+    return {};
+  }
+}
+
+export async function getGraph(req: Request, res: Response) {
+  const graphFilter: GraphFilter = req.body.graphFilter;
+  const onlySupernodes: boolean = graphFilter.onlySupernodes || false;
+
+  let ds = await getDataSource();
+
+  const entityFilter: FindOptionsWhere<EntityOrm> = {
+    ...dateFilter(graphFilter),
+    ...entityTermFrequencyFilter(graphFilter),
+    ...entityBlacklistFilter(graphFilter),
+    ...entitySupernodeFilter(graphFilter),
   };
 
   const relationFilter = {
     ...dateFilter,
-    termFrequency: rangeFilter(
-      graphFilter.minimumEdgeFrequency,
-      graphFilter.maximumEdgeFrequency,
-    ),
+    ...relationTermFrequencyFilter(graphFilter),
   };
 
-  let entities;
+  let entities: EntityOrm[];
 
   if (graphFilter.whitelistedEntityIds || graphFilter.labelSearch) {
-    const focusEntities = await ds.getRepository(EntityOrm).find({
+    const focusFilters = [];
+    if (graphFilter.whitelistedEntityIds) {
+      focusFilters.push({
+        ...entityWhitelistFilter(graphFilter),
+        ...entitySupernodeFilter(graphFilter),
+      });
+    }
+    if (graphFilter.labelSearch) {
+      focusFilters.push({
+        ...entityLabelFilter(graphFilter),
+        ...entitySupernodeFilter(graphFilter),
+      });
+    }
+
+    const focusEntities: EntityOrm[] = await ds.getRepository(EntityOrm).find({
       take: graphFilter.limit,
       select: { id: true, label: true, termFrequency: true },
-      where: [entityWhitelistFilter, entityLabelFilter],
+      relations: { supernode: true, subnodes: onlySupernodes },
+      where: focusFilters,
       order: { termFrequency: "desc" },
     });
 
@@ -113,6 +175,7 @@ export async function getGraph(req: Request, res: Response) {
       extraEntities = await ds.getRepository(EntityOrm).find({
         take: graphFilter.limit - focusEntities.length,
         select: { id: true, label: true, termFrequency: true },
+        relations: { supernode: true, subnodes: onlySupernodes },
         where: {
           ...entityFilter,
           // have to rebuild the ID condition here
@@ -124,7 +187,6 @@ export async function getGraph(req: Request, res: Response) {
         order: { termFrequency: "desc" },
       });
     }
-
     entities = focusEntities
       .map((e) => ({ ...e, focus: true }))
       .concat(extraEntities.map((e) => ({ ...e, focus: false })));
@@ -132,13 +194,35 @@ export async function getGraph(req: Request, res: Response) {
     entities = await ds.getRepository(EntityOrm).find({
       take: graphFilter.limit,
       select: { id: true, label: true, termFrequency: true },
+      relations: { supernode: true, subnodes: onlySupernodes },
       where: entityFilter,
       order: { termFrequency: "desc" },
     });
   }
 
-  const entityMap = new Map(entities.map((e) => [e.id, e]));
-  const entityIds = [...new Set(entities.map((e) => e.id))];
+  const entityIds = entities.map((e) => e.id);
+
+  if (onlySupernodes) {
+    const subEntities = await ds.getRepository(EntityOrm).find({
+      select: { id: true, label: true, termFrequency: true, supernodeId: true },
+      where: {
+        ...entityFilter,
+        supernodeId: In(entityIds),
+        isSupernode: false,
+      },
+    });
+    entityIds.push(...subEntities.map((e) => e.id));
+  }
+
+  if (onlySupernodes) {
+    entities = entities.map((e) => ({
+      ...e,
+      subnodes: e
+        .subnodes!.filter((sn) => entityIds.indexOf(sn.id) > -1)
+        .filter((sn) => sn.id !== e.id)
+        .sort((sn1, sn2) => sn2.termFrequency - sn1.termFrequency),
+    }));
+  }
 
   const relations = await ds.getRepository(RelationOrm).find({
     select: {
@@ -148,15 +232,22 @@ export async function getGraph(req: Request, res: Response) {
       objectId: true,
       termFrequency: true,
     },
+    relations: {
+      subject: true,
+      object: true,
+    },
     where: {
       ...relationFilter,
       subjectId: In(entityIds),
       objectId: In(entityIds),
     },
   });
+
   let groupedEdges = relations.reduce(
     (acc, curr) => {
-      const key = curr.subjectId + "->" + curr.objectId;
+      const key = onlySupernodes
+        ? curr.subject.supernodeId + "->" + curr.object.supernodeId
+        : curr.subjectId + "->" + curr.objectId;
       if (!acc[key]) {
         acc[key] = [];
       }
@@ -168,16 +259,23 @@ export async function getGraph(req: Request, res: Response) {
   let edges: Edge[] = Object.values(groupedEdges).map((group) => {
     group.sort((edge1, edge2) => edge2.termFrequency - edge1.termFrequency);
     const representative: RelationOrm = group.at(0)!;
+    const fromId = onlySupernodes
+      ? representative.subject.supernodeId!
+      : representative.subject.id;
+    const toId = onlySupernodes
+      ? representative.object.supernodeId!
+      : representative.object.id;
     return {
-      id: representative.subjectId + "->" + representative.objectId,
-      from: representative.subjectId,
-      subjectLabel: entityMap.get(representative.subjectId)!.label,
-      to: representative.objectId,
-      objectLabel: entityMap.get(representative.objectId)!.label,
-      label: group
-        .slice(0, 3)
-        .map((e) => e.label)
-        .join(", "),
+      id: fromId + "->" + toId,
+      from: fromId,
+      to: toId,
+      subjectLabel: representative.subject.label,
+      objectLabel: representative.object.label,
+      label:
+        group
+          .slice(0, 3)
+          .map((e) => e.label)
+          .join(", ") + (group.length > 3 ? ", ..." : ""),
       width: Math.log10(
         group.map((e) => e.termFrequency).reduce((a, b) => a + b),
       ),

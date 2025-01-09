@@ -41,7 +41,7 @@ def test_cluster_by_normalization():
         "yet another label",
         "a third label",
     ]
-    clusters = Clustering._cluster_via_normalization(labels, top=2)
+    clusters = Clustering._cluster_via_labels(labels, top=2)
     assert clusters == [
         ["popular label", "popular label 2"],
         ["another label", "yet another label"],

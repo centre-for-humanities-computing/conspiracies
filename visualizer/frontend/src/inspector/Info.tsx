@@ -1,16 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useServiceContext } from "../service/ServiceContextProvider";
 import { Details } from "@shared/types/graph";
 import { Doc } from "@shared/types/doc";
 import { DocInfo } from "./DocInfo";
 
 export interface InfoProps {
-  details: Details;
+  id: string | number;
   type: "entity" | "relation";
 }
 
-export const Info: React.FC<InfoProps> = ({ type, details }) => {
+export const Info: React.FC<InfoProps> = ({ type, id }) => {
   const { entityService, relationService } = useServiceContext();
+
+  const [details, setDetails] = useState<Details>();
+
+  useEffect(() => {
+    setDetails(undefined);
+    (type === "entity" ? entityService : relationService)
+      .getDetails(id)
+      .then(setDetails);
+  }, [entityService, relationService, id, type]);
 
   const [visibleDocs, setVisibleDocs] = React.useState(50);
 
@@ -18,7 +27,7 @@ export const Info: React.FC<InfoProps> = ({ type, details }) => {
   const loadDocs = () => {
     setDocs(null);
     (type === "entity" ? entityService : relationService)
-      .getDocs(details.id)
+      .getDocs(id)
       .then((r) => {
         setDocs(r);
       });
@@ -27,6 +36,10 @@ export const Info: React.FC<InfoProps> = ({ type, details }) => {
   const loadMore = () => {
     setVisibleDocs((prev) => prev + 50);
   };
+
+  if (details === undefined) {
+    return <div>Loading ...</div>;
+  }
 
   return (
     <div>
