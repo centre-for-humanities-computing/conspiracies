@@ -1,3 +1,11 @@
+.doc-info {
+  padding: 10px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+}
+
 .highlight-subject {
   background: cyan;
   opacity: 1;

@@ -98,11 +98,53 @@ function entityLabelFilter(
   graphFilter: GraphFilter,
 ): FindOptionsWhere<EntityOrm> {
   if (graphFilter.labelSearch) {
-    console.log("here");
     return { label: Like(`%${graphFilter.labelSearch}%`) };
   } else {
     return {};
   }
+}
+
+function createEdgeGroups(relations: RelationOrm[], bySupernodeId: boolean) {
+  let groupedEdges = relations.reduce(
+    (acc, curr) => {
+      const key = bySupernodeId
+        ? curr.subject.supernodeId + "->" + curr.object.supernodeId
+        : curr.subjectId + "->" + curr.objectId;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(curr);
+      return acc;
+    },
+    {} as Record<string, RelationOrm[]>,
+  );
+  let edges: Edge[] = Object.values(groupedEdges).map((group) => {
+    group.sort((edge1, edge2) => edge2.termFrequency - edge1.termFrequency);
+    const representative: RelationOrm = group.at(0)!;
+    const fromId = bySupernodeId
+      ? representative.subject.supernodeId!
+      : representative.subject.id;
+    const toId = bySupernodeId
+      ? representative.object.supernodeId!
+      : representative.object.id;
+    return {
+      id: fromId + "->" + toId,
+      from: fromId,
+      to: toId,
+      subjectLabel: representative.subject.label,
+      objectLabel: representative.object.label,
+      label:
+        group
+          .slice(0, 3)
+          .map((e) => e.label)
+          .join(", ") + (group.length > 3 ? ", ..." : ""),
+      width: Math.log10(
+        group.map((e) => e.termFrequency).reduce((a, b) => a + b),
+      ),
+      group: group.map((r) => ({ id: r.id, label: r.label })),
+    };
+  });
+  return edges;
 }
 
 export async function getGraph(req: Request, res: Response) {
@@ -123,6 +165,7 @@ export async function getGraph(req: Request, res: Response) {
     ...relationTermFrequencyFilter(graphFilter),
   };
 
+  let focusEntityIds: number[] = [];
   let entities: EntityOrm[];
 
   if (graphFilter.whitelistedEntityIds || graphFilter.labelSearch) {
@@ -147,6 +190,8 @@ export async function getGraph(req: Request, res: Response) {
       where: focusFilters,
       order: { termFrequency: "desc" },
     });
+
+    focusEntityIds = focusEntities.map((e) => e.id);
 
     let extraEntities: EntityOrm[] = [];
     if (focusEntities.length < graphFilter.limit) {
@@ -212,9 +257,6 @@ export async function getGraph(req: Request, res: Response) {
       },
     });
     entityIds.push(...subEntities.map((e) => e.id));
-  }
-
-  if (onlySupernodes) {
     entities = entities.map((e) => ({
       ...e,
       subnodes: e
@@ -236,52 +278,20 @@ export async function getGraph(req: Request, res: Response) {
       subject: true,
       object: true,
     },
-    where: {
-      ...relationFilter,
-      subjectId: In(entityIds),
-      objectId: In(entityIds),
-    },
+    where: [
+      {
+        subjectId: In(focusEntityIds),
+        objectId: In(focusEntityIds),
+      },
+      {
+        ...relationFilter,
+        subjectId: In(entityIds),
+        objectId: In(entityIds),
+      },
+    ],
   });
 
-  let groupedEdges = relations.reduce(
-    (acc, curr) => {
-      const key = onlySupernodes
-        ? curr.subject.supernodeId + "->" + curr.object.supernodeId
-        : curr.subjectId + "->" + curr.objectId;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(curr);
-      return acc;
-    },
-    {} as Record<string, RelationOrm[]>,
-  );
-  let edges: Edge[] = Object.values(groupedEdges).map((group) => {
-    group.sort((edge1, edge2) => edge2.termFrequency - edge1.termFrequency);
-    const representative: RelationOrm = group.at(0)!;
-    const fromId = onlySupernodes
-      ? representative.subject.supernodeId!
-      : representative.subject.id;
-    const toId = onlySupernodes
-      ? representative.object.supernodeId!
-      : representative.object.id;
-    return {
-      id: fromId + "->" + toId,
-      from: fromId,
-      to: toId,
-      subjectLabel: representative.subject.label,
-      objectLabel: representative.object.label,
-      label:
-        group
-          .slice(0, 3)
-          .map((e) => e.label)
-          .join(", ") + (group.length > 3 ? ", ..." : ""),
-      width: Math.log10(
-        group.map((e) => e.termFrequency).reduce((a, b) => a + b),
-      ),
-      group: group.map((r) => ({ id: r.id, label: r.label })),
-    };
-  });
+  let edges = createEdgeGroups(relations, onlySupernodes);
 
   res.json({
     edges: edges,

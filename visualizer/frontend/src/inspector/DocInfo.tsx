@@ -28,6 +28,7 @@ function createExcerpt(
   subjectId?: string | number,
   predicateId?: string | number,
   objectId?: string | number,
+  minCutText: number = 200,
 ): Doc {
   const triplets = document.triplets.filter(
     (t) =>
@@ -35,23 +36,34 @@ function createExcerpt(
       t.predicate.id === predicateId ||
       t.object.id === objectId,
   );
-  const offset = Math.max(
+  let offset = Math.max(
     0,
     Math.min(...triplets.map((t) => t.subject.start)) - 100,
   );
-  const start = offset > 0 ? offset + 4 : offset;
-  const tail = Math.min(
+  if (offset < minCutText) {
+    offset = 0;
+  }
+
+  let tail = Math.min(
     document.text.length,
     Math.max(...triplets.map((t) => t.object.end)) + 100,
   );
-  const end = tail < document.text.length ? tail - 4 : tail;
+  if (document.text.length - tail < minCutText) {
+    tail = document.text.length;
+  }
+
   return {
     ...document,
     text:
-      (start > 0 ? "... " : "") +
-      document.text.slice(start, end) +
-      (end < document.text.length ? " ..." : ""),
-    triplets: triplets.map((t) => subtractOffsetFromTriplet(t, offset)),
+      (offset > 0 ? "... " : "") +
+      document.text.slice(
+        offset + (offset > 0 ? 4 : 0),
+        tail - (tail < document.text.length ? 4 : 0),
+      ) +
+      (tail < document.text.length ? " ..." : ""),
+    triplets: document.triplets.map((t) =>
+      subtractOffsetFromTriplet(t, offset),
+    ),
   };
 }
 
@@ -158,11 +170,12 @@ export const DocInfo: React.FC<DocInfoProps> = ({
   );
 
   return (
-    <div style={{ border: "1px solid gray", padding: "2px" }}>
+    <div className={"doc-info"}>
       <h3>
         {document.id}{" "}
         <i style={{ color: "gray" }}>{document.timestamp?.toString()}</i>
       </h3>
+
       <HighlightedText
         text={showExcerpt ? excerpt.text : document.text}
         triplets={showExcerpt ? excerpt.triplets : document.triplets}
@@ -170,6 +183,7 @@ export const DocInfo: React.FC<DocInfoProps> = ({
         predicateId={predicateId}
         objectId={objectId}
       />
+      <br />
       {document.text !== excerpt.text && (
         <button onClick={() => setShowExcerpt((prevState) => !prevState)}>
           {showExcerpt ? "Show more" : "Show less"}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Info } from "./Info";
 import { Edge } from "@shared/types/graph";
 
@@ -17,11 +17,10 @@ const RelationInfo: React.FC<RelationInfoProps> = ({
 }) => {
   return (
     <div>
-      <i>{subjectLabel}</i>
-      <b> {label} </b>
-      <i>{objectLabel}</i>
+      <h2>
+        <i>{subjectLabel}</i> <u>{label}</u> <i>{objectLabel}</i>
+      </h2>
       <Info id={id} type={"relation"} />
-      <hr />
     </div>
   );
 };
@@ -36,15 +35,23 @@ export const EdgeInfo: React.FC<EdgeInfoProps> = ({
   className,
 }: EdgeInfoProps) => {
   return (
-    <div className={"node-info " + className}>
-      {edge.group.map((r) => (
-        <RelationInfo
-          key={r.id}
-          id={r.id}
-          label={r.label}
-          subjectLabel={edge.subjectLabel}
-          objectLabel={edge.objectLabel}
-        />
+    <div className={"panel node-info " + className}>
+      {edge.group.map((r, i) => (
+        <>
+          <RelationInfo
+            key={r.id}
+            id={r.id}
+            label={r.label}
+            subjectLabel={edge.subjectLabel}
+            objectLabel={edge.objectLabel}
+          />
+          {i + 1 < edge.group.length && (
+            <>
+              <br />
+              <hr />
+            </>
+          )}
+        </>
       ))}
     </div>
   );

@@ -13,9 +13,11 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
   const { entityService, relationService } = useServiceContext();
 
   const [details, setDetails] = useState<Details>();
+  const [docs, setDocs] = useState<Doc[] | null | undefined>(undefined);
 
   useEffect(() => {
     setDetails(undefined);
+    setDocs(undefined);
     (type === "entity" ? entityService : relationService)
       .getDetails(id)
       .then(setDetails);
@@ -23,7 +25,6 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
 
   const [visibleDocs, setVisibleDocs] = React.useState(50);
 
-  const [docs, setDocs] = useState<Doc[] | null | undefined>(undefined);
   const loadDocs = () => {
     setDocs(null);
     (type === "entity" ? entityService : relationService)
@@ -44,6 +45,7 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
   return (
     <div>
       <p>Frequency: {details.frequency}</p>
+      <p>Document hits: {details.docFrequency}</p>
       {details.firstOccurrence && (
         <p>Earliest date: {details.firstOccurrence.toString()}</p>
       )}
@@ -64,19 +66,22 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
         {docs === undefined && <button onClick={loadDocs}>Load docs</button>}
         {docs === null && <p>Loading ...</p>}
         {docs && (
-          <div>
-            {docs &&
-              docs
-                .slice(0, visibleDocs)
-                .map((d) => (
-                  <DocInfo
-                    key={d.id}
-                    document={d}
-                    subjectId={type === "entity" ? details.id : undefined}
-                    predicateId={type === "relation" ? details.id : undefined}
-                    objectId={type === "entity" ? details.id : undefined}
-                  />
-                ))}
+          <div className={"scroll-content"}>
+            <button
+              style={{ marginBottom: "3px" }}
+              onClick={() => setDocs(undefined)}
+            >
+              Hide docs
+            </button>
+            {docs.slice(0, visibleDocs).map((d) => (
+              <DocInfo
+                key={d.id}
+                document={d}
+                subjectId={type === "entity" ? details.id : undefined}
+                predicateId={type === "relation" ? details.id : undefined}
+                objectId={type === "entity" ? details.id : undefined}
+              />
+            ))}
             {visibleDocs < docs.length && (
               <button onClick={loadMore}>Load More</button>
             )}{" "}

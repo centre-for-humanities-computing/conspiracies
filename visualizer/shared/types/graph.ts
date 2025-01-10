@@ -25,6 +25,7 @@ export interface GraphData {
 
 export interface Details extends Identifiable {
   frequency: number;
+  docFrequency: number;
   docs?: string[] | number[];
   firstOccurrence?: Date | null;
   lastOccurrence?: Date | null;

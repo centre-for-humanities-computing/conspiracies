@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Info } from "./Info";
-import { Details, Node } from "@shared/types/graph";
-import { useServiceContext } from "../service/ServiceContextProvider";
+import { Node } from "@shared/types/graph";
 
 export interface NodeInfoProps {
   node: Node;
@@ -12,34 +11,26 @@ export const NodeInfo: React.FC<NodeInfoProps> = ({
   node,
   className,
 }: NodeInfoProps) => {
-  const { graphService } = useServiceContext();
-
-  const [details, setDetails] = useState<Details>();
-
-  useEffect(() => {
-    setDetails(undefined);
-    graphService.getEntityDetails(node.id).then(setDetails);
-  }, [graphService, node.id]);
-
   return (
-    <div className={"node-info " + className}>
-      <b>{node.label}</b>
-      {node.supernode && <i> [{node.supernode.label}]</i>}
-      <hr />
-      {!details && <p>Loading ...</p>}
-      {details && <Info id={node.id} type={"entity"} />}
+    <div className={"panel node-info " + className}>
+      <h2>{node.label}</h2>
+      {node.supernode && <p>Supernode: {node.supernode.label}</p>}
+      <Info id={node.id} type={"entity"} />
 
       {node.subnodes && node.subnodes.length > 0 && (
-        <details>
-          <summary>Subnodes</summary>
-          {node.subnodes.map((sn) => (
-            <div key={sn.id}>
-              <b>{sn.label}</b>
-              <Info id={sn.id} type={"entity"} />
-              <hr />
-            </div>
-          ))}
-        </details>
+        <>
+          <br />
+          <details>
+            <summary>Subnodes</summary>
+            {node.subnodes.map((sn, i) => (
+              <div key={sn.id}>
+                <b>{sn.label}</b>
+                <Info id={sn.id} type={"entity"} />
+                {i + 1 < node.subnodes!.length && <hr />}
+              </div>
+            ))}
+          </details>
+        </>
       )}
     </div>
   );

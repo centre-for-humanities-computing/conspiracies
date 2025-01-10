@@ -49,7 +49,7 @@ export class EntityOrm {
   termFrequency!: number;
 
   @Column("integer", { name: "doc_frequency" })
-  docFrequency!: number | null;
+  docFrequency!: number;
 
   @Column("datetime", { name: "first_occurrence" })
   firstOccurrence!: Date | null;

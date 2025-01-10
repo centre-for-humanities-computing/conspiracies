@@ -10,6 +10,7 @@ function transformEntityOrmToDetails(entity: EntityOrm): Details {
     id: entity.id,
     label: entity.label,
     frequency: entity.termFrequency,
+    docFrequency: entity.docFrequency,
     altLabels: [],
     firstOccurrence: entity.firstOccurrence,
     lastOccurrence: entity.lastOccurrence,

@@ -11,3 +11,20 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+button {
+  background: dodgerblue;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 3px darkgray;
+}
+
+button:disabled {
+  background: lightgray;
+  box-shadow: none;
+}
+
+button:active {
+  box-shadow: none;
+}

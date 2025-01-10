@@ -10,6 +10,7 @@ function transformRelationOrmToDetails(relation: RelationOrm): Details {
     id: relation.id,
     label: relation.label,
     frequency: relation.termFrequency,
+    docFrequency: relation.docFrequency,
     altLabels: [],
     firstOccurrence: relation.firstOccurrence,
     lastOccurrence: relation.lastOccurrence,

@@ -45,11 +45,9 @@ export const GraphFilterControlPanel = ({
   }
 
   return (
-    <div className={"flex-container"}>
-      <div className={"flex-container__element"}>
-        <span className={"flex-container__element__sub-element"}>
-          Limit nodes:&nbsp;
-        </span>
+    <div className={"flex-container flex-container--vertical"}>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Limit nodes:&nbsp;</span>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -68,11 +66,10 @@ export const GraphFilterControlPanel = ({
               setLimit(Number(event.target.value));
             }}
           />
-          <input type={"submit"} />
         </form>
       </div>
-      <div className={"flex-container__element"}>
-        Only supernodes:
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Only supernodes:</span>
         <input
           type={"checkbox"}
           checked={graphFilter.onlySupernodes || false}
@@ -84,10 +81,8 @@ export const GraphFilterControlPanel = ({
           }
         />
       </div>
-      <div className={"flex-container__element"}>
-        <span className={"flex-container__element__sub-element"}>
-          Node Frequency:&nbsp;
-        </span>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Node Frequency:&nbsp;</span>
         <div style={{ width: "250px" }}>
           <LogarithmicRangeSlider
             onChange={(e) => {
@@ -107,10 +102,8 @@ export const GraphFilterControlPanel = ({
           ></LogarithmicRangeSlider>
         </div>
       </div>
-      <div className={"flex-container__element"}>
-        <span className={"flex-container__element__sub-element"}>
-          Edge Frequency:&nbsp;
-        </span>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Edge Frequency:&nbsp;</span>
         <div style={{ width: "250px" }}>
           <LogarithmicRangeSlider
             onChange={(e) => {
@@ -130,11 +123,11 @@ export const GraphFilterControlPanel = ({
           ></LogarithmicRangeSlider>
         </div>
       </div>
-      {/*<div className={"flex-container__element"}>*/}
+      {/*<div >*/}
       {/*  Show unconnected nodes:*/}
       {/*  <input*/}
       {/*    type={"checkbox"}*/}
-      {/*    className={"flex-container__element__sub-element"}*/}
+      {/*    */}
       {/*    checked={graphFilter.showUnconnectedNodes}*/}
       {/*    onChange={(event) =>*/}
       {/*      setGraphFilter({*/}
@@ -144,8 +137,10 @@ export const GraphFilterControlPanel = ({
       {/*    }*/}
       {/*  />*/}
       {/*</div>*/}
-      <div className={"flex-container__element"}>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Search nodes:</span>
         <form
+          style={{ margin: 0 }}
           onSubmit={(event) => {
             event.preventDefault();
             setGraphFilter((prevState) => ({
@@ -154,41 +149,44 @@ export const GraphFilterControlPanel = ({
             }));
           }}
         >
-          Search nodes:
           <input
-            type={"text"}
+            type={"search"}
             value={search || ""}
             onChange={(event) => {
               let value = event.target.value;
               setSearch(value);
+              if (value === "") {
+                setGraphFilter((prevState) => ({
+                  ...prevState,
+                  labelSearch: undefined,
+                }));
+              }
             }}
           />
-          <input type={"submit"} />
         </form>
       </div>
-      <div className={"flex-container__element"}>
-        From:
-        <input
-          className={"flex-container__element__sub-element"}
-          type={"date"}
-          onChange={(event) =>
-            setGraphFilter({
-              ...graphFilter,
-              earliestDate: event.target.valueAsDate ?? undefined,
-            })
-          }
-        />
-        To:
-        <input
-          className={"flex-container__element__sub-element"}
-          type={"date"}
-          onChange={(event) =>
-            setGraphFilter({
-              ...graphFilter,
-              latestDate: event.target.valueAsDate ?? undefined,
-            })
-          }
-        />
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Date Filter:</span>
+        <div>
+          <input
+            type={"date"}
+            onChange={(event) =>
+              setGraphFilter({
+                ...graphFilter,
+                earliestDate: event.target.valueAsDate ?? undefined,
+              })
+            }
+          />
+          <input
+            type={"date"}
+            onChange={(event) =>
+              setGraphFilter({
+                ...graphFilter,
+                latestDate: event.target.valueAsDate ?? undefined,
+              })
+            }
+          />
+        </div>
       </div>
     </div>
   );

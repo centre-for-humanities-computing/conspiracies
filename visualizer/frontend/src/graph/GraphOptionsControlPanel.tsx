@@ -25,8 +25,8 @@ export const GraphOptionsControlPanel = ({
   setOptions,
 }: GraphOptionsControlPanelProps) => {
   return (
-    <div className={"flex-container"}>
-      <div className={"flex-container__element"}>
+    <div className={"flex-container flex-container--vertical"}>
+      <div>
         Physics enabled:
         <input
           type={"checkbox"}
@@ -42,7 +42,7 @@ export const GraphOptionsControlPanel = ({
           }
         />
       </div>
-      <div className={"flex-container__element"}>
+      <div>
         Rounded edges:
         <input
           type={"checkbox"}
@@ -58,7 +58,7 @@ export const GraphOptionsControlPanel = ({
           }
         />
       </div>
-      <div className={"flex-container__element"}>
+      <div>
         Edge length:
         <input
           type="range"

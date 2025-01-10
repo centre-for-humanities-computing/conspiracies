@@ -142,29 +142,47 @@ export const GraphViewer: React.FC = () => {
     },
   });
 
+  const [showControlPanel, setShowContralPanel] = useState<boolean>(true);
+
   return (
     <div>
-      <div className={"padded"}>
+      <button
+        onClick={() => setShowContralPanel((prev) => !prev)}
+        style={{
+          position: "absolute",
+          top: "1px",
+          right: "1px",
+          zIndex: 5,
+          fontSize: "16px",
+        }}
+      >
+        {showControlPanel ? <>&#8614;</> : <>&#8612;</>}
+      </button>
+      <div
+        className={
+          "panel control-panel " +
+          (showControlPanel ? "" : "control-panel--hidden")
+        }
+      >
         <GraphOptionsControlPanel options={options} setOptions={setOptions} />
+        <hr />
         {partialGraphFilter && (
           <GraphFilterControlPanel
             graphFilter={partialGraphFilter}
             setGraphFilter={setPartialGraphFilter}
           />
         )}
-      </div>
-      <div className={"padded"}>
-        <div className={"flex-container"}>
-          <div className={"flex-container__element"}>
+        <hr />
+        <div className={"flex-container flex-container--vertical"}>
+          <div>
             <span>
               <b>Double-click</b> to add or remove nodes from whitelist.
             </span>
           </div>
-          <div className={"flex-container__element"}>
-            <span>
-              <b>Hold</b> or <b>shift+mark</b> to add or remove nodes from the
-              blacklist.
-            </span>
+          <div className={"flex-container"}>
+            <div>
+              <b>Hold</b> or <b>shift+mark</b> to add nodes to blacklist.
+            </div>
             <button
               disabled={blacklistParts.length === 0}
               onClick={() =>
@@ -178,7 +196,6 @@ export const GraphViewer: React.FC = () => {
           </div>
 
           <button
-            className={"flex-container__element"}
             onClick={() => {
               setWhitelistSet(new Set<string>());
               setBlacklistParts([]);
@@ -188,6 +205,7 @@ export const GraphViewer: React.FC = () => {
           </button>
         </div>
       </div>
+
       <div className="graph-container">
         {selectedNode && <NodeInfo node={selectedNode} />}
         {selectedEdge && <EdgeInfo edge={selectedEdge} />}
