@@ -1,3 +1,7 @@
+/*TODO: restructure CSS. Most classes are in here
+   because they started as part of a all-encompassing
+   graph interface*/
+
 .padded {
   padding: 5px;
 }
@@ -9,6 +13,20 @@
   border: 1px solid lightgray;
   border-radius: 10px;
   overflow-y: auto;
+}
+
+.panel__close-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.panel__sub-panel {
+  padding: 10px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid lightgray;
+  border-radius: 5px;
 }
 
 .flex-container {
@@ -33,9 +51,9 @@
   z-index: 3;
   width: 25%;
   min-width: 250px;
-  max-width: 450px;
+  max-width: 400px;
   max-height: 80%;
-  transition: 0.2s;
+  transition: 0.4s;
 }
 
 .control-panel--hidden {
@@ -63,4 +81,14 @@
 
 .graph-container {
   height: 100vh;
+}
+
+.list-editor {
+  position: fixed;
+  padding-top: 35px;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  z-index: 3;
+  max-height: 80%;
 }

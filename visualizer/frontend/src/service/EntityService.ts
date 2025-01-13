@@ -1,8 +1,10 @@
 import { Doc } from "@shared/types/doc";
-import { Details } from "@shared/types/graph";
+import { Details, Identifiable } from "@shared/types/graph";
 
 export interface EntityService {
   getDetails(id: string | number): Promise<Details>;
+
+  getLabels(ids: string[] | number[]): Promise<Identifiable[]>;
 
   getDocs(id: string | number, limit?: number): Promise<Doc[]>;
 }
@@ -19,6 +21,20 @@ export class EntityServiceImpl implements EntityService {
 
     if (!response.ok) {
       throw new Error(`Failed to fetch entity: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  async getLabels(ids: string[] | number[]): Promise<Identifiable[]> {
+    const response = await fetch(`${this.baseUrl}/entities/labels`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ids }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch entity labels: ${response.statusText}`);
     }
 
     return await response.json();

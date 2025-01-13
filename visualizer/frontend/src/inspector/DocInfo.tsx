@@ -170,7 +170,7 @@ export const DocInfo: React.FC<DocInfoProps> = ({
   );
 
   return (
-    <div className={"doc-info"}>
+    <div className={"panel__sub-panel"}>
       <h3>
         {document.id}{" "}
         <i style={{ color: "gray" }}>{document.timestamp?.toString()}</i>

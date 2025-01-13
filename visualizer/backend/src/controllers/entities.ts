@@ -4,6 +4,7 @@ import { EntityOrm } from "../orms/EntityOrm";
 import { Details } from "@shared/types/graph";
 import { DocumentOrm } from "../orms/DocumentOrm";
 import { getDocs } from "../services/docs";
+import { In } from "typeorm";
 
 function transformEntityOrmToDetails(entity: EntityOrm): Details {
   return {
@@ -68,4 +69,21 @@ export async function getDocsByEntity(req: Request, res: Response) {
   const docs = await getDocs(docIds.map((d) => d.id));
 
   res.json(docs);
+}
+
+export async function getEntityLabels(req: Request, res: Response) {
+  const ids: number[] = req.body.ids;
+  let ds = await getDataSource();
+
+  const entityLabels = await ds.getRepository(EntityOrm).find({
+    select: { id: true, label: true },
+    where: { id: In(ids) },
+  });
+
+  if (entityLabels.length === 0) {
+    res.status(404).send("No entities found.");
+    return;
+  }
+
+  res.json(entityLabels.map((d) => ({ id: d.id, label: d.label })));
 }

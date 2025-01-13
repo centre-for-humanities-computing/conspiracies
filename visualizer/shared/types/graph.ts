@@ -14,7 +14,7 @@ export interface Edge extends Identifiable {
   to: string | number;
   subjectLabel: string;
   objectLabel: string;
-  width?: number;
+  totalTermFrequency?: number;
   group: Identifiable[];
 }
 

@@ -37,9 +37,8 @@ export const EdgeInfo: React.FC<EdgeInfoProps> = ({
   return (
     <div className={"panel node-info " + className}>
       {edge.group.map((r, i) => (
-        <>
+        <div key={r.id}>
           <RelationInfo
-            key={r.id}
             id={r.id}
             label={r.label}
             subjectLabel={edge.subjectLabel}
@@ -51,7 +50,7 @@ export const EdgeInfo: React.FC<EdgeInfoProps> = ({
               <hr />
             </>
           )}
-        </>
+        </div>
       ))}
     </div>
   );

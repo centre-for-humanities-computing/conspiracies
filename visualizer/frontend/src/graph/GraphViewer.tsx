@@ -7,6 +7,7 @@ import { NodeInfo } from "../inspector/NodeInfo";
 import { EdgeInfo } from "../inspector/EdgeInfo";
 import { GraphFilter } from "@shared/types/graphfilter";
 import { GraphFilterControlPanel } from "./GraphFilterControlPanel";
+import { EntityListEditor } from "./EntityListEditor";
 
 export interface GraphViewerProps {}
 
@@ -38,8 +39,9 @@ export const GraphViewer: React.FC = () => {
   }, [blacklistSet]);
 
   const [partialGraphFilter, setPartialGraphFilter] = useState<GraphFilter>({
-    limit: 50,
-    minimumEdgeFrequency: 5,
+    limitNodes: 50,
+    limitEdges: 50,
+    minimumEdgeFrequency: 3,
   });
 
   const [graphData, setGraphData] = useState<GraphData>({
@@ -58,7 +60,10 @@ export const GraphViewer: React.FC = () => {
 
   const coloredGraphData = useMemo(() => {
     return {
-      ...graphData,
+      edges: graphData.edges.map((e) => ({
+        ...e,
+        width: Math.log10(e.totalTermFrequency || 10),
+      })),
       nodes: graphData.nodes.map((n) => ({
         ...n,
         // TODO: fix this horrible block
@@ -142,12 +147,14 @@ export const GraphViewer: React.FC = () => {
     },
   });
 
-  const [showControlPanel, setShowContralPanel] = useState<boolean>(true);
+  const [showControlPanel, setShowControlPanel] = useState<boolean>(true);
+  const [editBlacklist, setEditBlacklist] = useState<boolean>(false);
+  const [editWhitelist, setEditWhitelist] = useState<boolean>(false);
 
   return (
     <div>
       <button
-        onClick={() => setShowContralPanel((prev) => !prev)}
+        onClick={() => setShowControlPanel((prev) => !prev)}
         style={{
           position: "absolute",
           top: "1px",
@@ -179,6 +186,26 @@ export const GraphViewer: React.FC = () => {
               <b>Double-click</b> to add or remove nodes from whitelist.
             </span>
           </div>
+          <button
+            disabled={whitelist === undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditWhitelist((prev) => !prev);
+            }}
+          >
+            Edit whitelist
+          </button>
+          {editWhitelist && (
+            <EntityListEditor
+              ids={whitelist!}
+              onCloseOrClickOutside={() => setEditWhitelist(false)}
+              onRemove={(id) =>
+                setWhitelistSet(
+                  (prev) => new Set([...prev].filter((n) => n != id)),
+                )
+              }
+            />
+          )}
           <div className={"flex-container"}>
             <div>
               <b>Hold</b> or <b>shift+mark</b> to add nodes to blacklist.
@@ -193,6 +220,26 @@ export const GraphViewer: React.FC = () => {
             >
               &#8617;
             </button>
+            <button
+              disabled={blacklistParts.length === 0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditBlacklist((prev) => !prev);
+              }}
+            >
+              Edit blacklist
+            </button>
+            {editBlacklist && (
+              <EntityListEditor
+                ids={blacklist!}
+                onCloseOrClickOutside={() => setEditBlacklist(false)}
+                onRemove={(id) => {
+                  setBlacklistParts((prevState) =>
+                    prevState.map((part) => part.filter((n) => n != id)),
+                  );
+                }}
+              />
+            )}
           </div>
 
           <button

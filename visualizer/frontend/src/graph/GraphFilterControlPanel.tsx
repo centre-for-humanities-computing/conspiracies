@@ -3,6 +3,7 @@ import "./graph.css";
 import LogarithmicRangeSlider from "../common/LogarithmicRangeSlider";
 import { DataBounds, GraphFilter } from "@shared/types/graphfilter";
 import { useServiceContext } from "../service/ServiceContextProvider";
+import { ClipLoader } from "react-spinners";
 
 interface GraphFilterControlPanelProps {
   graphFilter: GraphFilter;
@@ -20,7 +21,8 @@ export const GraphFilterControlPanel = ({
     graphService.getDataBounds().then((r) => setDataBounds(r));
   }, [graphService]);
 
-  const [limit, setLimit] = useState<number>(graphFilter.limit);
+  const [limitNodes, setLimitNodes] = useState<number>(graphFilter.limitNodes);
+  const [limitEdges, setLimitEdges] = useState<number>(graphFilter.limitEdges);
   const [search, setSearch] = useState<string | undefined>(
     graphFilter.labelSearch,
   );
@@ -41,33 +43,15 @@ export const GraphFilterControlPanel = ({
   };
 
   if (!dataBounds) {
-    return <div className={"flex-container"}>Loading ...</div>;
+    return (
+      <div className={"flex-container"}>
+        <ClipLoader loading={true} />
+      </div>
+    );
   }
 
   return (
     <div className={"flex-container flex-container--vertical"}>
-      <div className={"flex-container"}>
-        <span className={"option-span"}>Limit nodes:&nbsp;</span>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setGraphFilter((prevState) => ({
-              ...prevState,
-              limit: limit,
-            }));
-          }}
-        >
-          <input
-            min={1}
-            max={999}
-            type={"number"}
-            value={limit}
-            onChange={(event) => {
-              setLimit(Number(event.target.value));
-            }}
-          />
-        </form>
-      </div>
       <div className={"flex-container"}>
         <span className={"option-span"}>Only supernodes:</span>
         <input
@@ -80,6 +64,28 @@ export const GraphFilterControlPanel = ({
             }))
           }
         />
+      </div>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Limit nodes:&nbsp;</span>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setGraphFilter((prevState) => ({
+              ...prevState,
+              limitNodes: limitNodes,
+            }));
+          }}
+        >
+          <input
+            min={1}
+            max={999}
+            type={"number"}
+            value={limitNodes}
+            onChange={(event) => {
+              setLimitNodes(Number(event.target.value));
+            }}
+          />
+        </form>
       </div>
       <div className={"flex-container"}>
         <span className={"option-span"}>Node Frequency:&nbsp;</span>
@@ -101,6 +107,28 @@ export const GraphFilterControlPanel = ({
             style={{ border: "none", boxShadow: "none", padding: "15px 10px" }}
           ></LogarithmicRangeSlider>
         </div>
+      </div>
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Limit edges:&nbsp;</span>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setGraphFilter((prevState) => ({
+              ...prevState,
+              limitEdges: limitEdges,
+            }));
+          }}
+        >
+          <input
+            min={1}
+            max={999}
+            type={"number"}
+            value={limitEdges}
+            onChange={(event) => {
+              setLimitEdges(Number(event.target.value));
+            }}
+          />
+        </form>
       </div>
       <div className={"flex-container"}>
         <span className={"option-span"}>Edge Frequency:&nbsp;</span>

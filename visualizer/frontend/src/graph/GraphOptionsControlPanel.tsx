@@ -26,8 +26,8 @@ export const GraphOptionsControlPanel = ({
 }: GraphOptionsControlPanelProps) => {
   return (
     <div className={"flex-container flex-container--vertical"}>
-      <div>
-        Physics enabled:
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Physics enabled:</span>
         <input
           type={"checkbox"}
           checked={options.physics.enabled}
@@ -42,8 +42,8 @@ export const GraphOptionsControlPanel = ({
           }
         />
       </div>
-      <div>
-        Rounded edges:
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Rounded edges:</span>
         <input
           type={"checkbox"}
           checked={getSmoothEnabled(options)}
@@ -58,8 +58,8 @@ export const GraphOptionsControlPanel = ({
           }
         />
       </div>
-      <div>
-        Edge length:
+      <div className={"flex-container"}>
+        <span className={"option-span"}>Edge length:</span>
         <input
           type="range"
           min="50"

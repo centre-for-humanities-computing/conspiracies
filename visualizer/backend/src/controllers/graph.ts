@@ -138,9 +138,9 @@ function createEdgeGroups(relations: RelationOrm[], bySupernodeId: boolean) {
           .slice(0, 3)
           .map((e) => e.label)
           .join(", ") + (group.length > 3 ? ", ..." : ""),
-      width: Math.log10(
-        group.map((e) => e.termFrequency).reduce((a, b) => a + b),
-      ),
+      totalTermFrequency: group
+        .map((e) => e.termFrequency)
+        .reduce((a, b) => a + b),
       group: group.map((r) => ({ id: r.id, label: r.label })),
     };
   });
@@ -184,7 +184,7 @@ export async function getGraph(req: Request, res: Response) {
     }
 
     const focusEntities: EntityOrm[] = await ds.getRepository(EntityOrm).find({
-      take: graphFilter.limit,
+      take: graphFilter.limitNodes,
       select: { id: true, label: true, termFrequency: true },
       relations: { supernode: true, subnodes: onlySupernodes },
       where: focusFilters,
@@ -194,7 +194,7 @@ export async function getGraph(req: Request, res: Response) {
     focusEntityIds = focusEntities.map((e) => e.id);
 
     let extraEntities: EntityOrm[] = [];
-    if (focusEntities.length < graphFilter.limit) {
+    if (focusEntities.length < graphFilter.limitNodes) {
       const focusEntityIds = focusEntities.map((e) => e.id);
       const connections = await ds.getRepository(RelationOrm).find({
         select: {
@@ -218,7 +218,7 @@ export async function getGraph(req: Request, res: Response) {
         .filter((id) => focusEntityIds.indexOf(id) === -1);
 
       extraEntities = await ds.getRepository(EntityOrm).find({
-        take: graphFilter.limit - focusEntities.length,
+        take: graphFilter.limitNodes - focusEntities.length,
         select: { id: true, label: true, termFrequency: true },
         relations: { supernode: true, subnodes: onlySupernodes },
         where: {
@@ -237,7 +237,7 @@ export async function getGraph(req: Request, res: Response) {
       .concat(extraEntities.map((e) => ({ ...e, focus: false })));
   } else {
     entities = await ds.getRepository(EntityOrm).find({
-      take: graphFilter.limit,
+      take: graphFilter.limitNodes,
       select: { id: true, label: true, termFrequency: true },
       relations: { supernode: true, subnodes: onlySupernodes },
       where: entityFilter,
@@ -292,6 +292,9 @@ export async function getGraph(req: Request, res: Response) {
   });
 
   let edges = createEdgeGroups(relations, onlySupernodes);
+  edges = edges
+    .sort((a, b) => b.totalTermFrequency! - a.totalTermFrequency!)
+    .slice(0, graphFilter.limitEdges);
 
   res.json({
     edges: edges,

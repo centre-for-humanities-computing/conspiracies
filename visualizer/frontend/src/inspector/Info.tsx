@@ -3,6 +3,7 @@ import { useServiceContext } from "../service/ServiceContextProvider";
 import { Details } from "@shared/types/graph";
 import { Doc } from "@shared/types/doc";
 import { DocInfo } from "./DocInfo";
+import { ClipLoader } from "react-spinners";
 
 export interface InfoProps {
   id: string | number;
@@ -39,7 +40,11 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
   };
 
   if (details === undefined) {
-    return <div>Loading ...</div>;
+    return (
+      <div>
+        <ClipLoader loading={true} />
+      </div>
+    );
   }
 
   return (
@@ -64,7 +69,7 @@ export const Info: React.FC<InfoProps> = ({ type, id }) => {
       )}
       <div>
         {docs === undefined && <button onClick={loadDocs}>Load docs</button>}
-        {docs === null && <p>Loading ...</p>}
+        {docs === null && <ClipLoader loading={true} />}
         {docs && (
           <div className={"scroll-content"}>
             <button
