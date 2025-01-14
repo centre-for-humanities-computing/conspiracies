@@ -17,7 +17,7 @@ from conspiracies.database.models import (
 )
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig, Thresholds
+from conspiracies.pipeline.config import PipelineConfig
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -111,16 +111,11 @@ class Pipeline:
     def corpusprocessing(self):
         triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
         triplets = Triplet.filter_on_label_length(triplets, 50)
-        triplets = list(
-            Triplet.filter_on_stopwords(triplets, self.config.base.language),
-        )
-        if self.config.corpusprocessing.thresholds is None:
-            thresholds = Thresholds.estimate_from_n_triplets(len(triplets))
-        else:
-            thresholds = self.config.corpusprocessing.thresholds
+        triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
         triplets = Triplet.filter_on_entity_label_frequency(
             triplets,
-            thresholds.min_label_occurrence,
+            self.config.corpusprocessing.thresholds.min_label_occurrence,
+            min_doc_frequency=self.config.corpusprocessing.thresholds.min_label_doc_freq,
         )
         Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
 
@@ -129,8 +124,8 @@ class Pipeline:
             language=self.config.base.language,
             n_dimensions=self.config.corpusprocessing.dimensions,
             n_neighbors=self.config.corpusprocessing.n_neighbors,
-            min_cluster_size=thresholds.min_cluster_size,
-            min_samples=thresholds.min_samples,
+            min_cluster_size=self.config.corpusprocessing.thresholds.min_cluster_size,
+            min_samples=self.config.corpusprocessing.thresholds.min_samples,
             cache_location=self.output_path / "cache",
         )
         mappings = clustering.create_mappings(triplets)

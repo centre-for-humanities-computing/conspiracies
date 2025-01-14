@@ -7,6 +7,20 @@ import { getDocs } from "../services/docs";
 import { In } from "typeorm";
 
 function transformEntityOrmToDetails(entity: EntityOrm): Details {
+  // const altLabels = entity.subjectTriplets
+  //   .map((t) => t.subjSpanText)
+  //   .concat(entity.objectTriplets.map((t) => t.objSpanText));
+  // const countMap: Record<string, number> = altLabels.reduce(
+  //   (acc, item) => {
+  //     acc[item] = (acc[item] || 0) + 1;
+  //     return acc;
+  //   },
+  //   {} as Record<string, number>,
+  // );
+  // const sortedAltLabels = Object.keys(countMap)
+  //   .filter((al) => al !== entity.label)
+  //   .sort((a, b) => countMap[b] - countMap[a]);
+
   return {
     id: entity.id,
     label: entity.label,
@@ -25,6 +39,7 @@ export async function getEntity(req: Request, res: Response) {
 
   const entity = await ds.getRepository(EntityOrm).findOne({
     where: { id: Number(id) },
+    // relations: { subjectTriplets: true, objectTriplets: true },
   });
   if (!entity) {
     res.status(404).send("Node/Entity not found.");

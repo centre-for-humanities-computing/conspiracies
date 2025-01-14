@@ -9,13 +9,18 @@ export interface Node extends Identifiable {
   focus?: boolean;
 }
 
+export interface LabeledEdge extends Identifiable {
+  subjectLabel: string;
+  objectLabel: string;
+}
+
 export interface Edge extends Identifiable {
   from: string | number;
   to: string | number;
   subjectLabel: string;
   objectLabel: string;
   totalTermFrequency?: number;
-  group: Identifiable[];
+  group: LabeledEdge[];
 }
 
 export interface GraphData {

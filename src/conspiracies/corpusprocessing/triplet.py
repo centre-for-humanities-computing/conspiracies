@@ -32,7 +32,10 @@ class Triplet(BaseModel):
         return (f.text for f in self.fields())
 
     def has_blacklist_match(self, blacklist: Set[str]):
-        return any(text_field.lower() in blacklist for text_field in self.text_fields())
+        return any(
+            all(word in blacklist for word in text_field.lower().split())
+            for text_field in self.text_fields()
+        )
 
     @staticmethod
     def filter_on_label_length(
@@ -65,6 +68,10 @@ class Triplet(BaseModel):
         min_frequency: int,
         min_doc_frequency: int = 1,
     ):
+        # FIXME: This method cuts away the long tail of infrequent entities and their
+        #  triplets. That is all nice and good, but as those are cut away, some entities
+        #  will fall below those thresholds
+        triplets = list(triplets)
         entity_label_counter = Counter(
             f.text for triplet in triplets for f in (triplet.subject, triplet.object)
         )

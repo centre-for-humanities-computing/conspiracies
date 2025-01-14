@@ -141,13 +141,21 @@ function createEdgeGroups(relations: RelationOrm[], bySupernodeId: boolean) {
       totalTermFrequency: group
         .map((e) => e.termFrequency)
         .reduce((a, b) => a + b),
-      group: group.map((r) => ({ id: r.id, label: r.label })),
+      group: group.map((r) => ({
+        id: r.id,
+        label: r.label,
+        subjectLabel: r.subject.label,
+        objectLabel: r.object.label,
+      })),
     };
   });
   return edges;
 }
 
 export async function getGraph(req: Request, res: Response) {
+  // FIXME: This method has become horribly long and probably filled with bugs
+  //  from trying to hack in the supernode functionality. That should be split into
+  //  different methods for better readability.
   const graphFilter: GraphFilter = req.body.graphFilter;
   const onlySupernodes: boolean = graphFilter.onlySupernodes || false;
 
@@ -195,26 +203,41 @@ export async function getGraph(req: Request, res: Response) {
 
     let extraEntities: EntityOrm[] = [];
     if (focusEntities.length < graphFilter.limitNodes) {
-      const focusEntityIds = focusEntities.map((e) => e.id);
       const connections = await ds.getRepository(RelationOrm).find({
         select: {
           subjectId: true,
           objectId: true,
         },
-        where: [
-          {
-            ...relationFilter,
-            subjectId: In(focusEntityIds),
-          },
-          {
-            ...relationFilter,
-            objectId: In(focusEntityIds),
-          },
-        ],
+        relations: ["subject", "object"],
+        where: onlySupernodes
+          ? [
+              {
+                ...relationFilter,
+                subject: { supernodeId: In(focusEntityIds) },
+              },
+              {
+                ...relationFilter,
+                object: { supernodeId: In(focusEntityIds) },
+              },
+            ]
+          : [
+              {
+                ...relationFilter,
+                subjectId: In(focusEntityIds),
+              },
+              {
+                ...relationFilter,
+                objectId: In(focusEntityIds),
+              },
+            ],
       });
 
       const connectedEntityIds = connections
-        .flatMap((conn) => [conn.subjectId, conn.objectId])
+        .flatMap((conn) =>
+          onlySupernodes
+            ? [conn.subject.supernodeId!, conn.object.supernodeId!]
+            : [conn.subjectId, conn.objectId],
+        )
         .filter((id) => focusEntityIds.indexOf(id) === -1);
 
       extraEntities = await ds.getRepository(EntityOrm).find({
@@ -247,25 +270,6 @@ export async function getGraph(req: Request, res: Response) {
 
   const entityIds = entities.map((e) => e.id);
 
-  if (onlySupernodes) {
-    const subEntities = await ds.getRepository(EntityOrm).find({
-      select: { id: true, label: true, termFrequency: true, supernodeId: true },
-      where: {
-        ...entityFilter,
-        supernodeId: In(entityIds),
-        isSupernode: false,
-      },
-    });
-    entityIds.push(...subEntities.map((e) => e.id));
-    entities = entities.map((e) => ({
-      ...e,
-      subnodes: e
-        .subnodes!.filter((sn) => entityIds.indexOf(sn.id) > -1)
-        .filter((sn) => sn.id !== e.id)
-        .sort((sn1, sn2) => sn2.termFrequency - sn1.termFrequency),
-    }));
-  }
-
   const relations = await ds.getRepository(RelationOrm).find({
     select: {
       id: true,
@@ -278,23 +282,48 @@ export async function getGraph(req: Request, res: Response) {
       subject: true,
       object: true,
     },
-    where: [
-      {
-        subjectId: In(focusEntityIds),
-        objectId: In(focusEntityIds),
-      },
-      {
-        ...relationFilter,
-        subjectId: In(entityIds),
-        objectId: In(entityIds),
-      },
-    ],
+    where: onlySupernodes
+      ? [
+          {
+            subject: { supernodeId: In(focusEntityIds) },
+            object: { supernodeId: In(focusEntityIds) },
+          },
+          {
+            ...relationFilter,
+            subject: { supernodeId: In(entityIds) },
+            object: { supernodeId: In(entityIds) },
+          },
+        ]
+      : [
+          {
+            subjectId: In(focusEntityIds),
+            objectId: In(focusEntityIds),
+          },
+          {
+            ...relationFilter,
+            subjectId: In(entityIds),
+            objectId: In(entityIds),
+          },
+        ],
   });
 
   let edges = createEdgeGroups(relations, onlySupernodes);
   edges = edges
     .sort((a, b) => b.totalTermFrequency! - a.totalTermFrequency!)
     .slice(0, graphFilter.limitEdges);
+
+  if (onlySupernodes) {
+    const relatedSubEntityIds = new Set(
+      relations.flatMap((r) => [r.subjectId, r.objectId]),
+    );
+    entities = entities.map((e) => ({
+      ...e,
+      subnodes: e
+        .subnodes!.filter((sn) => relatedSubEntityIds.has(sn.id))
+        .filter((sn) => sn.id !== e.id)
+        .sort((sn1, sn2) => sn2.termFrequency - sn1.termFrequency),
+    }));
+  }
 
   res.json({
     edges: edges,

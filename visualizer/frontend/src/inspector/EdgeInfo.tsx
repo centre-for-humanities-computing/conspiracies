@@ -41,8 +41,8 @@ export const EdgeInfo: React.FC<EdgeInfoProps> = ({
           <RelationInfo
             id={r.id}
             label={r.label}
-            subjectLabel={edge.subjectLabel}
-            objectLabel={edge.objectLabel}
+            subjectLabel={r.subjectLabel}
+            objectLabel={r.objectLabel}
           />
           {i + 1 < edge.group.length && (
             <>

@@ -116,6 +116,7 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({
   return (
     <HighlightWithinTextarea
       value={text}
+      readOnly={true}
       highlight={[
         {
           highlight: subjects,
