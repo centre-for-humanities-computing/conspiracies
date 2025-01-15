@@ -1,11 +1,6 @@
 {
   "name": "visualizer",
-  "version": "0.1.0",
-  "dependencies": {
-    "express": "^4.21.2",
-    "cors": "^2.8.5"
-  },
-  "homepage": "./",
+  "version": "0.2.0",
   "main": "electron-main.js",
   "scripts": {
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
@@ -15,7 +10,7 @@
     "install": "npm install --prefix backend && npm install --prefix frontend",
     "electron:dev": "NODE_ENV=development electron .",
     "electron": "electron .",
-    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='README.md|tsconfig.json|.gitignore|frontend/(node_modules|src)|backend/src'",
+    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='README.md|tsconfig.json|.gitignore|src|node_modules'",
     "package:win": "npm run package -- --platform=win32",
     "package:mac": "npm run package -- --platform=darwin",
     "package:linux": "npm run package -- --platform=linux"

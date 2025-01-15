@@ -1,6 +1,6 @@
 const { app, BrowserWindow, dialog } = require("electron");
 const path = require("path");
-const { createServer } = require("./backend/dist/backend/src/server");
+const { createServer } = require("./backend/dist/index");
 
 const isDev = process.env.NODE_ENV === "development";
 
