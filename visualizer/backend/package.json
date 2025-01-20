@@ -3,7 +3,11 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "nodemon src/index.ts",
-    "build": "ncc build src/server.ts -o dist/"
+    "build": "ncc build src/server.ts -o dist/",
+    "build:win32": "PLATFORM=win32 npm run build",
+    "build:macos": "PLATFORM=darwin npm run build",
+    "build:linux": "PLATFORM=linux npm run build",
+    "postbuild": "[ -n \"$PLATFORM\" ] && { rm -fr tmp/node_modules && npm install sqlite3 --prefix tmp --platform=$PLATFORM && cp -r tmp/node_modules/sqlite3/build/Release/node_sqlite3.node dist/build/Release/ && rm -fr tmp; } || { exit 0; }"
   },
   "description": "",
   "dependencies": {
