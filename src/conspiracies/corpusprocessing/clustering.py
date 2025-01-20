@@ -1,15 +1,24 @@
-import os
 from collections import defaultdict, Counter
 from itertools import groupby
-from pathlib import Path
-from typing import List, Callable, Any, Hashable, Dict, Union
+from typing import (
+    List,
+    Callable,
+    Any,
+    Hashable,
+    Dict,
+    Union,
+    Iterable,
+    Iterator,
+    Tuple,
+    TypeVar,
+    Optional,
+)
 
 import networkx
 import numpy as np
 from hdbscan import HDBSCAN
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
-from tqdm import tqdm
 
 from conspiracies.common.modelchoice import ModelChoice
 from conspiracies.corpusprocessing.triplet import TripletField, Triplet
@@ -42,7 +51,24 @@ class Mappings(BaseModel):
         return alt_labels
 
 
+_V = TypeVar("_V")
+_K = TypeVar("_K", bound=Hashable)
+
+
+def _group_by_key(
+    elements: Iterable[_V],
+    key: Callable[[_V], _K] = lambda x: x,
+) -> Iterator[Tuple[_K, List[_V]]]:
+    grouped = defaultdict(list)
+    for item in elements:
+        grouped[key(item)].append(item)
+    yield from grouped.items()
+
+
 class Clustering:
+
+    _cached_sent_transformer = None
+
     def __init__(
         self,
         language: str,
@@ -51,7 +77,6 @@ class Clustering:
         min_cluster_size: int = 5,
         min_samples: int = 3,
         embedding_model: str = None,
-        cache_location: Path = None,
     ):
         self.language = language
         self.n_dimensions = n_dimensions
@@ -59,9 +84,6 @@ class Clustering:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self._embedding_model = embedding_model
-        self.cache_location = cache_location
-        if self.cache_location is not None:
-            os.makedirs(self.cache_location, exist_ok=True)
 
     def _get_embedding_model(self):
         # figure out embedding model if not given explicitly
@@ -73,7 +95,9 @@ class Clustering:
             ).get_model(self.language)
         else:
             embedding_model = self._embedding_model
-        return SentenceTransformer(embedding_model)
+        if self._cached_sent_transformer is None:
+            self._cached_sent_transformer = SentenceTransformer(embedding_model)
+        return self._cached_sent_transformer
 
     @staticmethod
     def _combine_clusters(
@@ -157,29 +181,24 @@ class Clustering:
     @staticmethod
     def _cluster_via_labels(
         labels: List[str],
-        top: Union[int, float] = 1.0,
-        restrictive_labels=True,
+        is_main_label: Optional[Callable[[str], bool]] = None,
         get_norm_label: Callable[[str], str] = lambda x: x,
-    ) -> List[List[str]]:
+    ) -> Tuple[List[List[str]], List[str]]:
         counter = Counter(labels)
-        if isinstance(top, float):
-            top = int(top * len(counter))
 
         norm_map = {
             label: " "
-            + get_norm_label(label).lower()
+            + get_norm_label(label)
             + " "  # surrounding spaces avoids matches like evil <-> devil
             for label in counter.keys()
         }
         cluster_map = {
             label: []
-            for label, count in counter.most_common(top)
-            # FIXME: hack due to lack of NER and lemmas at the time of writing
-            if not restrictive_labels
-            or len(label) >= 4
-            and label[0].isupper()
-            or len(label.split()) > 1
+            for label in counter.keys()
+            if is_main_label is None or is_main_label(label)
         }
+
+        unclustered = []
 
         for label in counter.keys():
             norm_label = norm_map[label]
@@ -189,21 +208,34 @@ class Clustering:
                 if norm_map[candidate] in norm_label
             ]
             if not matches:
+                unclustered.append(label)
                 continue
 
+            # best match is the shortest norm match; then the most frequent label
             best_match = min(
                 matches,
-                key=lambda match: len(norm_map[match]),
+                key=lambda match: (
+                    len(match.strip().split()),
+                    -counter[match],
+                ),
             )
             if best_match != label:
                 cluster_map[best_match].append(label)
 
         clusters = [
-            [main_label] + alt_labels
+            [main_label]
+            + sorted(
+                alt_labels,
+                key=lambda label: (
+                    len(label.strip().split()),
+                    -counter[label],
+                ),
+            )
             for main_label, alt_labels in cluster_map.items()
             if alt_labels
         ]
-        return clusters
+
+        return clusters, unclustered
 
     @staticmethod
     def _mapping_to_first_member(
@@ -233,48 +265,39 @@ class Clustering:
         # Ideal? No. Good enough? Yes.
         entity_norm = {
             text: Counter(pair[1] for pair in text_lemma_pairs).most_common(1)[0][0]
-            for text, text_lemma_pairs in groupby(
-                [(e.text, e.lemma) for e in entities],
+            for text, text_lemma_pairs in _group_by_key(
+                ((e.text, e.trimmed_and_normalized("entity")) for e in entities),
                 lambda x: x[0],
             )
         }
-        entity_clusters = self._cluster_via_labels(
+        super_entity_labels = {e.text for e in entities if e.max_entity}
+        super_entity_clusters, unclustered = self._cluster_via_labels(
             [e.text for e in entities],
-            0.4,
+            is_main_label=lambda text: text in super_entity_labels,
             get_norm_label=lambda text: entity_norm[text],
         )
-        sub_entity_clusters = [
-            sub_cluster
-            for cluster in tqdm(entity_clusters, desc="Creating sub-clusters")
-            for sub_cluster in (
-                self._cluster_via_embeddings(
-                    cluster,
-                    show_progress=False,
-                    get_combine_key=lambda label: entity_norm[label],
-                )
-                if len(cluster) > self.min_cluster_size
-                else [cluster]
-            )
+        entity_clusters = [
+            sorted(sub_cluster, key=len)
+            for cluster in super_entity_clusters + [unclustered]
+            for _, sub_cluster in _group_by_key(cluster, lambda text: entity_norm[text])
         ]
 
         print("Creating mappings for predicates")
         predicate_norm = {
             text: Counter(pair[1] for pair in text_lemma_pairs).most_common(1)[0][0]
             for text, text_lemma_pairs in groupby(
-                [(p.text, p.lemma) for p in predicates],
+                [(p.text, p.trimmed_and_normalized("relation")) for p in predicates],
                 lambda x: x[0],
             )
         }
-        predicate_clusters = self._cluster_via_labels(
+        predicate_clusters, _ = self._cluster_via_labels(
             [p.text for p in predicates],
-            # top=0.2,
-            restrictive_labels=False,
             get_norm_label=lambda text: predicate_norm[text],
         )
 
         mappings = Mappings(
-            entities=self._mapping_to_first_member(sub_entity_clusters),
-            super_entities=self._mapping_to_first_member(entity_clusters),
+            entities=self._mapping_to_first_member(entity_clusters),
+            super_entities=self._mapping_to_first_member(super_entity_clusters),
             predicates=self._mapping_to_first_member(predicate_clusters),
         )
 

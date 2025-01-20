@@ -269,6 +269,12 @@ class SpanTriplet(BaseModel):
             "end_char": span.end_char,
             "end": span.end,
             "lemma": span.lemma_,
+            "tokens": [
+                {"text": t.text, "lemma": t.lemma_, "pos": t.pos_} for t in span
+            ],
+            "max_noun_phrase": max(span.noun_chunks, key=len, default=span[0:0]).lemma_,
+            "max_entity": max(span.ents, key=len, default=span[0:0]).lemma_,
+            "head": span._.most_common_ancestor.lemma_,
         }
 
     @staticmethod

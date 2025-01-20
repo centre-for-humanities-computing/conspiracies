@@ -126,7 +126,6 @@ class Pipeline:
             n_neighbors=self.config.corpusprocessing.n_neighbors,
             min_cluster_size=self.config.corpusprocessing.thresholds.min_cluster_size,
             min_samples=self.config.corpusprocessing.thresholds.min_samples,
-            cache_location=self.output_path / "cache",
         )
         mappings = clustering.create_mappings(triplets)
         with open(self.output_path / "mappings.json", "w") as out:

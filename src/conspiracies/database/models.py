@@ -146,14 +146,14 @@ class EntityAndRelationCache:
 
     def get_or_create_entity(self, label):
         """Fetch an entity by label, or create it if it doesn't exist."""
-        entity_key = self._mappings.map_entity(label)
+        mapped_entity = self._mappings.map_entity(label)
 
-        entity = self._entities.get(entity_key, None)
+        entity = self._entities.get(mapped_entity, None)
         if entity is None:
-            entity = EntityOrm(label=label)
+            entity = EntityOrm(label=mapped_entity)
             self._session.add(entity)
             self._session.flush()  # Get the ID immediately
-            self._entities[entity_key] = entity  # noqa
+            self._entities[mapped_entity] = entity  # noqa
         return entity.id
 
     def get_or_create_relation(
@@ -198,7 +198,7 @@ class EntityAndRelationCache:
             super_entity = self._mappings.get_super_entity(entity.label)
             if super_entity is not None:
                 entity.supernode_id = self.get_or_create_entity(super_entity)
-                entity.is_supernode = entity.label == super_entity
+                entity.is_supernode = entity.id == entity.supernode_id
         session.commit()
 
     def update_relation_info(self, session: Session):
