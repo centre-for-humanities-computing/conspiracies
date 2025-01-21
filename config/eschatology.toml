@@ -11,7 +11,7 @@ text_column = "body"
 timestamp_column = "timestamp"
 
 [docprocessing]
-enabled = false
+enabled = true
 batch_size = 50
 prefer_gpu_for_coref = true
 n_process = 1

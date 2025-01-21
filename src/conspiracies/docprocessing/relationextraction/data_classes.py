@@ -262,7 +262,7 @@ class SpanTriplet(BaseModel):
     def span_to_json(span: Union[Span, Doc]) -> Dict[str, Any]:
         if isinstance(span, Doc):
             span = span[:]
-        return {
+        d = {
             "text": span.text,
             "start_char": span.start_char,
             "start": span.start,
@@ -272,10 +272,17 @@ class SpanTriplet(BaseModel):
             "tokens": [
                 {"text": t.text, "lemma": t.lemma_, "pos": t.pos_} for t in span
             ],
-            "max_noun_phrase": max(span.noun_chunks, key=len, default=span[0:0]).lemma_,
-            "max_entity": max(span.ents, key=len, default=span[0:0]).lemma_,
-            "head": span._.most_common_ancestor.lemma_,
         }
+        if span.doc.has_annotation("DEP"):
+            d["max_noun_phrase"] = max(
+                span.noun_chunks,
+                key=len,
+                default=span[0:0],
+            ).lemma_
+            d["max_entity"] = max(span.ents, key=len, default=span[0:0]).lemma_
+            if Doc.has_extension("most_common_ancestor"):
+                d["head"] = span._.most_common_ancestor.lemma_
+        return d
 
     @staticmethod
     def span_from_json(json: dict, doc: Doc) -> Span:
