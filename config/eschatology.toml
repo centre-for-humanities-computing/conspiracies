@@ -2,7 +2,7 @@
 language = "en"
 
 [preprocessing]
-enabled = true
+enabled = false
 doc_type = "csv"
 
 [preprocessing.extra]
@@ -12,8 +12,13 @@ timestamp_column = "timestamp"
 
 [docprocessing]
 enabled = true
-batch_size = 5
-prefer_gpu_for_coref = false
+batch_size = 50
+prefer_gpu_for_coref = true
+n_process = 1
 
 [corpusprocessing]
 enabled = true
+
+[databasepopulation]
+enabled = true
+clear_and_write = true

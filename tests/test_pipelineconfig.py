@@ -8,6 +8,7 @@ from conspiracies.pipeline.config import (
     PreProcessingConfig,
     DocProcessingConfig,
     CorpusProcessingConfig,
+    DatabasePopulationConfig,
 )
 
 
@@ -21,8 +22,7 @@ def test_config_loading(path: str):
     config = PipelineConfig.from_toml_file(path)
     assert config == PipelineConfig(
         base=BaseConfig(
-            project_name="test",
-            output_root="output",
+            output_path="output/test",
             language="en",
         ),
         preprocessing=PreProcessingConfig(
@@ -38,6 +38,7 @@ def test_config_loading(path: str):
             triplet_extraction_method="test",
         ),
         corpusprocessing=CorpusProcessingConfig(),
+        databasepopulation=DatabasePopulationConfig(),
     )
 
 

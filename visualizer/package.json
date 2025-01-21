@@ -1,57 +1,27 @@
 {
   "name": "visualizer",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.96",
-    "@types/react-dom": "^18.2.24",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-graph-vis": "^1.0.7",
-    "react-router-dom": "^6.22.3",
-    "react-scripts": "5.0.1",
-    "react-vis-graph-wrapper": "^0.1.3",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
-  },
-  "homepage": "./",
-  "main": "./electron-main.js",
+  "version": "0.2.0",
+  "main": "electron-main.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npm --prefix backend run start",
+    "start:frontend": "npm --prefix frontend run start",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build:win32": "npm --prefix backend run build:win32 && npm --prefix frontend run build",
+    "build:macos": "npm --prefix backend run build:macos && npm --prefix frontend run build",
+    "build:linux": "npm --prefix backend run build:linux && npm --prefix frontend run build",
+    "install": "npm install --prefix backend && npm install --prefix frontend",
+    "electron:dev": "NODE_ENV=development electron .",
     "electron": "electron .",
-    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='node_modules|src|dist|README.md|tsconfig.json|.gitignore'",
-    "package:win": "npm run package -- --platform=win32",
+    "package": "electron-packager . graph-visualizer --arch=x64 --out=dist --overwrite --ignore='README.md|tsconfig.json|.gitignore|src|node_modules|.env'",
+    "package:win32": "npm run package -- --platform=win32",
     "package:mac": "npm run package -- --platform=darwin",
     "package:linux": "npm run package -- --platform=linux"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
-    "electron": "^33.0.2",
     "@electron/packager": "^18.3.5",
-    "serve": "^14.2.4"
+    "electron": "^33.0.2",
+    "prettier": "^3.3.3",
+    "concurrently": "^9.1.0"
   }
 }

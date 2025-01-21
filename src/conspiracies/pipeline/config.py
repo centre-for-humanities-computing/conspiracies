@@ -5,8 +5,7 @@ from pydantic import BaseModel
 
 
 class BaseConfig(BaseModel):
-    project_name: str
-    output_root: str = "output"
+    output_path: str
     language: str
 
 
@@ -27,27 +26,26 @@ class DocProcessingConfig(StepConfig):
     continue_from_last: bool = True
     triplet_extraction_method: str = "multi2oie"
     prefer_gpu_for_coref: bool = False
+    n_process: int = 1
+    doc_bin_size: int = 100
 
 
-class ClusteringThresholds(BaseModel):
-    min_cluster_size: int
-    min_samples: int
+class Thresholds(BaseModel):
+    min_label_occurrence: int = 3
+    min_label_doc_freq: int = 2
+    min_cluster_size: int = 2
+    min_samples: int = 2
 
-    @classmethod
-    def estimate_from_n_triplets(cls, n_triplets: int):
-        factor = n_triplets / 1000
-        thresholds = cls(
-            min_cluster_size=max(int(factor + 1), 2),
-            min_samples=int(factor + 1),
-        )
-        return thresholds
+
+class DatabasePopulationConfig(StepConfig):
+    clear_and_write: bool = False
 
 
 class CorpusProcessingConfig(StepConfig):
     dimensions: int = None
     n_neighbors: int = 15
     embedding_model: str = None
-    thresholds: ClusteringThresholds = None
+    thresholds: Thresholds = Thresholds()
 
 
 class PipelineConfig(BaseModel):
@@ -55,6 +53,7 @@ class PipelineConfig(BaseModel):
     preprocessing: PreProcessingConfig
     docprocessing: DocProcessingConfig
     corpusprocessing: CorpusProcessingConfig
+    databasepopulation: DatabasePopulationConfig
 
     @staticmethod
     def update_nested_dict(d: dict[str, Any], path: str, value: Any) -> None:

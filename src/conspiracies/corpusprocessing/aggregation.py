@@ -124,11 +124,16 @@ class TripletAggregator:
                 Triplet(
                     subject=TripletField(
                         text=self._mappings.map_entity(t.subject.text),
+                        **t.subject.dict(exclude={"text"}),
                     ),
                     predicate=TripletField(
                         text=self._mappings.map_predicate(t.predicate.text),
+                        **t.predicate.dict(exclude={"text"}),
                     ),
-                    object=TripletField(text=self._mappings.map_entity(t.object.text)),
+                    object=TripletField(
+                        text=self._mappings.map_entity(t.object.text),
+                        **t.object.dict(exclude={"text"}),
+                    ),
                     doc=t.doc,
                     timestamp=t.timestamp,
                 )

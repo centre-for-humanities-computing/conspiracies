@@ -1,15 +1,23 @@
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
+from tqdm import tqdm
 
 from conspiracies.common.fileutils import iter_lines_of_files
 from conspiracies.corpusprocessing.aggregation import TripletAggregator
-from conspiracies.corpusprocessing.clustering import Clustering
+from conspiracies.corpusprocessing.clustering import Clustering, Mappings
 from conspiracies.corpusprocessing.triplet import Triplet
+from conspiracies.database.engine import get_engine, setup_database, get_session
+from conspiracies.database.models import (
+    TripletOrm,
+    DocumentOrm,
+    EntityAndRelationCache,
+)
 from conspiracies.docprocessing.docprocessor import DocProcessor
 from conspiracies.document import Document
-from conspiracies.pipeline.config import PipelineConfig, ClusteringThresholds
+from conspiracies.pipeline.config import PipelineConfig
 from conspiracies.preprocessing.csv import CsvPreprocessor
 from conspiracies.preprocessing.infomedia import InfoMediaPreprocessor
 from conspiracies.preprocessing.preprocessor import Preprocessor
@@ -23,12 +31,11 @@ from conspiracies.visualization.graph import (
 
 class Pipeline:
     def __init__(self, config: PipelineConfig):
-        self.project_name = config.base.project_name
         self.input_path = Path(config.preprocessing.input_path)
+        self.output_path = Path(config.base.output_path)
+        os.makedirs(self.output_path, exist_ok=True)
         self.config = config
         print("Initialized Pipeline with config:", config)
-        self.output_path = Path(self.config.base.output_root, self.project_name)
-        os.makedirs(self.output_path, exist_ok=True)
 
     def run(self):
         if self.config.preprocessing.enabled:
@@ -43,6 +50,9 @@ class Pipeline:
 
         if self.config.corpusprocessing.enabled:
             self.corpusprocessing()
+
+        if self.config.databasepopulation.enabled:
+            self.databasepopulation()
 
     def _get_preprocessor(self) -> Preprocessor:
         config = self.config.preprocessing
@@ -81,6 +91,8 @@ class Pipeline:
             batch_size=self.config.docprocessing.batch_size,
             triplet_extraction_method=self.config.docprocessing.triplet_extraction_method,
             prefer_gpu_for_coref=self.config.docprocessing.prefer_gpu_for_coref,
+            n_process=self.config.docprocessing.n_process,
+            doc_bin_size=self.config.docprocessing.doc_bin_size,
         )
 
     def docprocessing(self, continue_from_last=False):
@@ -97,23 +109,23 @@ class Pipeline:
         )
 
     def corpusprocessing(self):
-        # TODO: make into logging messages or progress bars instead
-        print("Collecting triplets.")
         triplets = Triplet.from_annotated_docs(self.output_path / "annotations.ndjson")
+        triplets = Triplet.filter_on_label_length(triplets, 50)
         triplets = Triplet.filter_on_stopwords(triplets, self.config.base.language)
+        triplets = Triplet.filter_on_entity_label_frequency(
+            triplets,
+            self.config.corpusprocessing.thresholds.min_label_occurrence,
+            min_doc_frequency=self.config.corpusprocessing.thresholds.min_label_doc_freq,
+        )
         Triplet.write_jsonl(self.output_path / "triplets.ndjson", triplets)
 
-        if self.config.corpusprocessing.thresholds is None:
-            thresholds = ClusteringThresholds.estimate_from_n_triplets(len(triplets))
-        else:
-            thresholds = self.config.corpusprocessing.thresholds
         print("Clustering entities and predicates to create mappings.")
         clustering = Clustering(
             language=self.config.base.language,
             n_dimensions=self.config.corpusprocessing.dimensions,
             n_neighbors=self.config.corpusprocessing.n_neighbors,
-            min_cluster_size=thresholds.min_cluster_size,
-            min_samples=thresholds.min_samples,
+            min_cluster_size=self.config.corpusprocessing.thresholds.min_cluster_size,
+            min_samples=self.config.corpusprocessing.thresholds.min_samples,
         )
         mappings = clustering.create_mappings(triplets)
         with open(self.output_path / "mappings.json", "w") as out:
@@ -145,3 +157,78 @@ class Pipeline:
             edges,
             save=self.output_path / "graph.png",
         )
+
+    def databasepopulation(self):
+        # TODO: move to own class and methods in conspiracies.database package
+
+        if self.config.databasepopulation.clear_and_write:
+            if os.path.exists(self.output_path / "database.db"):
+                print("Removing old database.")
+                os.remove(self.output_path / "database.db")
+
+        print("Populating database.")
+        engine = get_engine(self.output_path / "database.db")
+        setup_database(engine)
+        session = get_session(engine)
+
+        with open(self.output_path / "mappings.json") as mappings_file:
+            mappings = Mappings(**json.load(mappings_file))
+
+        with open(self.output_path / "triplets.ndjson") as triplets_file:
+            cache = EntityAndRelationCache(session, mappings)
+            bulk = []
+            for line in tqdm(triplets_file, desc="Writing triplets to database"):
+                triplet = Triplet(**json.loads(line))
+                subject_id = cache.get_or_create_entity(triplet.subject.text)
+                object_id = cache.get_or_create_entity(triplet.object.text)
+                relation_id = cache.get_or_create_relation(
+                    subject_id,
+                    object_id,
+                    triplet.predicate.text,
+                )
+
+                triplet_orm = TripletOrm(
+                    doc_id=int(triplet.doc),
+                    timestamp=triplet.timestamp,
+                    subject_id=subject_id,
+                    relation_id=relation_id,
+                    object_id=object_id,
+                    subj_span_start=triplet.subject.start_char,
+                    subj_span_end=triplet.subject.end_char,
+                    subj_span_text=triplet.subject.text,
+                    pred_span_start=triplet.predicate.start_char,
+                    pred_span_end=triplet.predicate.end_char,
+                    pred_span_text=triplet.predicate.text,
+                    obj_span_start=triplet.object.start_char,
+                    obj_span_end=triplet.object.end_char,
+                    obj_span_text=triplet.object.text,
+                )
+                bulk.append(triplet_orm)
+                if len(bulk) >= 500:
+                    session.bulk_save_objects(bulk)
+                    bulk.clear()
+        session.bulk_save_objects(bulk)
+        bulk.clear()
+        session.commit()
+
+        cache.update_entity_info(session)
+        cache.update_relation_info(session)
+
+        for doc in (
+            json.loads(line)
+            for line in tqdm(
+                iter_lines_of_files(self.output_path / "annotations.ndjson"),
+                desc="Writing documents to database",
+            )
+        ):
+            doc_orm = DocumentOrm(
+                id=doc["id"],
+                text=doc["text"],
+                timestamp=datetime.fromisoformat(doc["timestamp"]),
+            )
+            bulk.append(doc_orm)
+            if len(bulk) >= 500:
+                session.bulk_save_objects(bulk)
+                bulk.clear()
+        session.bulk_save_objects(bulk)
+        session.commit()

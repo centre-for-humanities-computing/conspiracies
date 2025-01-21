@@ -8,7 +8,7 @@ from conspiracies.pipeline.pipeline import Pipeline
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
-        "project_name",
+        "output_path",
         nargs="?",
         default=None,
         help="Name of your project under which various output files will be output"
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(args.root_log_level)
 
     cli_args = {
-        "base.project_name": args.project_name,
+        "base.output_path": args.output_path,
         "base.language": args.language,
         "preprocessing.input_path": args.input_path,
         "preprocessing.n_docs": args.n_docs,
@@ -61,4 +61,13 @@ if __name__ == "__main__":
         config = PipelineConfig.default_with_extra_config(cli_args)
 
     pipeline = Pipeline(config)
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename=config.base.output_path + "/logfile",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        filemode="a+",
+    )
+    logging.info("Running pipeline...")
+
     pipeline.run()

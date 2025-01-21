@@ -1,0 +1,94 @@
+/*TODO: restructure CSS. Most classes are in here
+   because they started as part of a all-encompassing
+   graph interface*/
+
+.padded {
+  padding: 5px;
+}
+
+.panel {
+  margin: 2px;
+  padding: 10px;
+  background: whitesmoke;
+  border: 1px solid lightgray;
+  border-radius: 10px;
+  overflow-y: auto;
+}
+
+.panel__close-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.panel__sub-panel {
+  padding: 10px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+}
+
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  gap: 5px;
+}
+
+.flex-container--vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.control-panel {
+  position: fixed;
+  top: 5px;
+  right: 5px;
+  z-index: 3;
+  width: 25%;
+  min-width: 250px;
+  max-width: 400px;
+  max-height: 80%;
+  transition: 0.4s;
+}
+
+.control-panel--hidden {
+  transform: translateX(500px);
+}
+
+.option-span {
+  min-width: 130px;
+  width: 130px;
+  max-width: 130px;
+}
+
+.node-info {
+  position: fixed;
+  top: 5px;
+  left: 5px;
+  z-index: 3;
+  font-size: small;
+  width: 25%;
+  min-width: 250px;
+  max-width: 450px;
+  /* FIXME: max-height subtraction calculated by hand from border, padding, margin and top.*/
+  max-height: calc(100vh - 36px);
+}
+
+.graph-container {
+  height: 100vh;
+}
+
+.list-editor {
+  position: fixed;
+  padding-top: 35px;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  z-index: 3;
+  max-height: 80%;
+}

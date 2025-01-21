@@ -40,10 +40,10 @@ class CoreferenceComponent(TrainablePipe):
             )
 
         # Register custom extension on the Doc and Span
-        if not Doc.has_extension("resolve_coref"):
-            Doc.set_extension("resolve_coref", getter=self.resolve_coref_doc)
-        if not Span.has_extension("resolve_coref"):
-            Span.set_extension("resolve_coref", getter=self.resolve_coref_span)
+        if not Doc.has_extension("resolved_text"):
+            Doc.set_extension("resolved_text", getter=self.resolved_text_doc)
+        if not Span.has_extension("resolved_text"):
+            Span.set_extension("resolved_text", getter=self.resolved_text_span)
         if not Doc.has_extension("coref_clusters"):
             Doc.set_extension("coref_clusters", default=list())
         if not Span.has_extension("coref_clusters"):
@@ -51,7 +51,7 @@ class CoreferenceComponent(TrainablePipe):
         if not Span.has_extension("antecedent"):
             Span.set_extension("antecedent", default=None)
 
-    def resolve_coref_doc(self, doc: Doc) -> str:
+    def resolved_text_doc(self, doc: Doc) -> str:
         """Resolve the coreference clusters by replacing each entity with the
         antecedent. The antecedent is the first entity that appears in the
         cluster. This is for the whole doc.
@@ -73,7 +73,7 @@ class CoreferenceComponent(TrainablePipe):
                         resolved[i] = ""
         return "".join(resolved)
 
-    def resolve_coref_span(self, sent: Span) -> str:
+    def resolved_text_span(self, sent: Span) -> str:
         """Resolve the coreference clusters by replacing each entity with the
         antecedent. The antecedent is the first entity that appears in the
         cluster. This is for the the sent.

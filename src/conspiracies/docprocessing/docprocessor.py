@@ -1,10 +1,13 @@
+import json
+import logging
 import os
+from glob import glob
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Tuple, Iterator
 
 import spacy
 import torch
-from jsonlines import jsonlines
+from spacy.tokens import DocBin, Doc
 from tqdm import tqdm
 
 from conspiracies import docs_to_jsonl
@@ -16,14 +19,28 @@ class DocProcessor:
     def _build_coref_pipeline(self):
         nlp_coref = spacy.blank(self.language)
         nlp_coref.add_pipe("sentencizer")
-        nlp_coref.add_pipe(
-            "allennlp_coref",
-            config={
-                "device": (
-                    0 if self.prefer_gpu_for_coref and torch.cuda.is_available() else -1
-                ),
-            },
-        )
+        if self.language == "en":
+            nlp_coref.add_pipe(
+                "safe_fastcoref",
+                config={
+                    "device": (
+                        "cuda"
+                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
+                        else "cpu"
+                    ),
+                },
+            )
+        elif self.language == "da":
+            nlp_coref.add_pipe(
+                "allennlp_coref",
+                config={
+                    "device": (
+                        0
+                        if self.prefer_gpu_for_coref and torch.cuda.is_available()
+                        else -1
+                    ),
+                },
+            )
 
         def warn_error(proc_name, proc, docs, e):
             print(
@@ -86,13 +103,100 @@ class DocProcessor:
         batch_size=25,
         triplet_extraction_method="multi2oie",
         prefer_gpu_for_coref: bool = False,
+        n_process: int = 1,
+        doc_bin_size: int = 100,
     ):
         self.language = language
         self.batch_size = batch_size
         self.prefer_gpu_for_coref = prefer_gpu_for_coref
+        self.n_process = n_process
+        if n_process > 1:
+            # multiprocessing and torch with multiple threads result in a deadlock, therefore:
+            torch.set_num_threads(1)
+        self.doc_bin_size = doc_bin_size
         self.coref_pipeline = self._build_coref_pipeline()
         self.triplet_extraction_component = triplet_extraction_method
         self.triplet_extraction_pipeline = self._build_triplet_extraction_pipeline()
+        self.deduplicate_processed_docs = False
+
+    def _store_doc_bins(self, docs: Iterator[Tuple[Doc, Document]], output_path: Path):
+        # FIXME: paths should be given elsewhere and not be inferred like this
+        output_dir = Path(os.path.dirname(output_path)) / "spacy_docs"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        prev_doc_bins = glob(
+            (Path(os.path.dirname(output_path)) / "spacy_docs").as_posix() + "/*.bin",
+        )
+        start_from = (
+            max(int(os.path.basename(doc).replace(".bin", "")) for doc in prev_doc_bins)
+            if prev_doc_bins
+            else 0
+        )
+
+        size = self.doc_bin_size
+        doc_bin = DocBin(store_user_data=True)
+        at_doc = start_from
+        for doc, src_doc in docs:
+            at_doc += 1
+
+            # FIXME: this conversion is kind of stupid, but with old pydantic this will have to work for now.
+            doc.user_data["doc_metadata"] = json.loads(src_doc.json())
+
+            doc_bin.add(doc)
+            if at_doc % size == 0:
+                with open(output_dir / f"{at_doc}.bin", "wb") as f:
+                    f.write(doc_bin.to_bytes())
+                doc_bin = DocBin(store_user_data=True)
+            yield doc
+
+        if len(doc_bin) > 0:
+            # write final doc bin if any docs are left
+            with open(output_dir / f"{at_doc}.bin", "wb") as f:
+                f.write(doc_bin.to_bytes())
+
+    def _read_doc_bins(self, output_path: Path):
+        # FIXME: paths should be given elsewhere and not be inferred like this
+        count = 0
+        for bin_file in glob(
+            (Path(os.path.dirname(output_path)) / "spacy_docs").as_posix() + "/*.bin",
+        ):
+            with open(bin_file, "rb") as bytes_data:
+                doc_bin = DocBin().from_bytes(bytes_data.read())
+                for doc in doc_bin.get_docs(self.triplet_extraction_pipeline.vocab):
+                    count += 1
+                    src_doc = Document(**doc.user_data["doc_metadata"])
+                    yield doc, src_doc
+
+    def _read_deduplicated_doc_bins(
+        self,
+        output_path: Path,
+        processed_ids: set[str] = None,
+    ):
+        if processed_ids is None:
+            processed_ids = set()
+
+        for doc, src_doc in tqdm(
+            self._read_doc_bins(output_path),
+            desc="Reading previously processed docs",
+        ):
+            if src_doc.id in processed_ids:
+                logging.warning(f"Duplicate processed document: {src_doc.id}")
+                continue
+            processed_ids.add(src_doc.id)
+            yield doc, src_doc
+
+    def deduplicate_doc_bins(self, output_path: Path):
+        spacy_docs = Path(os.path.dirname(output_path)) / "spacy_docs"
+        old_docs = Path(os.path.dirname(output_path)) / ".old" / "spacy_docs"
+        old_docs.mkdir(parents=True, exist_ok=True)
+        orig_dir = spacy_docs.rename(old_docs)
+        deduplicated = spacy_docs
+        deduplicated.mkdir()
+        for _ in self._store_doc_bins(
+            self._read_deduplicated_doc_bins(orig_dir),
+            deduplicated,
+        ):
+            pass
 
     def process_docs(
         self,
@@ -100,13 +204,22 @@ class DocProcessor:
         output_path: Path,
         continue_from_last=False,
     ):
-        if continue_from_last and os.path.exists(output_path):
-            with jsonlines.open(output_path) as annotated_docs:
-                already_processed = {
-                    annotated_doc["id"] for annotated_doc in annotated_docs
-                }
-            print(f"Skipping {len(already_processed)} processed docs.")
-            docs = (doc for doc in docs if doc.id not in already_processed)
+        if self.deduplicate_processed_docs:
+            self.deduplicate_doc_bins(output_path)
+        if continue_from_last:
+            print(
+                "Reading previously processed documents! Disable 'continue_from_last' to avoid this.'",
+            )
+            processed_ids = set()
+            docs_to_jsonl(
+                self._read_deduplicated_doc_bins(
+                    output_path,
+                    processed_ids=processed_ids,
+                ),
+                output_path,
+            )
+            print(f"Read {len(processed_ids)} previously processed docs.")
+            docs = (d for d in docs if d.id not in processed_ids)
 
         # The coreference pipeline tends to choke on too large batches because of an
         # extreme memory pressure, hence the small batch size
@@ -114,19 +227,26 @@ class DocProcessor:
             ((text_with_context(src_doc), src_doc) for src_doc in docs),
             batch_size=self.batch_size,
             as_tuples=True,
+            n_process=self.n_process,
         )
 
         with_triplets = self.triplet_extraction_pipeline.pipe(
             (
-                (remove_context(doc._.resolve_coref), src_doc)
+                (remove_context(doc._.resolved_text), src_doc)
                 for doc, src_doc in coref_resolved_docs
             ),
             batch_size=self.batch_size,
             as_tuples=True,
+            n_process=self.n_process,
+        )
+
+        docs_to_output = tqdm(
+            self._store_doc_bins(with_triplets, output_path),
+            desc="Processing documents",
         )
 
         docs_to_jsonl(
-            tqdm(d for d in with_triplets),
+            docs_to_output,
             output_path,
             append=continue_from_last,
         )

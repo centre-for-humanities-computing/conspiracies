@@ -45,7 +45,9 @@ dependencies = [
     "sentence-transformers",
     "stop-words",
     "bs4",
-    "toml"
+    "toml",
+    "fastcoref",
+    "sqlalchemy"
 ]
 
 [project.license]
@@ -94,6 +96,7 @@ content-type = "text/markdown"
 "prompt_relation_extraction" = "conspiracies.docprocessing.relationextraction.gptprompting:create_prompt_relation_extraction_component"
 "relation_extractor" = "conspiracies.docprocessing.relationextraction.multi2oie:make_relation_extractor"
 "allennlp_coref" = "conspiracies.docprocessing.coref:create_coref_component"
+"safe_fastcoref" = "conspiracies.docprocessing.coref.safefastcoref:create_safe_fastcoref"
 "heads_extraction" = "conspiracies.docprocessing.headwordextraction:create_headwords_component"
 
 

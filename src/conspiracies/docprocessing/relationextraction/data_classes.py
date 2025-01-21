@@ -262,18 +262,34 @@ class SpanTriplet(BaseModel):
     def span_to_json(span: Union[Span, Doc]) -> Dict[str, Any]:
         if isinstance(span, Doc):
             span = span[:]
-        return {
+        d = {
             "text": span.text,
+            "start_char": span.start_char,
             "start": span.start,
+            "end_char": span.end_char,
             "end": span.end,
+            "lemma": span.lemma_,
+            "tokens": [
+                {"text": t.text, "lemma": t.lemma_, "pos": t.pos_} for t in span
+            ],
         }
+        if span.doc.has_annotation("DEP"):
+            d["max_noun_phrase"] = max(
+                span.noun_chunks,
+                key=len,
+                default=span[0:0],
+            ).lemma_
+            d["max_entity"] = max(span.ents, key=len, default=span[0:0]).lemma_
+            if Doc.has_extension("most_common_ancestor"):
+                d["head"] = span._.most_common_ancestor.lemma_
+        return d
 
     @staticmethod
     def span_from_json(json: dict, doc: Doc) -> Span:
         span = doc[json["start"] : json["end"]]
         return span
 
-    def to_dict(self, include_doc=True, include_span_heads=False) -> Dict[str, Any]:
+    def to_dict(self, include_doc=True) -> Dict[str, Any]:
         if include_doc:
             data = self.span.doc.to_json()
         else:
@@ -281,12 +297,6 @@ class SpanTriplet(BaseModel):
         data["subject"] = self.span_to_json(self.subject)
         data["predicate"] = self.span_to_json(self.predicate)
         data["object"] = self.span_to_json(self.object)
-        if include_span_heads and Span.has_extension("most_common_ancestor"):
-            subject_head = self.subject._.most_common_ancestor.text
-            data["subject"]["head"] = subject_head
-            object_head = self.object._.most_common_ancestor.text
-            data["object"]["head"] = object_head
-
         return data
 
     @staticmethod
