@@ -309,7 +309,23 @@ export async function getGraph(req: Request, res: Response) {
 
   let edges = createEdgeGroups(relations, onlySupernodes);
   edges = edges
-    .sort((a, b) => b.totalTermFrequency! - a.totalTermFrequency!)
+    .sort((a, b) => {
+      const aConnectsFocusNodes =
+        focusEntityIds.indexOf(a.from) > -1 &&
+        focusEntityIds.indexOf(a.to) > -1;
+      const bConnectsFocusNodes =
+        focusEntityIds.indexOf(b.from) > -1 &&
+        focusEntityIds.indexOf(b.to) > -1;
+      if (aConnectsFocusNodes && bConnectsFocusNodes) {
+        return 0;
+      } else if (aConnectsFocusNodes && !bConnectsFocusNodes) {
+        return -1;
+      } else if (!aConnectsFocusNodes && bConnectsFocusNodes) {
+        return 1;
+      } else {
+        return b.totalTermFrequency! - a.totalTermFrequency!;
+      }
+    })
     .slice(0, graphFilter.limitEdges);
 
   if (onlySupernodes) {

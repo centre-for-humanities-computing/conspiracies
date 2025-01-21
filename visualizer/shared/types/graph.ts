@@ -15,8 +15,8 @@ export interface LabeledEdge extends Identifiable {
 }
 
 export interface Edge extends Identifiable {
-  from: string | number;
-  to: string | number;
+  from: number;
+  to: number;
   subjectLabel: string;
   objectLabel: string;
   totalTermFrequency?: number;
