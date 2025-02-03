@@ -1,8 +1,8 @@
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 
 repos:
   - repo: https://github.com/bwhmather/ssort
-    rev: 0.13.0
+    rev: 0.14.0
     hooks:
       - id: ssort
 
@@ -12,12 +12,12 @@ repos:
       - id: add-trailing-comma
 
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 25.1.0
     hooks:
       - id: black
         args: [--line-length, "88"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.7
+    rev: v0.9.4
     hooks:
       - id: ruff
