@@ -30,7 +30,7 @@ dependencies = [
     "allennlp>=2.10.0,<2.11.0",
     "allennlp-models>=2.10.0,<2.11.0",
     # transformers
-    "transformers>=4.11.3,<4.19.0",
+    "transformers>=4.11.3,<4.58.0",
     # base+ 
     "torch>=1.6.0,<1.12.0",
     "numpy>=1.19.5,<1.24.0",
